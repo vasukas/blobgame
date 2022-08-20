@@ -1,0 +1,4 @@
+imports_granularity = "Crate"
+fn_args_layout = "Compressed"
+use_field_init_shorthand = true
+single_line_if_else_max_width = 80

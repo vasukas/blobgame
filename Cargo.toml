@@ -1,0 +1,43 @@
+[package]
+name = "blobfight"
+version = "0.1.0"
+edition = "2021"
+
+[features]
+default = ["debug_build"]
+debug_build = [
+    "bevy/dynamic",
+    "bevy/filesystem_watcher",
+]
+
+[dependencies]
+# Engine
+bevy = {version = "0.8", default-features = false, features = [
+    "bevy_asset",
+    "bevy_winit",
+    "bevy_sprite",
+    "bevy_text",
+
+    "png",
+    "x11",
+    "serialize",
+]}
+bevy_egui = {version = "0.15", default-features = false}
+bevy_kira_audio = {version = "0.12", features = ["wav", "ogg"]}
+bevy_prototype_lyon = "0.6"
+bevy_rapier2d = "0.16"
+
+# General utilities
+ron = "0.7"
+serde = {version = "1", features = ["derive"]}
+itertools = "0.10"
+rand = "0.8"
+enum-map = {version = "2.3", features = ["serde"]}
+
+# Enable only a small amount of optimization in debug mode
+[profile.dev]
+opt-level = 1
+
+# Enable high optimizations for dependencies (incl. Bevy), but not for our code:
+[profile.dev.package."*"]
+opt-level = 3
