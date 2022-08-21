@@ -5,9 +5,7 @@ use crate::{
 };
 
 #[derive(Component, Clone, Serialize, Deserialize)]
-pub enum Spawn {
-    WallTile,
-}
+pub enum Spawn {}
 
 #[derive(Component)]
 pub struct SpawnActive;
@@ -29,28 +27,7 @@ fn spawn(
     assets: Res<GameAssets>,
 ) {
     for (transform, spawn) in tiles.iter() {
-        match spawn {
-            Spawn::WallTile => {
-                commands
-                    .spawn_bundle(SpatialBundle {
-                        transform: (*transform).into(),
-                        ..default()
-                    })
-                    .insert(GameplayObject)
-                    //
-                    .insert(RigidBody::Fixed)
-                    .insert(PhysicsType::Obstacle.rapier())
-                    .insert(Collider::cuboid(TILE_SIZE / 2., TILE_SIZE / 2.))
-                    //
-                    .insert(Depth::WallTile)
-                    .insert(SimpleSprite {
-                        images: assets.wall_sprite.clone(),
-                        frame: END_OF_TIMES,
-                        size: Vec2::splat(TILE_SIZE),
-                        ..default()
-                    });
-            }
-        }
+        //
     }
 }
 

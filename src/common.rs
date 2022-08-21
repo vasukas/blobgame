@@ -1,5 +1,5 @@
 pub use crate::{
-    control::time::GameTime,
+    control::{level::GameplayObject, time::GameTime},
     present::depth::Depth,
     utils::{bevy::*, rust::*},
 };
@@ -9,7 +9,8 @@ pub use bevy_rapier2d::prelude::*;
 pub use serde::{Deserialize, Serialize};
 pub use std::time::Duration;
 
-pub const TILE_SIZE: f32 = 32.;
+pub use bevy_prototype_lyon::prelude as bevy_lyon;
+
 pub const END_OF_TIMES: Duration = Duration::from_secs(60 * 60 * 24 * 30); // in 30 days
 
 //

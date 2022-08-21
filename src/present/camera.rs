@@ -48,7 +48,7 @@ impl Plugin for CameraPlugin {
 }
 
 fn spawn_camera(mut commands: Commands) {
-    let target_size = vec2(TILE_SIZE * 20., 1.);
+    let target_size = vec2(40., 1.);
     commands
         .spawn_bundle(Camera2dBundle::default())
         .insert(WorldCamera { target_size });

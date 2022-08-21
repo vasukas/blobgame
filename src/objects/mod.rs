@@ -2,7 +2,7 @@ use crate::common::*;
 
 pub mod player;
 pub mod spawn;
-pub mod tile;
+pub mod terrain;
 
 pub struct ObjectsPlugin;
 
