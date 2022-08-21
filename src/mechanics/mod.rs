@@ -1,8 +1,8 @@
 use crate::common::*;
 
-pub struct SomePlugin;
+pub struct MechanicsPlugin;
 
-impl Plugin for SomePlugin {
+impl Plugin for MechanicsPlugin {
     fn build(&self, _app: &mut App) {
         //
     }

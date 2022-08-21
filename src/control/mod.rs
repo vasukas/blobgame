@@ -1,9 +1,14 @@
+use self::{loading::LoadingPlugin, time::TimePlugin, editor::EditorPlugin};
 use crate::common::*;
 
-pub struct SomePlugin;
+pub mod editor;
+pub mod loading;
+pub mod time;
 
-impl Plugin for SomePlugin {
-    fn build(&self, _app: &mut App) {
-        //
+pub struct ControlPlugin;
+
+impl Plugin for ControlPlugin {
+    fn build(&self, app: &mut App) {
+        app.add_plugin(TimePlugin).add_plugin(LoadingPlugin).add_plugin(EditorPlugin);
     }
 }

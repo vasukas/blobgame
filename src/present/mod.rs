@@ -1,9 +1,14 @@
+use self::{camera::CameraPlugin, simple_sprite::SimpleSpritePlugin};
 use crate::common::*;
 
-pub struct SomePlugin;
+pub mod camera;
+pub mod depth;
+pub mod simple_sprite;
 
-impl Plugin for SomePlugin {
-    fn build(&self, _app: &mut App) {
-        //
+pub struct PresentationPlugin;
+
+impl Plugin for PresentationPlugin {
+    fn build(&self, app: &mut App) {
+        app.add_plugin(CameraPlugin).add_plugin(SimpleSpritePlugin);
     }
 }

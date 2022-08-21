@@ -32,7 +32,6 @@ ron = "0.7"
 serde = {version = "1", features = ["derive"]}
 itertools = "0.10"
 rand = "0.8"
-enum-map = {version = "2.3", features = ["serde"]}
 
 # Enable only a small amount of optimization in debug mode
 [profile.dev]

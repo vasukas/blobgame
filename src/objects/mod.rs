@@ -1,8 +1,12 @@
 use crate::common::*;
 
-pub struct SomePlugin;
+pub mod player;
+pub mod spawn;
+pub mod tile;
 
-impl Plugin for SomePlugin {
+pub struct ObjectsPlugin;
+
+impl Plugin for ObjectsPlugin {
     fn build(&self, _app: &mut App) {
         //
     }

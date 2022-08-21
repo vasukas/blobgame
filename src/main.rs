@@ -16,6 +16,9 @@ fn main() {
     App::new()
         .insert_resource(WindowDescriptor {
             title: "BlobFight".to_string(),
+            width: 1280.,
+            height: 720.,
+
             #[cfg(target_os = "linux")] // avoid hanging on exit
             present_mode: PresentMode::Mailbox,
             ..default()
@@ -32,10 +35,10 @@ fn main() {
         })
         .add_system_to_stage(CoreStage::Last, exit_on_esc_system)
         .add_startup_system(setup)
-        .add_plugin(control::SomePlugin)
-        .add_plugin(mechanics::SomePlugin)
-        .add_plugin(objects::SomePlugin)
-        .add_plugin(present::SomePlugin)
+        .add_plugin(control::ControlPlugin)
+        .add_plugin(mechanics::MechanicsPlugin)
+        .add_plugin(objects::ObjectsPlugin)
+        .add_plugin(present::PresentationPlugin)
         .run()
 }
 

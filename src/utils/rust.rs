@@ -9,3 +9,27 @@ impl DurationExtended for Duration {
         self.as_secs_f32() / rhs.as_secs_f32()
     }
 }
+
+//
+
+pub trait RandomSelect<T> {
+    fn random_select(self) -> T;
+    fn get_random_select(self) -> Option<T>;
+}
+
+impl<Iter: ExactSizeIterator + Clone> RandomSelect<Iter::Item> for Iter {
+    fn random_select(self) -> Iter::Item {
+        self.get_random_select().unwrap()
+    }
+
+    fn get_random_select(self) -> Option<Iter::Item> {
+        use rand::*;
+        let len = self.len();
+        if len == 0 {
+            None
+        } else {
+            let i = thread_rng().gen_range(0..len);
+            self.skip(i).next()
+        }
+    }
+}

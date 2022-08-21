@@ -40,6 +40,8 @@ impl BevyTransform2d for GlobalTransform {
 
 pub trait GlamVec2 {
     fn area(&self) -> f32;
+    fn angle(&self) -> f32;
+
     fn in_bounds(&self, min: Self, max: Self) -> bool;
 }
 
@@ -47,6 +49,14 @@ impl GlamVec2 for Vec2 {
     fn area(&self) -> f32 {
         self.x * self.y
     }
+    fn angle(&self) -> f32 {
+        // TODO: why negative
+        -self
+            .try_normalize()
+            .unwrap_or(Vec2::X)
+            .angle_between(Vec2::X)
+    }
+
     fn in_bounds(&self, min: Self, max: Self) -> bool {
         self.cmpge(min).all() && self.cmplt(max).all()
     }
