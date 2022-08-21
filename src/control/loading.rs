@@ -17,11 +17,14 @@ impl Loading {
     }
 
     pub fn add_n<T: Asset>(
-        &mut self, server: &AssetServer, path: &str, count: usize, extension: &str,
+        &mut self, server: &AssetServer, path_template: &str, count: usize,
     ) -> Vec<Handle<T>> {
         (0..count)
             .into_iter()
-            .map(|index| self.add(server, &format!("{}{}.{}", path, index, extension)))
+            .map(|index| {
+                let path = path_template.replace("?", &index.to_string());
+                self.add(server, &path)
+            })
             .collect()
     }
 

@@ -10,6 +10,18 @@ impl DurationExtended for Duration {
     }
 }
 
+pub trait BoolExtended {
+    /// Sets value to the opposite of current and returns new value
+    fn flip(&mut self) -> Self;
+}
+
+impl BoolExtended for bool {
+    fn flip(&mut self) -> Self {
+        *self = !*self;
+        *self
+    }
+}
+
 //
 
 pub trait RandomSelect<T> {

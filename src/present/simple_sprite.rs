@@ -1,9 +1,12 @@
 use crate::common::*;
+use std::sync::Arc;
+
+pub type ImageVec = Arc<Vec<Handle<Image>>>;
 
 /// Requires SpatialBundle
 #[derive(Component, Default)]
 pub struct SimpleSprite {
-    pub images: Vec<Handle<Image>>,
+    pub images: ImageVec,
     pub frame: Duration,
 
     pub color: Color,
