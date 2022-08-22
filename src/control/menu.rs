@@ -50,12 +50,11 @@ fn show_menu(
     match *state {
         MainState::Game => (),
         MainState::MainMenu | MainState::InGameMenu => {
-            ctx.popup("menu::show_menu", vec2(0., 0.), false, |ui| {
-                let ingame = match *state {
-                    MainState::MainMenu => false,
-                    MainState::Game | MainState::InGameMenu => true,
-                };
-
+            let ingame = match *state {
+                MainState::MainMenu => false,
+                MainState::Game | MainState::InGameMenu => true,
+            };
+            ctx.popup("menu::show_menu", vec2(0., 0.), ingame, |ui| {
                 ui.heading("BLOBFIGHT");
                 ui.label(""); // separator
 

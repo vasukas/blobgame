@@ -126,17 +126,22 @@ impl Level {
         level.title = svg.title.clone().unwrap_or_else(|| "UNKNOWN".to_string());
 
         for point in svg.points {
-            let id = point.id.split("_").next().unwrap_or(point.id.as_str());
-            match LevelObject::from_id(id) {
-                Some(obj) => level.points.push((point.pos, obj)),
-                None => log::warn!("SVG: invalid point id \"{}\"", point.id),
+            match LevelObject::from_id(&point.id) {
+                Ok(Some(obj)) => level.points.push((point.pos, obj)),
+                Ok(None) => log::warn!("SVG: invalid point id \"{}\"", point.id),
+                Err(error) => {
+                    anyhow::bail!("SVG: failed to parse point id \"{}\": {}", point.id, error)
+                }
             }
         }
 
         for line in svg.lines {
-            let id = line.id.split("_").next().unwrap_or(line.id.as_str());
-            let obj = LevelArea::from_id(id);
-            level.areas.push((line.pos, obj));
+            match LevelArea::from_id(&line.id) {
+                Ok(obj) => level.areas.push((line.pos, obj)),
+                Err(error) => {
+                    anyhow::bail!("SVG: failed to parse line id \"{}\": {}", line.id, error)
+                }
+            }
         }
 
         Ok(level)

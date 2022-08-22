@@ -1,7 +1,9 @@
 pub use crate::{
+    assets::MyAssets,
     control::{level::GameplayObject, time::GameTime},
-    present::depth::Depth,
-    utils::{bevy::*, bevy_egui::*, rust::*},
+    mechanics::physics::PhysicsType,
+    present::depth::{ChildDepth, Depth},
+    utils::{bevy::*, bevy_egui::*, math::*, rust::*},
 };
 pub use bevy::{log, math::vec2, prelude::*, utils::HashMap};
 pub use bevy_egui::{egui, EguiContext};
@@ -10,31 +12,19 @@ pub use bevy_rapier2d::prelude::*;
 pub use serde::{Deserialize, Serialize};
 pub use std::time::Duration;
 
-pub const END_OF_TIMES: Duration = Duration::from_secs(60 * 60 * 24 * 30); // in 30 days
-
 //
 
-#[derive(Clone, Copy)]
-pub enum PhysicsType {
-    Obstacle,
-}
+/// Really ugly pattern I should remove.
+/// Someday.
+/// Maybe.
+#[derive(Default)]
+pub struct BadEntityHack(Option<Entity>);
 
-impl PhysicsType {
-    pub fn rapier(self) -> CollisionGroups {
-        let obstacles = 1;
-
-        let (memberships, filters) = match self {
-            PhysicsType::Obstacle => (obstacles, obstacles),
-        };
-        CollisionGroups {
-            memberships,
-            filters,
-        }
+impl BadEntityHack {
+    pub fn set(&mut self, entity: Entity) {
+        self.0 = Some(entity)
     }
-}
-
-impl Into<InteractionGroups> for PhysicsType {
-    fn into(self) -> InteractionGroups {
-        self.rapier().into()
+    pub fn get(self) -> Entity {
+        self.0.unwrap()
     }
 }

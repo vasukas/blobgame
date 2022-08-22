@@ -2,9 +2,16 @@ use crate::{
     common::*,
     control::level::{LevelCommand, LevelEvent},
 };
+use bevy::utils::HashSet;
 
-#[derive(Component, Default)]
-pub struct Player;
+#[derive(Component)]
+pub struct CheckpointArea(pub u64);
+
+#[derive(Component)]
+pub struct CheckpointSpawn(pub u64);
+
+#[derive(Component)]
+pub struct ExitArea;
 
 //
 
@@ -22,9 +29,18 @@ impl Plugin for PlayerPlugin {
 
 #[derive(Default)]
 struct PlayerState {
-    playing: bool,
     show_level_title: Option<(String, Duration)>,
+    level: Option<LevelData>,
 }
+
+#[derive(Default)]
+struct LevelData {
+    visited_checkpoints: HashSet<Entity>,
+    last_checkpoint: Vec2,
+}
+
+#[derive(Component)]
+struct Player;
 
 fn spawn_player(mut commands: Commands, player: Query<Entity, Added<Player>>) {
     for entity in player.iter() {
@@ -46,15 +62,15 @@ fn respawn_and_level_info(
     mut events: EventReader<LevelEvent>, mut level_cmd: EventWriter<LevelCommand>,
     keys: Res<Input<KeyCode>>, time: Res<GameTime>,
 ) {
-    for event in events.iter() {
-        match event {
-            LevelEvent::Loaded { title } => {
-                pstate.playing = true;
-                pstate.show_level_title = Some((title.clone(), time.now()))
-            }
-            LevelEvent::Unloaded => pstate.playing = false,
-        }
-    }
+    // for event in events.iter() {
+    //     match event {
+    //         LevelEvent::Loaded { title } => {
+    //             pstate.playing = true;
+    //             pstate.show_level_title = Some((title.clone(), time.now()))
+    //         }
+    //         LevelEvent::Unloaded => pstate.playing = false,
+    //     }
+    // }
 
     // TODO: implement
 }

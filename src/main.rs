@@ -1,4 +1,4 @@
-#![allow(unstable_name_collisions)] // I swear I don't do anything too weird with this
+//#![allow(unstable_name_collisions)] // I swear I don't do anything too weird with this
 
 use bevy::{app::AppExit, prelude::*, window::PresentMode};
 use bevy_egui::EguiPlugin;
@@ -6,6 +6,7 @@ use bevy_prototype_lyon::plugin::ShapePlugin;
 use bevy_rapier2d::plugin::RapierPhysicsPlugin;
 use control::menu::StartupMenuHack;
 
+mod assets;
 mod common;
 mod control;
 mod mechanics;
@@ -47,6 +48,7 @@ fn main() {
         .add_plugin(objects::ObjectsPlugin)
         .add_plugin(present::PresentationPlugin)
         .add_plugin(temporary::TemporaryPlugin)
+        .add_plugin(assets::MyAssetsPlugin)
         .run()
 }
 

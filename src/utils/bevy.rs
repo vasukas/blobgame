@@ -79,3 +79,15 @@ impl<T, E: std::fmt::Display> LogResult<T> for Result<T, E> {
         }
     }
 }
+
+// Color
+
+pub trait BevyColorExtended {
+    fn with_a(self, alpha: f32) -> Self;
+}
+
+impl BevyColorExtended for Color {
+    fn with_a(mut self, alpha: f32) -> Self {
+        *self.set_a(alpha)
+    }
+}

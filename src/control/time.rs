@@ -26,6 +26,10 @@ impl GameTime {
     pub fn passed(&self, since: Duration) -> Duration {
         self.now.checked_sub(since).unwrap_or_default()
     }
+
+    pub fn t_passed(&self, since: Duration, period: Duration) -> f32 {
+        self.passed(since).as_secs_f32() / period.as_secs_f32()
+    }
 }
 
 //

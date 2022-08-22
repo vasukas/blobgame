@@ -1,6 +1,5 @@
-use crate::common::*;
-
-use super::player::Player;
+use super::player::*;
+use crate::{common::*, mechanics::physics::*, present::light::*};
 
 /// If it's closed, last point will be equal to first
 #[derive(Component)]
@@ -9,32 +8,50 @@ pub struct LevelAreaPolygon(pub Vec<Vec2>);
 #[derive(Component, Clone)]
 pub enum LevelArea {
     Terrain,
-    Checkpoint,
+    Checkpoint(u64),
     LevelExit,
 }
 
 impl LevelArea {
-    pub fn from_id(id: &str) -> Self {
+    pub fn from_id(full_id: &str) -> anyhow::Result<Self> {
+        let mut split = full_id.split("_");
+        let id = split.next().unwrap_or(full_id);
+        let arg = split.next();
+
         match id {
-            "check" => Self::Checkpoint,
-            "exit" => Self::LevelExit,
-            _ => Self::Terrain,
+            "check" => Ok(Self::Checkpoint(parse_id_arg(arg)?)),
+            "exit" => Ok(Self::LevelExit),
+            _ => Ok(Self::Terrain),
         }
     }
 }
 
 #[derive(Component, Clone)]
 pub enum LevelObject {
-    PlayerSpawn,
+    PlayerSpawn(u64),
+    Crystal,
+    Torch,
+    Spewer,
 }
 
 impl LevelObject {
-    pub fn from_id(id: &str) -> Option<Self> {
+    pub fn from_id(full_id: &str) -> anyhow::Result<Option<Self>> {
+        let mut split = full_id.split("_");
+        let id = split.next().unwrap_or(full_id);
+        let arg = split.next();
+
         match id {
-            "player" => Some(LevelObject::PlayerSpawn),
-            _ => None,
+            "player" => Ok(Some(LevelObject::PlayerSpawn(parse_id_arg(arg)?))),
+            "crystal" => Ok(Some(LevelObject::Crystal)),
+            "torch" => Ok(Some(LevelObject::Torch)),
+            "spew" => Ok(Some(LevelObject::Spewer)),
+            _ => Ok(None),
         }
     }
+}
+
+fn parse_id_arg(arg: Option<&str>) -> anyhow::Result<u64> {
+    Ok(arg.ok_or_else(|| anyhow::anyhow!("No argument"))?.parse()?)
 }
 
 //
@@ -43,10 +60,6 @@ pub struct SpawnPlugin;
 
 impl Plugin for SpawnPlugin {
     fn build(&self, app: &mut App) {
-        /*         app.init_resource::<GameAssets>()
-        .add_system_to_stage(CoreStage::First, spawn)
-        .add_startup_system(load_assets); */
-
         app.add_system_to_stage(CoreStage::First, spawn_areas.exclusive_system().at_end())
             .add_system_to_stage(CoreStage::First, spawn_objects.exclusive_system().at_end());
     }
@@ -96,45 +109,90 @@ fn spawn_areas(
                     });
             }
 
-            LevelArea::Checkpoint => todo!(),
+            LevelArea::Checkpoint(id) => {
+                commands
+                    .entity(entity)
+                    .insert(RigidBody::Fixed)
+                    .insert(PhysicsType::Script.rapier())
+                    .insert(convex_decomposition(&polygon.0))
+                    .insert(Sensor)
+                    //
+                    .insert(CheckpointArea(*id))
+                    .insert(CollectContacts::default());
+            }
 
-            LevelArea::LevelExit => todo!(),
+            LevelArea::LevelExit => {
+                commands
+                    .entity(entity)
+                    .insert(RigidBody::Fixed)
+                    .insert(PhysicsType::Script.rapier())
+                    .insert(convex_decomposition(&polygon.0))
+                    .insert(Sensor)
+                    //
+                    .insert(ExitArea)
+                    .insert(CollectContacts::default());
+            }
         }
     }
 }
 
 fn spawn_objects(
     mut commands: Commands, objects: Query<(Entity, &LevelObject), Added<LevelObject>>,
+    assets: Res<MyAssets>,
 ) {
     for (entity, ty) in objects.iter() {
         match ty {
-            LevelObject::PlayerSpawn => {
-                commands.entity(entity).insert(Player::default());
+            LevelObject::PlayerSpawn(id) => {
+                commands.entity(entity).insert(CheckpointSpawn(*id));
             }
+            LevelObject::Crystal => {
+                let size = vec2(0.6, 1.);
+                commands
+                    .entity(entity)
+                    .insert(Sprite {
+                        custom_size: Some(size),
+                        ..default()
+                    })
+                    .insert(assets.crystal.clone())
+                    .insert(Depth::BackgroundObject)
+                    .insert(Light::default())
+                    .insert(LightPulse {
+                        period: Duration::from_secs(4),
+                        source: Light {
+                            radius: 10.,
+                            color: Color::CYAN.with_a(0.1),
+                        },
+                        ..default()
+                    })
+                    //
+                    .insert(PlunkDown {
+                        distance: size.y / 2.,
+                    });
+            }
+
+            LevelObject::Torch => (),
+
+            LevelObject::Spewer => (),
         }
     }
 }
 
-/*
-fn spawn(
-    mut commands: Commands, tiles: Query<(&GlobalTransform, &Spawn), Added<SpawnActive>>,
-    assets: Res<GameAssets>,
-) {
-    for (transform, spawn) in tiles.iter() {
-        //
-    }
+/// Converts polygon into shape. Veeeery slooooooowlyeeeee.
+/// Also it may panic in some cases, not sure which.
+fn convex_decomposition(points: &[Vec2]) -> Collider {
+    let points = if !points.is_empty() && points.first() == points.last() {
+        // see below why this is needed
+        &points[..points.len() - 1]
+    } else {
+        points
+    };
+    Collider::convex_decomposition(
+        points,
+        &points
+            .iter()
+            .enumerate()
+            // this assumes polygon is not closed, that's why there is that thing above
+            .map(|v| [v.0 as u32, ((v.0 + 1) % points.len()) as u32])
+            .collect::<Vec<_>>(),
+    )
 }
-
-#[derive(Default)]
-struct GameAssets {
-    player_sprite: ImageVec,
-    wall_sprite: ImageVec,
-}
-
-fn load_assets(
-    mut loading: ResMut<Loading>, server: Res<AssetServer>, mut assets: ResMut<GameAssets>,
-) {
-    assets.player_sprite = ImageVec::new(loading.add_n(&server, "sprites/player/circ?.png", 3));
-    assets.wall_sprite = ImageVec::new(loading.add_n(&server, "sprites/wall/wall?.png", 3));
-}
-*/
