@@ -5,11 +5,10 @@ pub use crate::{
 };
 pub use bevy::{log, math::vec2, prelude::*, utils::HashMap};
 pub use bevy_egui::{egui, EguiContext};
+pub use bevy_prototype_lyon::prelude as bevy_lyon;
 pub use bevy_rapier2d::prelude::*;
 pub use serde::{Deserialize, Serialize};
 pub use std::time::Duration;
-
-pub use bevy_prototype_lyon::prelude as bevy_lyon;
 
 pub const END_OF_TIMES: Duration = Duration::from_secs(60 * 60 * 24 * 30); // in 30 days
 

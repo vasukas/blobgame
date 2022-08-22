@@ -13,8 +13,9 @@ pub enum LevelCommand {
 }
 
 /// Event (not sent on reloading)
-pub struct LevelLoaded {
-    pub title: String,
+pub enum LevelEvent {
+    Loaded { title: String },
+    Unloaded,
 }
 
 //
@@ -24,11 +25,11 @@ pub struct LevelPlugin;
 impl Plugin for LevelPlugin {
     fn build(&self, app: &mut App) {
         app.add_event::<LevelCommand>()
-            .add_event::<LevelLoaded>()
-            .init_asset_loader::<LevelAssetLoader>()
+            .add_event::<LevelEvent>()
             .add_asset::<Level>()
+            .init_asset_loader::<LevelAssetLoader>()
             .init_resource::<CurrentLevel>()
-            .add_system_to_stage(CoreStage::First, load_level.exclusive_system());
+            .add_system_to_stage(CoreStage::First, load_level.exclusive_system().at_start());
     }
 }
 
@@ -41,7 +42,7 @@ struct CurrentLevel {
 
 fn load_level(
     mut cmds: EventReader<LevelCommand>, mut current: ResMut<CurrentLevel>, mut commands: Commands,
-    mut events: EventWriter<LevelLoaded>, levels: Res<Assets<Level>>,
+    mut events: EventWriter<LevelEvent>, levels: Res<Assets<Level>>,
     objects: Query<Entity, With<GameplayObject>>,
 ) {
     // process commands
@@ -63,6 +64,8 @@ fn load_level(
             LevelCommand::Unload => {
                 log::info!("Level: unloaded");
                 current.loaded = true;
+
+                events.send(LevelEvent::Unloaded);
             }
             LevelCommand::Reload => {
                 log::info!("Level: start reload");
@@ -79,7 +82,7 @@ fn load_level(
                 current.old = current.level.clone();
                 log::info!("Level: loading {:?} - \"{}\"", current.level, level.title);
             }
-            events.send(LevelLoaded {
+            events.send(LevelEvent::Loaded {
                 title: level.title.clone(),
             });
 

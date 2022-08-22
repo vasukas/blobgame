@@ -10,12 +10,12 @@ pub struct GameTime {
 }
 
 impl GameTime {
-    pub fn _now(&self) -> Duration {
+    pub fn now(&self) -> Duration {
         self.now
     }
 
     /// Note that this might be zero!
-    pub fn _delta_seconds(&self) -> f32 {
+    pub fn delta_seconds(&self) -> f32 {
         self.delta.as_secs_f32()
     }
 
@@ -23,7 +23,7 @@ impl GameTime {
         self.now >= time
     }
 
-    pub fn _passed(&self, since: Duration) -> Duration {
+    pub fn passed(&self, since: Duration) -> Duration {
         self.now.checked_sub(since).unwrap_or_default()
     }
 }
@@ -50,10 +50,9 @@ fn advance_time(
     game_time.delta = delta;
     game_time.now += delta;
 
-    // TODO: which mode to use? maybe change time_scale instead of dt?
     physics.timestep_mode = TimestepMode::Interpolated {
-        dt: delta.as_secs_f32(),
-        time_scale: 1.,
+        dt: time.delta_seconds(),
+        time_scale: game_time.scale,
         substeps: 1,
     };
 }

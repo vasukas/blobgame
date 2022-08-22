@@ -57,7 +57,7 @@ fn show_menu(
                 };
 
                 ui.heading("BLOBFIGHT");
-                ui.separator();
+                ui.label(""); // separator
 
                 if ingame {
                     if ui.button("Continue").clicked() {
@@ -78,11 +78,11 @@ fn show_menu(
                     exit_app.send_default()
                 }
 
-                ui.separator();
+                ui.label(""); // separator
                 ui.label("Here will be settings");
                 // TODO: actually add settings menu
 
-                ui.separator();
+                ui.label(""); // separator
                 ui.label("Made by vasukas with Bevy Engine");
                 // TODO: don't forget to add other stuff here
             });
@@ -103,7 +103,7 @@ fn play_level(
 ) {
     if let Some(level) = hack.play_level.as_ref() {
         level_cmd.send(LevelCommand::Load(
-            server.load(&format!("levels/{}", level)),
+            server.load(&format!("levels/{}.svg", level)),
         ));
         *state = MainState::Game;
     }
