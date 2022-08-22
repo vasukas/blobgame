@@ -14,7 +14,9 @@ pub enum LevelCommand {
 
 /// Event (not sent on reloading)
 pub enum LevelEvent {
+    /// Loaded and spawned new level
     Loaded { title: String },
+    /// Unloaded all levels (exited from game)
     Unloaded,
 }
 
