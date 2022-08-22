@@ -18,6 +18,7 @@ pub struct Point {
 
 #[derive(Default)]
 pub struct File {
+    pub title: Option<String>,
     pub lines: Vec<Line>,
     pub points: Vec<Point>,
 }
@@ -29,12 +30,12 @@ impl File {
     /// If it fails with "invalid float literal" set this in Inkscape:
     /// `Edit -> Preferences -> Input/Output -> SVG Export -> Path data -> Path string format -> Absolute`
     pub fn from_file(filename: &str) -> Result<File> {
-        let file = Self::from_string(&std::fs::read(filename)?)?;
+        let file = Self::from_bytes(&std::fs::read(filename)?)?;
         log::info!("Loaded SVG \"{}\"", filename);
         Ok(file)
     }
 
-    pub fn from_string(file: &[u8]) -> Result<File> {
+    pub fn from_bytes(file: &[u8]) -> Result<File> {
         let xml = load_xml(file)?;
 
         let mut file = File::default();
@@ -121,6 +122,7 @@ impl File {
                         format!("Circle, id: \"{}\"", e.get_attr("id").unwrap_or(""))
                     })?)
                 }
+                "title" => self.title = e.content.clone(),
                 _ => (),
             }
         }
@@ -243,6 +245,7 @@ struct XmlElement {
     name: String,
     attrs: HashMap<String, String>,
     elements: Vec<XmlElement>,
+    content: Option<String>,
 }
 
 impl XmlElement {
@@ -266,6 +269,11 @@ fn load_xml(file: &[u8]) -> Result<XmlElement> {
                 .iter()
                 .filter_map(|n| n.as_element().map(|e| conv(e)))
                 .collect(),
+            content: src
+                .children
+                .iter()
+                .find_map(|n| n.as_text())
+                .map(ToString::to_string),
         }
     }
 

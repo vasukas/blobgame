@@ -8,7 +8,9 @@ pub struct TemporaryPlugin;
 
 impl Plugin for TemporaryPlugin {
     fn build(&self, app: &mut App) {
-        app.add_startup_system(test)
+        app
+            // fubar
+            //.add_startup_system(test_svg_spawn)
             .add_system(tmp_keys)
             .add_system(debug_info);
     }
@@ -29,7 +31,8 @@ fn debug_info(mut ctx: ResMut<EguiContext>, window: Res<WindowInfo>) {
     });
 }
 
-fn test(mut commands: Commands) {
+#[allow(unused)]
+fn test_svg_spawn(mut commands: Commands) {
     use bevy_lyon::*;
 
     let mut svg = svg::File::from_file("assets/levels/first.svg").unwrap();

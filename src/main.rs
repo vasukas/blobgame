@@ -4,6 +4,7 @@ use bevy::{app::AppExit, prelude::*, window::PresentMode};
 use bevy_egui::EguiPlugin;
 use bevy_prototype_lyon::plugin::ShapePlugin;
 use bevy_rapier2d::plugin::RapierPhysicsPlugin;
+use control::menu::StartupMenuHack;
 
 mod common;
 mod control;
@@ -14,6 +15,10 @@ mod temporary;
 mod utils;
 
 fn main() {
+    let mut args = std::env::args();
+    args.next(); // skip program name
+    let play_level = args.next();
+
     App::new()
         .insert_resource(WindowDescriptor {
             title: "BlobFight".to_string(),
@@ -25,6 +30,7 @@ fn main() {
             ..default()
         })
         .insert_resource(ClearColor(Color::rgb(0.1, 0.1, 0.1)))
+        .insert_resource(StartupMenuHack { play_level })
         .add_plugins(DefaultPlugins)
         .add_plugin(EguiPlugin)
         .add_plugin(ShapePlugin)
