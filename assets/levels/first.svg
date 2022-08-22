@@ -2,9 +2,9 @@
 <!-- Created with Inkscape (http://www.inkscape.org/) -->
 
 <svg
-   width="210mm"
-   height="297mm"
-   viewBox="0 0 210 297"
+   width="793.70081"
+   height="1122.5197"
+   viewBox="0 0 793.70081 1122.5197"
    version="1.1"
    id="svg5"
    inkscape:version="1.2.1 (9c6d41e410, 2022-07-14)"
@@ -24,11 +24,11 @@
      inkscape:deskcolor="#d1d1d1"
      inkscape:document-units="mm"
      showgrid="true"
-     inkscape:zoom="13.669248"
-     inkscape:cx="183.07518"
-     inkscape:cy="621.28509"
-     inkscape:window-width="1920"
-     inkscape:window-height="1148"
+     inkscape:zoom="38.662472"
+     inkscape:cx="45.897221"
+     inkscape:cy="163.99624"
+     inkscape:window-width="2560"
+     inkscape:window-height="1507"
      inkscape:window-x="0"
      inkscape:window-y="0"
      inkscape:window-maximized="1"
@@ -39,7 +39,9 @@
        color="#9a9aff"
        opacity="0.1254902"
        empcolor="#d8d8ff"
-       empopacity="0.25098039" />
+       empopacity="0.25098039"
+       originx="0"
+       originy="0" />
   </sodipodi:namedview>
   <defs
      id="defs2" />
@@ -62,7 +64,7 @@
        cy="160.46979"
        r="0.13229166" />
     <ellipse
-       style="fill:none;fill-rule:evenodd;stroke:#00f6ff;stroke-width:0.124767;fill-opacity:1;stroke-opacity:1"
+       style="fill:none;fill-opacity:1;fill-rule:evenodd;stroke:#00f6ff;stroke-width:0.124767;stroke-opacity:1"
        id="lamp_path290"
        cx="54.901039"
        cy="159.25417"
@@ -114,5 +116,13 @@
        style="opacity:1;vector-effect:none;fill:#808080;fill-opacity:1;fill-rule:evenodd;stroke:#d3d3d3;stroke-width:0.0264583;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1"
        d="M 40.745833,169.8625 48.683333,163.5125 H 47.889583 V 162.45417 H 46.302083 V 161.13125 H 45.508333 L 44.979167,160.3375 H 37.041667 L 40.745833,169.8625"
        id="path1145" />
+    <path
+       style="fill:#ff6666;fill-opacity:1;stroke:#ffffff;stroke-width:0.03;stroke-dasharray:none;stroke-opacity:1"
+       d="M 46.302083,159.27917 47.095833,156.63333 47.889583,157.95625 48.947917,156.63334 49.741667,159.27917 48.41875,158.48542 Z"
+       id="path239" />
+    <path
+       style="fill:#ff6666;stroke:#ffffff;stroke-width:0.113386"
+       d="M 25.000001,175 30.000001,173 35,175 45,171 55,175 60,173 65,175"
+       id="path380" />
   </g>
 </svg>

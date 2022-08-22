@@ -10,6 +10,7 @@ mod control;
 mod mechanics;
 mod objects;
 mod present;
+mod temporary;
 mod utils;
 
 fn main() {
@@ -39,6 +40,7 @@ fn main() {
         .add_plugin(mechanics::MechanicsPlugin)
         .add_plugin(objects::ObjectsPlugin)
         .add_plugin(present::PresentationPlugin)
+        .add_plugin(temporary::TemporaryPlugin)
         .run()
 }
 

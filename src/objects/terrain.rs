@@ -18,8 +18,7 @@ pub struct SomePlugin;
 
 impl Plugin for SomePlugin {
     fn build(&self, app: &mut App) {
-        app.add_event::<SpawnTerrain>()
-            .add_system(spawn_terrain);
+        app.add_event::<SpawnTerrain>().add_system(spawn_terrain);
     }
 }
 
@@ -57,7 +56,7 @@ fn spawn_terrain(
                     DrawMode::Stroke(StrokeMode::new(LINE_COLOR, LINE_WIDTH)),
                     default(),
                 ))
-                .insert(Depth::WallTile)
+                /* .insert(Depth::WallTile) */
                 //
                 .insert(GameplayObject)
                 .insert(TerrainLine)

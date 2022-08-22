@@ -1,7 +1,7 @@
 pub use crate::{
     control::{level::GameplayObject, time::GameTime},
     present::depth::Depth,
-    utils::{bevy::*, rust::*},
+    utils::{bevy::*, bevy_egui::*, rust::*},
 };
 pub use bevy::{log, math::vec2, prelude::*, utils::HashMap};
 pub use bevy_egui::{egui, EguiContext};

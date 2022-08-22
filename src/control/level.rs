@@ -1,5 +1,4 @@
-use crate::common::*;
-use crate::objects::terrain::TerrainPoint;
+use crate::{common::*, objects::terrain::TerrainPoint};
 
 // TODO: this is all unneccassry convoluted
 
@@ -25,9 +24,7 @@ pub enum LevelObject {
 /// Event
 pub enum LevelCommand {
     Respawn,
-    Load {
-        level: Option<String>
-    }
+    Load { level: Option<String> },
 }
 
 //
@@ -36,15 +33,13 @@ pub struct LevelPlugin;
 
 impl Plugin for LevelPlugin {
     fn build(&self, app: &mut App) {
-        app.add_event::<LevelCommand>().add_system(respawn.exclusive_system());
+        app.add_event::<LevelCommand>()
+            .add_system(respawn.exclusive_system());
     }
 }
 
 fn respawn(
-    mut commands: Commands,
-    mut cmds: EventReader<LevelCommand>,
-    gameplays: Query<Entity, With<GameplayObject>>,
-    level: Query<Entity, With<LevelObject>>,
+    mut commands: Commands, mut cmds: EventReader<LevelCommand>,
+    gameplays: Query<Entity, With<GameplayObject>>, level: Query<Entity, With<LevelObject>>,
 ) {
-
 }

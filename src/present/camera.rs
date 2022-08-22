@@ -16,11 +16,14 @@ pub struct WindowInfo {
     pub scale: f32,
 }
 
-// impl WindowInfo {
-//     pub fn point_visible(&self, point: Vec2, size: f32) -> bool {
-//         point.in_bounds(self.world_min - size, self.world_max + size)
-//     }
-// }
+impl WindowInfo {
+    pub fn world_size(&self) -> Vec2 {
+        self.world_max - self.world_min
+    }
+    //     pub fn point_visible(&self, point: Vec2, size: f32) -> bool {
+    //         point.in_bounds(self.world_min - size, self.world_max + size)
+    //     }
+}
 
 #[derive(Component)]
 pub struct WorldCamera {
@@ -55,11 +58,8 @@ fn spawn_camera(mut commands: Commands) {
 }
 
 fn update_camera_scale(
-    mut camera: Query<(&mut OrthographicProjection, &WorldCamera), Changed<WorldCamera>>,
-    mut info: ResMut<WindowInfo>,
+    mut camera: Query<(&mut OrthographicProjection, &WorldCamera)>, mut info: ResMut<WindowInfo>,
 ) {
-    // TODO: scale must be recalculated when window size changes!
-
     if let Ok((mut projection, wcam)) = camera.get_single_mut() {
         let scale = (wcam.target_size / info.size).max_element();
         info.scale = scale;

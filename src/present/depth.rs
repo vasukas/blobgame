@@ -2,13 +2,15 @@ use crate::common::*;
 
 #[derive(Component, Clone, Copy)]
 pub enum Depth {
-    WallTile,
+    TerrainPolygon,
+    TerrainOutline,
 }
 
 impl Depth {
     fn z_exact(self) -> f32 {
         match self {
-            Depth::WallTile => 100.,
+            Depth::TerrainPolygon => 900.,
+            Depth::TerrainOutline => 910.,
         }
     }
 
