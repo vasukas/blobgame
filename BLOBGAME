@@ -1,0 +1,180 @@
+TODO
+* level load
+  * just reload whole thing from SVG
+  * use intermediate format instead of SVG directly
+  * store last touched checkpoint (by default it's first one)
+    and spawn player on it
+  * score etc is stored in resource and reset on loading or something
+* visuals
+  * loading terrain from SVG (and spawn outline as physics polyline)
+  * sprite loops
+  * animations (or boy)
+    * scale deformations (pulse, directional temporary change)
+    * color (pulse, fade-out)
+  * HUD
+    * shaking triggered by Explosion event
+    * bars are divided into sections, use floating point
+    * HP bar, cannon charge bar
+    * world-space
+      * HP bar appears when damaged
+      * gun charge bar
+    * text: boss health and name on top + YOU ARE DEAD
+    * fading colors: fullscreen (on top of which is only text) & background
+  * UI - egui - start/continue, options, credits, exit
+    * can be done ALL on one screen, bc I'm lazy
+    * in-game pauses the game
+* sound
+  * music, looped, crossfade
+  * beats sync and level control (0 to 3)
+  * events
+  * loops (only one per entity)
+  * optionally positional
+  * no special controls
+  * can have range
+  * some sounds are heard only when not in combat (special group with volume fade)
+* mechanics
+  * attack objects - either ray or area cast
+    * can have limited lifetime etc, different components
+    * main component checks for object hit and builds list
+  * physics
+    * obstacles, creatures, ghosts, projectiles, projectiles with light
+  * lamps
+  * crystals
+  * creature
+  * player controller
+
+
+
+Visuals
+* layered sprites & shapes
+* on screen (in Z-order)
+  * background (PROBABLY NONE)
+  * light (sprite)
+  * objects (sprite/shape with scale pseudo-animations and animated color)
+    * can have stuff attached - like attack hints or pointer arrow for player
+  * terrain polygon (shape)
+  * terrain outline (shape)
+  * help text (text, worldspace)
+  * HUD (progress bars & text)
+    * some world space, some UI
+    * shaking on explosions
+* effects
+  * blood splatters (shapes, don't stay)
+  * explosions (animated shapes; might try sprites; probably multiple layers)
+  * attack hints (animated shapes)
+  * rays (for attacks and moonlight)
+
+Sound
+* background
+  * drone, changing pitch with player's HP
+    * also in some places is tied to location?
+  * beats (three levels)
+     damaging fills meter
+     getting hit decreases it
+     on particular value level increases
+     when player HP drops to low, also increases
+     increase is temporary (unless meter stays same)
+     | x O x | x O x
+     | - O - | - O - 
+     |       |
+* ambient
+  * water drops
+  * hum of crystals
+* combat
+  * explosions
+  * attacks
+  * hits
+* player
+  * jump/dash
+  * attacks
+  * falling
+
+Mechanics
+* player
+  * dash
+    * shift-dash - in cursor direction
+    * jump-dash - in movement direction + up
+    * applies some inertial speed (esp. shift one)
+  * attacks
+    * melee (F)
+      * hitting projectile will send it flying at max speed at cursor
+      * if held, will release round shockwave 1/2 damaging and flinging enemies
+        * also explodes projectiles
+    * gun (LMB)
+      * just shooting (basically hitscan)
+      * hitting projectile will explode it with more power
+      * holding the button charges it
+        * charged shot chains through highlighted targets
+        * each charge level takes 1 HP after 1 second each
+    * grenade (RMB)
+      * projectile with long arc
+      * explodes on contact
+      * can be charged by moonlight (affects only ghosts)
+    * cannon (4)
+      * powerful and wide hitscan ray
+      * gets through all targets, unless it hits
+        * spewer - it explodes
+        * advanced blob
+        * lamp - LIGHT explosion
+        * grenade - powerful explosion
+      * takes a moment to charge before shoots
+      * takes 1 HP to use
+* crystals
+  * takes several hits
+  * when destroyed, drops healing fungus
+  * fungus heals 1 HP once in 2 secs when standing still for 2 seconds
+* lamps & torches
+  * provide LIGHT
+  * lamps are breakable - drop and explode on contact
+  * torches are indestructible
+* moonlight
+  * provides LIGHT and can't be extinguishedconvex
+  * sometimes where are cracks in the ceiling, removable by explosions, which release it
+* ghosts (grues)
+  * when it's dark, moves fast and instakills player on touch
+  * when it's light, moves to extinguish light source
+    * it takes time and there is bright flash on start and end
+  * can be damaged only by direct attacks and lamp explosions
+  * go through all obstacles
+  * slightly shake when moving, turns from white to bright red without light
+* spewer
+  * just attacks player with bullet patterns when sees it
+  * killing it grants 1 HP
+* blob
+  * moves towards player
+  * attacks in melee with warning line
+  * there is a LOT of them
+  * occasionaly jump for no reason
+* advanced blob
+  * when blobs can't reach player, they combine into this
+  * bigger, has combined HP and then some
+  * shoots projectiles and powerful ray (with line hint)
+  * doesn't move
+* snek
+  * flies through screen
+  * touching it damages you
+  * sometimes shoots fireballs at player instead of damaging
+    * but not if player is close to the head
+  * appears with distinct sound (positional)
+* snek racing
+  * snek chasing you
+  * suddenly you constanly move to the right
+  * you receive smol constant damage as it moves past you
+    * or it is actually water or lava which snek runs from
+* the boss - God-Machine
+  * big thingy with armored weak points
+  * player can climb on it, damaging points with melee
+  * has number of classic arcade attacks
+    * comboes it attacks - you can break the combo by hitting points
+    * comboed attacks are MUCH stronger
+
+Progression
+* levels - just get in the area
+* there are marked checkpoints, game is just reloaded with player at it
+* on death fade to black and to silence
+* levels separated into arenas
+  * after entering arena, you can't go back
+  * can't leave until all enemies are destroyed
+  * shortly after entering enemies are spawned
+    * there might be several waves
+    * may be divided into different wave-chains

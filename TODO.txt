@@ -1,3 +1,31 @@
+Minimal - ghosts and moving
+
+Terrain
+* white lines
+* static physics
+
+Player
+* sprite
+* have weapons
+* character controller
+
+Ghosts
+* sprite
+* dynamic but have no physics
+
+Spewers
+* have weapons
+* static
+
+Weapon
+* spawns bullets
+
+Level
+* load from SVG
+* respawn
+
+
+
 2D action game
 * dark (lovecraftian?) dungeons
   * black background
