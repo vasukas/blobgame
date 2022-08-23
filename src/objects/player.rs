@@ -38,7 +38,7 @@ impl Plugin for PlayerPlugin {
             //         .before(UiMenuSystem)
             //         .after(text_event),
             // )
-            .add_system(track_checkpoints)
+            .add_system_to_stage(CoreStage::First, track_checkpoints)
             .add_system(track_level)
             .add_system(text_event);
     }
@@ -100,6 +100,8 @@ fn spawn_player(
             .insert(RigidBody::KinematicPositionBased)
             .insert(PhysicsType::Player.rapier())
             .insert(Collider::ball(size));
+
+        log::info!("Player spawned at {}", checkpoint);
     }
 }
 
@@ -170,9 +172,9 @@ fn track_level(
         }
     }
 
+    // check if touches level exit
     let pstate = &mut *pstate;
     if let Some(level) = pstate.level.as_mut() {
-        // level exit
         if let Ok(player) = player.get_single() {
             for (exit, contacts) in exit.iter() {
                 if contacts.current.contains(&player) {
