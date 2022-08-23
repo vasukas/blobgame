@@ -1,5 +1,5 @@
 use anyhow::{anyhow, bail, Context, Result};
-use bevy::{log, math::Vec2};
+use bevy::math::Vec2;
 use std::collections::HashMap;
 
 /// Polyline (straight line segments)
@@ -29,12 +29,6 @@ impl File {
     ///
     /// If it fails with "invalid float literal" set this in Inkscape:
     /// `Edit -> Preferences -> Input/Output -> SVG Export -> Path data -> Path string format -> Absolute`
-    pub fn from_file(filename: &str) -> Result<File> {
-        let file = Self::from_bytes(&std::fs::read(filename)?)?;
-        log::info!("Loaded SVG \"{}\"", filename);
-        Ok(file)
-    }
-
     pub fn from_bytes(file: &[u8]) -> Result<File> {
         let xml = load_xml(file)?;
 

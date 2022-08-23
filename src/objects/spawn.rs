@@ -1,5 +1,9 @@
 use super::player::*;
-use crate::{common::*, mechanics::physics::*, present::light::*};
+use crate::{
+    common::*,
+    mechanics::{combat::ArenaDoor, physics::*},
+    present::light::*,
+};
 
 /// If it's closed, last point will be equal to first
 #[derive(Component)]
@@ -9,19 +13,22 @@ pub struct LevelAreaPolygon(pub Vec<Vec2>);
 pub enum LevelArea {
     Terrain,
     Checkpoint(u64),
-    LevelExit,
+    LevelExit(String),
+    Door,
 }
 
 impl LevelArea {
-    pub fn from_id(full_id: &str) -> anyhow::Result<Self> {
+    pub fn from_id(full_id: &str) -> anyhow::Result<Option<Self>> {
         let mut split = full_id.split("_");
         let id = split.next().unwrap_or(full_id);
         let arg = split.next();
 
         match id {
-            "check" => Ok(Self::Checkpoint(parse_id_arg(arg)?)),
-            "exit" => Ok(Self::LevelExit),
-            _ => Ok(Self::Terrain),
+            "check" => Ok(Some(Self::Checkpoint(parse_id_arg(arg)?))),
+            "exit" => Ok(Some(Self::LevelExit(option_err(arg)?.to_string()))),
+            "door" => Ok(Some(Self::Door)),
+            id if id.starts_with("path") => Ok(Some(Self::Terrain)),
+            _ => Ok(None),
         }
     }
 }
@@ -50,8 +57,11 @@ impl LevelObject {
     }
 }
 
+fn option_err<T>(arg: Option<T>) -> anyhow::Result<T> {
+    Ok(arg.ok_or_else(|| anyhow::anyhow!("No argument"))?)
+}
 fn parse_id_arg(arg: Option<&str>) -> anyhow::Result<u64> {
-    Ok(arg.ok_or_else(|| anyhow::anyhow!("No argument"))?.parse()?)
+    Ok(option_err(arg)?.parse()?)
 }
 
 //
@@ -71,6 +81,7 @@ fn spawn_areas(
     use bevy_lyon::*;
 
     let terrain_fill_color = Color::BLACK;
+    let door_fill_color = Color::rgb(0.2, 0., 0.);
     let terrain_outline_color = Color::WHITE;
     let terrain_outline_width = 0.1;
 
@@ -121,7 +132,7 @@ fn spawn_areas(
                     .insert(CollectContacts::default());
             }
 
-            LevelArea::LevelExit => {
+            LevelArea::LevelExit(id) => {
                 commands
                     .entity(entity)
                     .insert(RigidBody::Fixed)
@@ -129,8 +140,31 @@ fn spawn_areas(
                     .insert(convex_decomposition(&polygon.0))
                     .insert(Sensor)
                     //
-                    .insert(ExitArea)
+                    .insert(ExitArea(id.clone()))
                     .insert(CollectContacts::default());
+            }
+
+            LevelArea::Door => {
+                commands
+                    .entity(entity)
+                    // No RigidBody! doors are disabled by default
+                    .insert(PhysicsType::Obstacle.rapier())
+                    .insert(convex_decomposition(&polygon.0))
+                    //
+                    .insert(ArenaDoor)
+                    .insert(Visibility { is_visible: false })
+                    .with_children(|parent| {
+                        parent
+                            .spawn_bundle(GeometryBuilder::build_as(
+                                &shapes::Polygon {
+                                    points: polygon.0.clone(),
+                                    closed: false,
+                                },
+                                DrawMode::Fill(FillMode::color(door_fill_color)),
+                                default(),
+                            ))
+                            .insert(Depth::TerrainPolygon);
+                    });
             }
         }
     }

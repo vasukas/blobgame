@@ -1,5 +1,5 @@
 use super::level::LevelCommand;
-use crate::common::*;
+use crate::{common::*, present::camera::WindowInfo};
 use bevy::app::AppExit;
 use bevy_egui::EguiSettings;
 
@@ -10,6 +10,10 @@ pub struct StartupMenuHack {
 
 const FIRST_LEVEL: &str = "levels/first.svg";
 
+/// In-game UI must be drawn before this!
+#[derive(SystemLabel)]
+pub struct UiMenuSystem;
+
 //
 
 pub struct MenuPlugin;
@@ -17,7 +21,7 @@ pub struct MenuPlugin;
 impl Plugin for MenuPlugin {
     fn build(&self, app: &mut App) {
         app.insert_resource(MainState::MainMenu)
-            .add_system(show_menu)
+            .add_system(show_menu.label(UiMenuSystem))
             .add_system_to_stage(CoreStage::First, set_time)
             .add_startup_system(play_level)
             .add_startup_system(setup_egui_scale);
@@ -38,7 +42,7 @@ enum MainState {
 fn show_menu(
     mut ctx: ResMut<EguiContext>, mut state: ResMut<MainState>, keys: Res<Input<KeyCode>>,
     mut exit_app: EventWriter<AppExit>, mut level_cmd: EventWriter<LevelCommand>,
-    server: Res<AssetServer>,
+    server: Res<AssetServer>, window: Res<WindowInfo>, mut settings: ResMut<Settings>,
 ) {
     if keys.any_just_pressed([KeyCode::Escape, KeyCode::F10]) {
         *state = match *state {
@@ -54,7 +58,14 @@ fn show_menu(
                 MainState::MainMenu => false,
                 MainState::Game | MainState::InGameMenu => true,
             };
-            ctx.popup("menu::show_menu", vec2(0., 0.), ingame, |ui| {
+            if ingame {
+                ctx.fill_screen(
+                    "menu::show_menu.bg",
+                    egui::Color32::from_black_alpha(128),
+                    window.size,
+                );
+            }
+            ctx.popup("menu::show_menu", vec2(0., 0.), false, |ui| {
                 ui.heading("BLOBFIGHT");
                 ui.label(""); // separator
 
@@ -78,8 +89,7 @@ fn show_menu(
                 }
 
                 ui.label(""); // separator
-                ui.label("Here will be settings");
-                // TODO: actually add settings menu
+                settings.menu(ui);
 
                 ui.label(""); // separator
                 ui.label("Made by vasukas with Bevy Engine");

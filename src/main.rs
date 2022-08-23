@@ -6,12 +6,15 @@ use bevy_prototype_lyon::plugin::ShapePlugin;
 use bevy_rapier2d::plugin::RapierPhysicsPlugin;
 use control::menu::StartupMenuHack;
 
+// TODO: use leafwing-input-manager for ALL input except debug ones; also add keybinds
+
 mod assets;
 mod common;
 mod control;
 mod mechanics;
 mod objects;
 mod present;
+mod settings;
 mod temporary;
 mod utils;
 
@@ -32,6 +35,7 @@ fn main() {
         })
         .insert_resource(ClearColor(Color::rgb(0.1, 0.1, 0.1)))
         .insert_resource(StartupMenuHack { play_level })
+        .insert_resource(settings::Settings::load().unwrap_or_default())
         .add_plugins(DefaultPlugins)
         .add_plugin(EguiPlugin)
         .add_plugin(ShapePlugin)

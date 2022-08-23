@@ -15,9 +15,12 @@ pub enum LevelCommand {
 /// Event (not sent on reloading)
 pub enum LevelEvent {
     /// Loaded and spawned new level
-    Loaded { title: String },
+    Loaded {
+        title: String,
+    },
     /// Unloaded all levels (exited from game)
     Unloaded,
+    Reloaded,
 }
 
 //
@@ -66,12 +69,12 @@ fn load_level(
             LevelCommand::Unload => {
                 log::info!("Level: unloaded");
                 current.loaded = true;
-
                 events.send(LevelEvent::Unloaded);
             }
             LevelCommand::Reload => {
                 log::info!("Level: start reload");
                 current.loaded = false;
+                events.send(LevelEvent::Reloaded);
             }
         }
     }
@@ -137,7 +140,8 @@ impl Level {
 
         for line in svg.lines {
             match LevelArea::from_id(&line.id) {
-                Ok(obj) => level.areas.push((line.pos, obj)),
+                Ok(Some(obj)) => level.areas.push((line.pos, obj)),
+                Ok(None) => log::warn!("SVG: invalid line id \"{}\"", line.id),
                 Err(error) => {
                     anyhow::bail!("SVG: failed to parse line id \"{}\": {}", line.id, error)
                 }

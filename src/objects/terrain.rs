@@ -1,6 +1,6 @@
 use crate::common::*;
 
-#[derive(Component, Serialize, Deserialize)]
+#[derive(Component)]
 pub struct TerrainPoint {
     pub line_id: usize,
     pub point_id: usize,

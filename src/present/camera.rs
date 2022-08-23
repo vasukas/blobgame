@@ -17,9 +17,9 @@ pub struct WindowInfo {
 }
 
 impl WindowInfo {
-    pub fn world_size(&self) -> Vec2 {
-        self.world_max - self.world_min
-    }
+    // pub fn world_size(&self) -> Vec2 {
+    //     self.world_max - self.world_min
+    // }
     //     pub fn point_visible(&self, point: Vec2, size: f32) -> bool {
     //         point.in_bounds(self.world_min - size, self.world_max + size)
     //     }

@@ -3,13 +3,13 @@ pub use crate::{
     control::{level::GameplayObject, time::GameTime},
     mechanics::physics::PhysicsType,
     present::depth::{ChildDepth, Depth},
+    settings::Settings,
     utils::{bevy::*, bevy_egui::*, math::*, rust::*},
 };
 pub use bevy::{log, math::vec2, prelude::*, utils::HashMap};
 pub use bevy_egui::{egui, EguiContext};
 pub use bevy_prototype_lyon::prelude as bevy_lyon;
 pub use bevy_rapier2d::prelude::*;
-pub use serde::{Deserialize, Serialize};
 pub use std::time::Duration;
 
 //

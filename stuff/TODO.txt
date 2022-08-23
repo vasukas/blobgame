@@ -1,12 +1,11 @@
 Minimal
 - levels & progression
-  - load and reload
+  + load and reload
     + implement
-    - test
-  - checkpoints
-    - store last touched area
-    - spawn player in specified point in it
-    - have unique IDs
+  + checkpoints
+    + store last touched area
+    + spawn player in specified point in it
+    + have unique IDs
   - player score
     - stored in resource, reset on loading or something
 - visuals
@@ -58,6 +57,7 @@ Advanced
 Polish
 - difficulty select
 - settings
-  - volume and keybinds
-  - store settings even in wasm via cookies
+  + volume
+  - keybinds
+  + store settings even in wasm via cookies
   - ... other settings?

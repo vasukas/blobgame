@@ -37,6 +37,9 @@ rand = "0.8"
 anyhow = "1"
 xmltree = "0.10"
 
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+wasm-cookies = "0.1"
+
 # Enable only a small amount of optimization in debug mode
 [profile.dev]
 opt-level = 1
