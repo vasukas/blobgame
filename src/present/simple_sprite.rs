@@ -7,10 +7,14 @@ pub type ImageVec = Arc<Vec<Handle<Image>>>;
 #[derive(Component, Default)]
 pub struct SimpleSprite {
     pub images: ImageVec,
-    pub frame: Duration,
+    pub frame_duration: Duration,
 
     pub color: Color,
     pub size: Vec2,
+
+    // state
+    pub frame: usize,
+    pub until: Duration,
 }
 
 //
@@ -19,52 +23,36 @@ pub struct SimpleSpritePlugin;
 
 impl Plugin for SimpleSpritePlugin {
     fn build(&self, app: &mut App) {
-        app.add_system(spawn_sprite)
-            .add_system(update_image)
-            .add_system(update_sprite);
+        app.add_system(spawn_sprite).add_system(update_sprite);
     }
-}
-
-#[derive(Component)]
-struct SpriteState {
-    frame: usize,
-    until: Duration,
 }
 
 fn spawn_sprite(
-    mut commands: Commands, sprites: Query<(Entity, &SimpleSprite), Added<SimpleSprite>>,
+    mut commands: Commands, mut sprites: Query<(Entity, &mut SimpleSprite), Added<SimpleSprite>>,
 ) {
-    for (entity, sprite) in sprites.iter() {
+    for (entity, mut sprite) in sprites.iter_mut() {
         if let Some((frame, image)) = sprite.images.iter().enumerate().get_random_select() {
             commands
                 .entity(entity)
-                .insert(SpriteState {
-                    frame,
-                    until: default(),
-                })
                 .insert(Sprite {
-                    color: sprite.color,
-                    custom_size: Some(sprite.size),
+                    custom_size: Some(Vec2::ZERO),
                     ..default()
                 })
                 .insert(image.clone());
+            sprite.frame = frame;
         }
     }
 }
 
-fn update_image(
-    mut sprites: Query<(&SimpleSprite, &mut SpriteState, &mut Handle<Image>)>, time: Res<GameTime>,
+fn update_sprite(
+    mut sprites: Query<(&mut SimpleSprite, &mut Sprite, &mut Handle<Image>)>, time: Res<GameTime>,
 ) {
-    for (data, mut state, mut image) in sprites.iter_mut() {
-        if time.reached(state.until) && data.images.len() > 0 {
-            state.frame = (state.frame + 1) % data.images.len();
-            *image = data.images.get(state.frame).unwrap().clone();
+    for (mut data, mut sprite, mut image) in sprites.iter_mut() {
+        if time.reached(data.until) && data.images.len() > 0 {
+            data.frame = (data.frame + 1) % data.images.len();
+            data.until = time.now() + data.frame_duration;
+            *image = data.images.get(data.frame).unwrap().clone();
         }
-    }
-}
-
-fn update_sprite(mut sprites: Query<(&SimpleSprite, &mut Sprite), Changed<SimpleSprite>>) {
-    for (data, mut sprite) in sprites.iter_mut() {
         sprite.color = data.color;
         sprite.custom_size = Some(data.size);
     }

@@ -4,6 +4,7 @@ use crate::common::*;
 pub enum Depth {
     Light,
     BackgroundObject,
+    Player,
     TerrainPolygon,
     TerrainOutline,
 }
@@ -13,6 +14,7 @@ impl Depth {
         match self {
             Depth::Light => 110.,
             Depth::BackgroundObject => 100.,
+            Depth::Player => 300.,
             Depth::TerrainPolygon => 900.,
             Depth::TerrainOutline => 910.,
         }
