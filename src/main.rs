@@ -15,7 +15,6 @@ mod mechanics;
 mod objects;
 mod present;
 mod settings;
-mod temporary;
 mod utils;
 
 fn main() {
@@ -42,7 +41,7 @@ fn main() {
         .add_plugin(RapierPhysicsPlugin::<()>::pixels_per_meter(1.))
         .insert_resource({
             let mut config = bevy_rapier2d::plugin::RapierConfiguration::default();
-            config.gravity = Vec2::ZERO;
+            config.gravity = -Vec2::Y * 9.81;
             config
         })
         .add_system_to_stage(CoreStage::Last, exit_on_esc_system)
@@ -51,7 +50,6 @@ fn main() {
         .add_plugin(mechanics::MechanicsPlugin)
         .add_plugin(objects::ObjectsPlugin)
         .add_plugin(present::PresentationPlugin)
-        .add_plugin(temporary::TemporaryPlugin)
         .add_plugin(assets::MyAssetsPlugin)
         .run()
 }

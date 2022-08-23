@@ -92,19 +92,21 @@ fn update_window_info(
 }
 
 fn follow_target(
-    mut camera: Query<&mut Transform, With<WorldCamera>>,
+    mut camera: Query<(&mut Transform, &WorldCamera)>,
     target: Query<&GlobalTransform, (With<WorldCameraTarget>, Changed<GlobalTransform>)>,
     time: Res<Time>,
 ) {
-    if let Ok(mut camera) = camera.get_single_mut() {
+    if let Ok((mut camera, camera_params)) = camera.get_single_mut() {
         if let Some(sum) = target.iter().map(|t| t.pos_2d()).reduce(|acc, t| acc + t) {
             let target = sum / target.iter().count() as f32;
 
             let delta = target - camera.pos_2d();
-            if delta.length_squared() < 1. {
-                camera.translation = target.extend(camera.translation.z);
+            let distance = delta.length_squared();
+
+            if distance < 1. || distance > camera_params.target_size.max_element().powi(2) {
+                camera.set_2d(target);
             } else {
-                let magic = if delta.length_squared() < 10. { 0.15 } else { 0.1 } / (1. / 60.);
+                let magic = if distance < 10. { 0.15 } else { 0.1 } / (1. / 60.);
 
                 let delta = delta * magic * time.delta_seconds();
                 camera.translation += delta.extend(0.);

@@ -88,6 +88,7 @@ fn spawn_areas(
     for (entity, polygon, area) in areas.iter() {
         match area {
             LevelArea::Terrain => {
+                let closed = polygon.0.first() != polygon.0.last();
                 commands
                     .entity(entity)
                     .insert(RigidBody::Fixed)
@@ -98,7 +99,7 @@ fn spawn_areas(
                             .spawn_bundle(GeometryBuilder::build_as(
                                 &shapes::Polygon {
                                     points: polygon.0.clone(),
-                                    closed: false,
+                                    closed,
                                 },
                                 DrawMode::Fill(FillMode::color(terrain_fill_color)),
                                 default(),
@@ -108,7 +109,7 @@ fn spawn_areas(
                             .spawn_bundle(GeometryBuilder::build_as(
                                 &shapes::Polygon {
                                     points: polygon.0.clone(),
-                                    closed: false,
+                                    closed,
                                 },
                                 DrawMode::Stroke(StrokeMode::new(
                                     terrain_outline_color,

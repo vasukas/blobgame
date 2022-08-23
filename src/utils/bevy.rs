@@ -9,6 +9,7 @@ pub trait BevyTransform2d {
 
 pub trait BevyTransform2dMut {
     fn add_2d(&mut self, value: Vec2);
+    fn set_2d(&mut self, value: Vec2);
 }
 
 impl BevyTransform2d for Transform {
@@ -24,6 +25,10 @@ impl BevyTransform2dMut for Transform {
     fn add_2d(&mut self, value: Vec2) {
         self.translation.x += value.x;
         self.translation.y += value.y;
+    }
+    fn set_2d(&mut self, value: Vec2) {
+        self.translation.x = value.x;
+        self.translation.y = value.y;
     }
 }
 
