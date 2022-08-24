@@ -1,0 +1,158 @@
+Also just notes
+
+Debug controls:
+* F2 to bring up menu
+* F3 to switch between fullscreen and windowed
+
+how to read this todo:
+- feature not yet done
+    - sub-feature (part of the parent feature)
++ completed feature (group of features is considered completed only when all sub-features are)
+? not sure this feature is needed or important
+- features are listed in order of importance, more or less
+
+General reminder
+- I have no idea what I'm doing, for the most part
+- Code quality. Doesn't. Matter. At. All.
+    - as long as it mostly works and doesn't crash the game for no reason
+        - silent errors are better than panicking :)
+
+
+Important bugs
+==============
+- ask about this on discord
+    - (WASM; WORKS IN CHROMIUM) switching to fullscreen doesn't work on itch.io with Firefox
+        Window size changes, but actual view is distorted with horizontal black bars.
+        At least in some cases, pressing fullscreen button quickly just after start works fine.
+        Happens if with python server too, but fixes itself after about five seconds.
+        Am using bevy_web_resizer; without it size changes are completely ignored.
+- playtest fucking EVERYTHING
+- add LICENSE file and list used assets, with source and license
+...
+
+
+Needs to be done ASAP
+=====================
+- mechanics (minimal)
+    - walls and player movement
+        - spawn
+        - simple kinematic controller
+    - turret enemy
+        - health
+        - projectiles (ALL attacks in game are projectiles, techically)
+        - respawn
+    - player weapons
+        - melee (F, cone; hitting projectile sends it at cursor)
+            ? charge to make shockwave which stuns enemies (also increases damage)
+        - gun (LMB, simple hitscan)
+            - hitting projectile will explode it and stop the shot
+                hitting most projectiles will simply destroy them
+            ? charge (break it on receiving damage or what? feels weak)
+        - gun (RMB, alt.fire - slow projectile)
+            ? charge (longer charge makes it fly even slower but deals more damage)
+                note that enemies also can destroy projectiles (but some attacks will still explode it)
+        - cannon (4, slowly re-charging ultrapowerful hitscan)
+            - if deals overdamage, makes enemy explode
+            ? figure out way to reduce usage on bosses
+                - takes moment before attack
+                - if you don't kill anything with it, it takes 1 HP
+                    (unless there are no enemies left on arena; also it never kills you)
+        ? figure out combos
+    - advanced movement
+        - dash
+        - combos with weapons
+    - advanced enemies
+        - turret patterns
+        - movement
+            - patterns
+            - player-based
+            ? collision avoidance
+        - statistics
+    ? parts & combine
+        - temporary weapons
+        - collecting parts from enemies
+        - combine menu
+        ? actually some weapons parts can be shot off from enemies?
+- spawn waves
+- asteroids (just big rocks, what else is there?)
+    - would be fun to split them in parts on hit
+- mini-bosses (like shield robot)
+- bosses
+- other important stuff
+    - healing? drops and from some enemies?
+    - tutorial wave & messages
+    - HUD (explosion shaking?)
+    - maybe add shop? points are from asters
+    - combining smaller enemies into bigger ones?
+
+- graphics
+    - explosions
+    - particles? like blood/oil splatters, debree from asters, etc
+
+- audio
+    - play beats, controlled by level via state:
+        0 (no beats)
+        1 |       |
+        2 |   i   |   i  
+        3 | . i . | . i .
+            feel free to use other patterns, but you get the idea
+            also mb 3rd level would be too much, dunno
+        - beat timing should be adjustable (store them in resource)
+        - provide resource with timings - when beat will begin and how long till next one
+            // something like this - this is resource
+            struct BeatTimings {
+                next: Duration, // actually timestamp, not duration, based on GameTime::now()
+                period: Duration, // time between closest beats
+                level: u8, // or use separate struct/resource for it, doesn't matter
+            }
+        ? use two sets of beats - for when player is having good damage and for when player is low on HP
+
+    - play ambient drone (tbh really not sure if this will work; maybe just use some music)
+        - some system should control what to play; for now just change it over time
+        - idea is there would be several drones of different tones, which could warn the player about
+            being low on HP, boss appearing, etc
+
+    - sound playback
+        - features
+            - positional sound (not all sounds are positional)
+                - has fixed position or follows specified entity
+                - panning and volume change depending on distance and direction relatively to player
+                ? startup delay depending on distance
+                ? doppler effect, but not sure if it would be even heard
+            - slightly randomized parameters - volume, speed, panning
+                ? delay before start
+        - event (just play sound once)
+        ? loop (play looped sound when component is added to the entity; removal doesn't matter for now)
+            - sound pitch should be controlled, probably via same component
+
+    - actual sounds
+        - some can be taken from here: https://github.com/vasukas/rodent/tree/binary_sounds/data/sounds
+            don't forget to convert them for kira
+        - actual list will be ready later
+
+    ? would be nice to have volume limiter to avoid peaking, but that may be non-doable
+
+...
+
+
+Additional features
+===================
+? more mechanics
+...
+
+
+
+Would be nice to have but not important
+=======================================
+- settings
+    - remappable controls (may or may not include debug ones)
+    - play sound when adjusting volume - when user stops moving slider
+
+
+Only after jam
+==============
+- refactor, comment, playtest
+- try using leafwing-input-manager
+- co-op - possibly even over network; would require adjusting difficulty
+- is bevy_web_resizer still required or is that issue already fixed?
+

@@ -2,7 +2,6 @@
 
 use bevy::{app::AppExit, prelude::*, window::PresentMode};
 use bevy_egui::EguiPlugin;
-use bevy_prototype_lyon::plugin::ShapePlugin;
 use bevy_rapier2d::plugin::RapierPhysicsPlugin;
 use control::menu::StartupMenuHack;
 
@@ -24,13 +23,8 @@ fn main() {
 
     let mut app = App::new();
 
-    // TODO: resizing in wasm is still buggy af - sometimes when switching to fullscreen
-    // reported size changes but image is distorted for a few seconds.
-    // TODO: CRITICAL: IT DOESNT BECOME UNDISTORTED ON ITCH!!!!
     #[cfg(target_arch = "wasm32")]
     {
-        // TODO: check if there is bug report
-        // resizing to fullscreen doesn't work correctly at least on itch.io in Firefox
         app.add_plugin(bevy_web_resizer::Plugin);
     }
 
@@ -48,8 +42,9 @@ fn main() {
     .insert_resource(settings::Settings::load().unwrap_or_default())
     .add_plugins(DefaultPlugins)
     .add_plugin(EguiPlugin)
-    .add_plugin(ShapePlugin)
+    .add_plugin(bevy_prototype_lyon::plugin::ShapePlugin)
     .add_plugin(RapierPhysicsPlugin::<()>::pixels_per_meter(1.))
+    .add_plugin(bevy_kira_audio::AudioPlugin)
     .insert_resource({
         let mut config = bevy_rapier2d::plugin::RapierConfiguration::default();
         config.gravity = -Vec2::Y * 9.81;
