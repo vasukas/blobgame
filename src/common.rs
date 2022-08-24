@@ -1,8 +1,8 @@
 pub use crate::{
     assets::MyAssets,
-    control::{level::GameplayObject, time::GameTime},
+    control::time::GameTime,
     mechanics::physics::PhysicsType,
-    present::depth::{ChildDepth, Depth},
+    present::depth::Depth,
     settings::Settings,
     utils::{bevy::*, bevy_egui::*, math::*, rust::*},
 };

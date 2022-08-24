@@ -255,7 +255,7 @@ dependencies = [
  "downcast-rs",
  "fastrand",
  "js-sys",
- "ndk-glue 0.5.2",
+ "ndk-glue",
  "notify",
  "parking_lot 0.12.1",
  "serde",
@@ -438,7 +438,7 @@ dependencies = [
  "bevy_utils",
  "bevy_window",
  "bevy_winit",
- "ndk-glue 0.5.2",
+ "ndk-glue",
 ]
 
 [[package]]
@@ -841,7 +841,6 @@ checksum = "bef38d45163c2f1dde094a7dfd33ccf595c92905c8f8f4fdc18d06fb1037718a"
 name = "blobfight"
 version = "0.1.0"
 dependencies = [
- "anyhow",
  "bevy",
  "bevy-web-resizer",
  "bevy_egui",
@@ -853,7 +852,6 @@ dependencies = [
  "ron",
  "serde",
  "wasm-cookies",
- "xmltree",
 ]
 
 [[package]]
@@ -1161,8 +1159,7 @@ dependencies = [
 [[package]]
 name = "cpal"
 version = "0.13.5"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "74117836a5124f3629e4b474eed03e479abaf98988b4bb317e29f08cfe0e4116"
+source = "git+https://github.com/RustAudio/cpal?rev=f0d47204c91e5aa38f74bd47e49e6d91c8c70a5e#f0d47204c91e5aa38f74bd47e49e6d91c8c70a5e"
 dependencies = [
  "alsa",
  "core-foundation-sys 0.8.3",
@@ -1173,10 +1170,11 @@ dependencies = [
  "libc",
  "mach",
  "ndk 0.6.0",
- "ndk-glue 0.6.2",
+ "ndk-context",
  "nix 0.23.1",
  "oboe",
  "parking_lot 0.11.2",
+ "parking_lot 0.12.1",
  "stdweb",
  "thiserror",
  "wasm-bindgen",
@@ -2148,21 +2146,6 @@ dependencies = [
  "ndk-context",
  "ndk-macro",
  "ndk-sys 0.2.2",
-]
-
-[[package]]
-name = "ndk-glue"
-version = "0.6.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0d0c4a7b83860226e6b4183edac21851f05d5a51756e97a1144b7f5a6b63e65f"
-dependencies = [
- "lazy_static",
- "libc",
- "log",
- "ndk 0.6.0",
- "ndk-context",
- "ndk-macro",
- "ndk-sys 0.3.0",
 ]
 
 [[package]]
@@ -3574,7 +3557,7 @@ dependencies = [
  "log",
  "mio",
  "ndk 0.5.0",
- "ndk-glue 0.5.2",
+ "ndk-glue",
  "ndk-sys 0.2.2",
  "objc",
  "parking_lot 0.11.2",
@@ -3620,12 +3603,3 @@ name = "xml-rs"
 version = "0.8.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d2d7d3948613f75c98fd9328cfdcc45acc4d360655289d0a7d4ec931392200a3"
-
-[[package]]
-name = "xmltree"
-version = "0.10.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d7d8a75eaf6557bb84a65ace8609883db44a29951042ada9b393151532e41fcb"
-dependencies = [
- "xml-rs",
-]

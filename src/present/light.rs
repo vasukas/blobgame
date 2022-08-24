@@ -35,10 +35,9 @@ impl Plugin for LightPlugin {
 struct LightChild(Entity);
 
 fn spawn_light(
-    mut commands: Commands, lights: Query<(Entity, &Light, Option<&Depth>), Added<Light>>,
-    assets: Res<MyAssets>,
+    mut commands: Commands, lights: Query<(Entity, &Light), Added<Light>>, assets: Res<MyAssets>,
 ) {
-    for (entity, light, depth) in lights.iter() {
+    for (entity, light) in lights.iter() {
         let mut child = BadEntityHack::default();
         commands
             .entity(entity)
@@ -54,7 +53,7 @@ fn spawn_light(
                             texture: assets.glow.clone(),
                             ..default()
                         })
-                        .insert(ChildDepth::new(depth, Depth::Light))
+                        .insert(Depth::Light)
                         .id(),
                 );
             })

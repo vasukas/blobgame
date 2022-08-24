@@ -28,18 +28,20 @@ bevy_prototype_lyon = "0.6"
 bevy_rapier2d = "0.16"
 
 # General utilities
-ron = "0.7"
-serde = {version = "1", features = ["derive"]}
 itertools = "0.10"
 rand = "0.8"
+ron = "0.7"
+serde = {version = "1", features = ["derive"]}
 
-# SVG loader
-anyhow = "1"
-xmltree = "0.10"
-
+# WASM-specific
 [target.'cfg(target_arch = "wasm32")'.dependencies]
 bevy-web-resizer = "3.0"
 wasm-cookies = "0.1"
+
+# Linux-specific: ALSA fix, until cpal 0.13.6 rolls
+[target.'cfg(target_arch = "linux")'.dependencies]
+[patch.crates-io]
+cpal = {git = "https://github.com/RustAudio/cpal", rev = "f0d47204c91e5aa38f74bd47e49e6d91c8c70a5e"}
 
 # Enable only a small amount of optimization in debug mode
 [profile.dev]

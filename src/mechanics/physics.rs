@@ -44,14 +44,6 @@ pub struct CollectContacts {
     pub current: HashSet<Entity>,
 }
 
-/// Immediatly drop object down to first Obstacle/Script object below it.
-/// This is a hack for spawn positions.
-#[derive(Component)]
-pub struct PlunkDown {
-    /// From the floor
-    pub distance: f32,
-}
-
 //
 
 pub struct PhysicsPlugin;
@@ -62,8 +54,7 @@ impl Plugin for PhysicsPlugin {
             CoreStage::PreUpdate,
             collect_contacts_enable.exclusive_system().at_start(),
         )
-        .add_system(collect_contacts)
-        .add_system_to_stage(CoreStage::First, plunk_down.exclusive_system().at_start());
+        .add_system(collect_contacts);
     }
 }
 
@@ -96,28 +87,6 @@ fn collect_contacts(
                     contacts.current.remove(other)
                 };
             }
-        }
-    }
-}
-
-fn plunk_down(
-    mut commands: Commands,
-    mut entities: Query<(Entity, &mut Transform, &GlobalTransform, &PlunkDown)>,
-    phy: Res<RapierContext>,
-) {
-    let huge_number = 1000.;
-
-    for (entity, mut transform, global, plunk) in entities.iter_mut() {
-        if let Some((_, distance)) = phy.cast_ray(
-            global.translation().truncate(),
-            -Vec2::Y,
-            huge_number,
-            false,
-            QueryFilter::new().groups(PhysicsType::PlunkDown.into()),
-        ) {
-            let ooffset = distance - plunk.distance;
-            transform.translation.y -= ooffset;
-            commands.entity(entity).remove::<PlunkDown>();
         }
     }
 }

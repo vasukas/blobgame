@@ -19,8 +19,7 @@ struct SingleFrameEntity;
 fn menu(
     mut ctx: ResMut<EguiContext>, keys: Res<Input<KeyCode>>, mut menu: Local<DebugMenu>,
     window: Res<WindowInfo>, mut commands: Commands,
-    delete_us: Query<Entity, With<SingleFrameEntity>>,
-    mut windows: ResMut<Windows>
+    delete_us: Query<Entity, With<SingleFrameEntity>>, mut windows: ResMut<Windows>,
 ) {
     if keys.just_pressed(KeyCode::F2) {
         menu.show.flip();
@@ -32,11 +31,7 @@ fn menu(
             Windowed => true,
             BorderlessFullscreen | SizedFullscreen | Fullscreen => false,
         };
-        window.set_mode(if make_fullscreen {
-            BorderlessFullscreen
-        } else {
-            Windowed
-        });
+        window.set_mode(if make_fullscreen { BorderlessFullscreen } else { Windowed });
     }
     if menu.show {
         ctx.popup("debug::menu", vec2(-1., 1.), true, |ui| {

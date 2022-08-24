@@ -1,5 +1,6 @@
 use crate::common::*;
 
+/// Note that this can't be changed after initial creation
 #[derive(Component, Clone, Copy)]
 pub enum Depth {
     Light,
@@ -26,23 +27,6 @@ impl Depth {
     }
 }
 
-/// Use this for children of entities which have their own Depth.
-/// Dunno if there is a better solution.
-#[derive(Component)]
-pub struct ChildDepth {
-    pub parent: Option<Depth>,
-    pub this: Depth,
-}
-
-impl ChildDepth {
-    pub fn new(parent: Option<&Depth>, this: Depth) -> Self {
-        Self {
-            parent: parent.copied(),
-            this,
-        }
-    }
-}
-
 //
 
 pub struct DepthPlugin;
@@ -57,15 +41,20 @@ impl Plugin for DepthPlugin {
 }
 
 fn set_depth(
-    mut entities: Query<(&mut Transform, &Depth), Added<Depth>>,
-    mut relatives: Query<(&mut Transform, &ChildDepth), (Added<ChildDepth>, Without<Depth>)>,
+    mut entities: Query<(&mut Transform, &Depth, Option<&Parent>), Added<Depth>>,
+    all: Query<(&Depth, Option<&Parent>)>,
 ) {
-    // TODO: make this work with hierarchies somehow - and allow depth change
-    for (mut transform, depth) in entities.iter_mut() {
-        transform.translation.z = depth.z_fuzzy();
-    }
-    for (mut transform, depth) in relatives.iter_mut() {
-        transform.translation.z =
-            depth.this.z_fuzzy() - depth.parent.map(|d| d.z_exact()).unwrap_or_default();
+    for (mut transform, depth, parent) in entities.iter_mut() {
+        let mut z = depth.z_fuzzy();
+
+        let mut parent = parent.map(|p| p.get());
+        while let Some(entity) = parent {
+            if let Ok((depth, grandparent)) = all.get(entity) {
+                z -= depth.z_exact();
+                parent = grandparent.map(|p| p.get());
+            }
+        }
+
+        transform.translation.z = z;
     }
 }
