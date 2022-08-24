@@ -22,8 +22,19 @@ fn main() {
     args.next(); // skip program name
     let play_level = args.next();
 
-    App::new()
-        .insert_resource(WindowDescriptor {
+    let mut app = App::new();
+
+    // TODO: resizing in wasm is still buggy af - sometimes when switching to fullscreen
+    // reported size changes but image is distorted for a few seconds.
+    // TODO: CRITICAL: IT DOESNT BECOME UNDISTORTED ON ITCH!!!!
+    #[cfg(target_arch = "wasm32")]
+    {
+        // TODO: check if there is bug report
+        // resizing to fullscreen doesn't work correctly at least on itch.io in Firefox
+        app.add_plugin(bevy_web_resizer::Plugin);
+    }
+
+    app.insert_resource(WindowDescriptor {
             title: "BlobFight".to_string(),
             width: 1280.,
             height: 720.,
@@ -32,26 +43,26 @@ fn main() {
             present_mode: PresentMode::Mailbox,
             ..default()
         })
-        .insert_resource(ClearColor(Color::rgb(0.1, 0.1, 0.1)))
-        .insert_resource(StartupMenuHack { play_level })
-        .insert_resource(settings::Settings::load().unwrap_or_default())
-        .add_plugins(DefaultPlugins)
-        .add_plugin(EguiPlugin)
-        .add_plugin(ShapePlugin)
-        .add_plugin(RapierPhysicsPlugin::<()>::pixels_per_meter(1.))
-        .insert_resource({
-            let mut config = bevy_rapier2d::plugin::RapierConfiguration::default();
-            config.gravity = -Vec2::Y * 9.81;
-            config
-        })
-        .add_system_to_stage(CoreStage::Last, exit_on_esc_system)
-        .add_startup_system(setup)
-        .add_plugin(control::ControlPlugin)
-        .add_plugin(mechanics::MechanicsPlugin)
-        .add_plugin(objects::ObjectsPlugin)
-        .add_plugin(present::PresentationPlugin)
-        .add_plugin(assets::MyAssetsPlugin)
-        .run()
+    .insert_resource(ClearColor(Color::rgb(0.1, 0.1, 0.1)))
+    .insert_resource(StartupMenuHack { play_level })
+    .insert_resource(settings::Settings::load().unwrap_or_default())
+    .add_plugins(DefaultPlugins)
+    .add_plugin(EguiPlugin)
+    .add_plugin(ShapePlugin)
+    .add_plugin(RapierPhysicsPlugin::<()>::pixels_per_meter(1.))
+    .insert_resource({
+        let mut config = bevy_rapier2d::plugin::RapierConfiguration::default();
+        config.gravity = -Vec2::Y * 9.81;
+        config
+    })
+    .add_system_to_stage(CoreStage::Last, exit_on_esc_system)
+    .add_startup_system(setup)
+    .add_plugin(control::ControlPlugin)
+    .add_plugin(mechanics::MechanicsPlugin)
+    .add_plugin(objects::ObjectsPlugin)
+    .add_plugin(present::PresentationPlugin)
+    .add_plugin(assets::MyAssetsPlugin)
+    .run()
 }
 
 fn setup(mut windows: ResMut<Windows>, server: Res<AssetServer>) {

@@ -196,6 +196,7 @@ if [[ ! -z "$run_address" ]]; then
     server_job=$!
 
     if [[ "$run_browser" -eq 1 ]]; then
+        sleep 2s  # sometimes browser opens faster than server starts ¯\_(ツ)_/¯
         if [[ -z "$browser" ]]; then
             xdg-open "$link"
         else

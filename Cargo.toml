@@ -38,6 +38,7 @@ anyhow = "1"
 xmltree = "0.10"
 
 [target.'cfg(target_arch = "wasm32")'.dependencies]
+bevy-web-resizer = "3.0"
 wasm-cookies = "0.1"
 
 # Enable only a small amount of optimization in debug mode

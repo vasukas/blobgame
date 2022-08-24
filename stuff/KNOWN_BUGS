@@ -1,0 +1,4 @@
+* wasm-specific
+  * switching to fullscreen
+    * you need to click the window after the change for it to take effect
+    * image may be distorted for up to about 5 seconds

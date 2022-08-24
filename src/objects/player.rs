@@ -95,7 +95,7 @@ fn spawn_player(
                     radius,
                     ..default()
                 },
-                DrawMode::Fill(FillMode::color(Color::rgb(0.4, 0.9, 1.).with_a(0.1))),
+                DrawMode::Fill(FillMode::color(Color::rgb(0.4, 0.9, 1.))),
                 Transform::from_translation(checkpoint.extend(0.)),
             ))
             .insert(GameplayObject)
@@ -170,13 +170,7 @@ fn movement(
         .exclude_sensors();
     let dir = velocity.normalize_or_zero();
 
-    if let Some((_, distance)) = phy.cast_ray(
-        origin,
-        dir,
-        player.radius,
-        false,
-        filter,
-    ) {
+    if let Some((_, distance)) = phy.cast_ray(origin, dir, player.radius, false, filter) {
         player.on_ground = true;
         transform.add_2d(dir * (distance - player.radius));
     } else {
