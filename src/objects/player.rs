@@ -101,6 +101,9 @@ fn respawn(
     time: Res<Time>, mut spawn: ResMut<SpawnControl>, mut input: EventReader<InputAction>,
     input_map: Res<InputMap>, window: Res<WindowInfo>,
 ) {
+    if !spawn.spawned {
+        return;
+    }
     if player.is_empty() {
         let passed =
             time.time_since_startup() - *data.death_start.get_or_insert(time.time_since_startup());

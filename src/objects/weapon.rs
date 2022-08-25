@@ -10,7 +10,11 @@ pub enum Weapon {
     #[default]
     None,
     Turret,
+
+    PlayerMelee,
     PlayerGun,
+    PlayerRocket,
+    PlayerCannon,
 }
 
 #[derive(SystemLabel)]
@@ -71,7 +75,16 @@ fn weapon(
                 .insert(Velocity::linear(velocity));
         }
 
+        Weapon::PlayerMelee => {
+            // TODO: implement
+        }
         Weapon::PlayerGun => {
+            // TODO: implement
+        }
+        Weapon::PlayerRocket => {
+            // TODO: implement
+        }
+        Weapon::PlayerCannon => {
             // TODO: implement
         }
     });

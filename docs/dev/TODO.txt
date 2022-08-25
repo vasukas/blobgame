@@ -81,6 +81,7 @@ Needs to be done ASAP
 - mini-bosses (like shield robot)
 - bosses
 - other important stuff
+    - player reaction to being hit - particles, pulsating color, shaking, changing color, HUD, sound, etc
     - healing? drops and from some enemies?
     - tutorial wave & messages
     - HUD (explosion shaking?)

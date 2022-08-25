@@ -62,66 +62,74 @@ fn show_menu(
                 window.size,
             );
             ctx.popup("menu::show_menu", vec2(0., 0.), false, |ui| {
-                ui.horizontal(|ui| {
-                    // root left pane
-                    ui.vertical(|ui| {
-                        ui.group(|ui| {
-                            ui.heading("BLOBFIGHT");
-                            ui.label(""); // separator
+                egui::ScrollArea::both().show(ui, |ui| {
+                    ui.horizontal(|ui| {
+                        // root left pane
+                        ui.vertical(|ui| {
+                            ui.group(|ui| {
+                                ui.heading("BLOBFIGHT");
+                                ui.label(""); // separator
 
-                            if ingame {
-                                if ui.button("Continue").clicked() {
-                                    *state = MenuState::None
+                                if ingame {
+                                    if ui.button("Continue").clicked() {
+                                        *state = MenuState::None
+                                    }
+                                    if ui.button("Exit to main menu").clicked() {
+                                        spawn.despawn = Some(false)
+                                    }
+                                } else {
+                                    if ui.button("Play").clicked() {
+                                        spawn.despawn = Some(true)
+                                    }
                                 }
-                                if ui.button("Exit to main menu").clicked() {
-                                    spawn.despawn = Some(false)
+                                #[cfg(not(target_arch = "wasm32"))]
+                                if ui.button("Exit to desktop").clicked() {
+                                    exit_app.send_default()
                                 }
-                            } else {
-                                if ui.button("Play").clicked() {
-                                    spawn.despawn = Some(true)
-                                }
-                            }
-                            #[cfg(not(target_arch = "wasm32"))]
-                            if ui.button("Exit to desktop").clicked() {
-                                exit_app.send_default()
-                            }
 
-                            ui.label(""); // separator
-                            settings.menu(ui);
+                                ui.label(""); // separator
+                                ui.heading("SETTINGS");
+                                settings.menu(ui);
 
-                            ui.label(""); // separator
-                            ui.label("Made by vasukas with Bevy Engine");
-                            // TODO: don't forget to add other stuff here
+                                ui.label(""); // separator
+                                ui.label("Made with Bevy Engine");
+                                // TODO: add credits?
+                            });
                         });
-                    });
-                    // root right pane
-                    ui.vertical(|ui| {
-                        ui.group(|ui| {
-                            ui.heading("HELP");
+                        // root right pane
+                        ui.vertical(|ui| {
+                            ui.group(|ui| {
+                                ui.heading("CONTROLS");
 
-                            let mut help = vec![
-                                ("ESC or F10".to_string(), "toggle this menu".to_string()),
-                                ("Ctrl + Q".to_string(), "exit app".to_string()),
-                                ("".to_string(), "".to_string()),
-                            ];
-                            for (action, (key, ty)) in input_map.map.iter() {
+                                let mut help = vec![];
+                                for (i, (action, (key, ty))) in input_map.map.iter().enumerate() {
+                                    help.push((
+                                        action.description().to_string(),
+                                        format!("{} ({})", key.to_string(), ty.description()),
+                                    ));
+                                    if i % 4 == 3 {
+                                        help.push(("".to_string(), "".to_string()));
+                                    }
+                                }
+                                help.push(("".to_string(), "".to_string()));
                                 help.push((
-                                    action.description().to_string(),
-                                    format!("{} ({})", key.to_string(), ty.description()),
+                                    "ESC or F10".to_string(),
+                                    "toggle this menu".to_string(),
                                 ));
-                            }
+                                help.push(("Ctrl + Q".to_string(), "exit app".to_string()));
 
-                            // poor man's table
-                            ui.horizontal(|ui| {
-                                ui.vertical(|ui| {
-                                    for v in &help {
-                                        ui.label(&v.0);
-                                    }
-                                });
-                                ui.vertical(|ui| {
-                                    for v in &help {
-                                        ui.label(&v.1);
-                                    }
+                                // poor man's table
+                                ui.horizontal(|ui| {
+                                    ui.vertical(|ui| {
+                                        for v in &help {
+                                            ui.label(&v.0);
+                                        }
+                                    });
+                                    ui.vertical(|ui| {
+                                        for v in &help {
+                                            ui.label(&v.1);
+                                        }
+                                    });
                                 });
                             });
                         });

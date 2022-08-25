@@ -10,6 +10,13 @@ pub enum InputAction {
     MoveUp,
     MoveDown,
 
+    Fire,
+    FireAlt,
+    Melee,
+    Cannon,
+
+    Dash,
+    TargetDash,
     Respawn,
 }
 
@@ -21,6 +28,13 @@ impl InputAction {
             InputAction::MoveUp => "Move up",
             InputAction::MoveDown => "Move down",
 
+            InputAction::Fire => "Fire",
+            InputAction::FireAlt => "FireAlt",
+            InputAction::Melee => "Melee",
+            InputAction::Cannon => "Cannon",
+
+            InputAction::Dash => "Dash",
+            InputAction::TargetDash => "Dash to cursor",
             InputAction::Respawn => "Retry",
         }
     }
@@ -72,6 +86,13 @@ impl Default for InputMap {
                 MoveUp => (InputKey::Key(KeyCode::W), InputType::Hold),
                 MoveDown => (InputKey::Key(KeyCode::S), InputType::Hold),
 
+                InputAction::Fire => (InputKey::Button(MouseButton::Left), InputType::Hold),
+                InputAction::FireAlt => (InputKey::Button(MouseButton::Right), InputType::Hold),
+                InputAction::Melee => (InputKey::Key(KeyCode::F), InputType::Hold),
+                InputAction::Cannon => (InputKey::Key(KeyCode::V), InputType::Click),
+
+                InputAction::Dash => (InputKey::Key(KeyCode::LShift), InputType::Click),
+                InputAction::TargetDash => (InputKey::Key(KeyCode::Space), InputType::Click),
                 Respawn => (InputKey::Key(KeyCode::R), InputType::Click),
             },
         }
