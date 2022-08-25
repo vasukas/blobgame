@@ -35,13 +35,12 @@ fn kinematic_controller(
         &GlobalTransform,
         &mut Transform,
         &KinematicController,
-        &CollisionGroups,
     )>,
     time: Res<GameTime>, mut cmds: CmdReader<KinematicCommand>, phy: Res<RapierContext>,
 ) {
     cmds.iter_cmd_mut(
         &mut entities,
-        |cmd, (entity, global_pos, mut transform, kinematic, groups)| {
+        |cmd, (entity, global_pos, mut transform, kinematic)| {
             match *cmd {
                 // horizontal movement
                 KinematicCommand::Move { dir } => {
@@ -50,7 +49,7 @@ fn kinematic_controller(
                     let global_pos = global_pos.pos_2d();
                     let filter = QueryFilter::new()
                         .exclude_rigid_body(entity)
-                        .groups((*groups).into());
+                        .groups(PhysicsType::MovementController.into());
 
                     let speed = kinematic.speed * time.delta_seconds();
 

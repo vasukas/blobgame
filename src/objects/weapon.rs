@@ -34,20 +34,18 @@ fn weapon(
     weapon.iter_cmd_mut(&mut source, |weapon, (transform, team)| match *weapon {
         Weapon::None => log::warn!("Shooting Weapon::None"),
         Weapon::Turret => {
-            println!("WTF");
-
             let radius = 0.25;
             commands
                 .spawn_bundle(GeometryBuilder::build_as(
                     &shapes::Polygon {
                         points: vec![
-                            vec2(radius * 3., 0.),
-                            vec2(radius, 0.).rotated(160f32.to_radians()),
-                            vec2(radius, 0.).rotated(-160f32.to_radians()),
+                            vec2(0., radius * 2.),
+                            vec2(0., radius).rotated(160f32.to_radians()),
+                            vec2(0., radius).rotated(-160f32.to_radians()),
                         ],
                         closed: true,
                     },
-                    DrawMode::Fill(FillMode::color(Color::ORANGE_RED)),
+                    DrawMode::Fill(FillMode::color(Color::rgb(1., 1., 0.6))),
                     forward(transform, 1.5),
                 ))
                 .insert(Depth::Projectile)
@@ -57,6 +55,7 @@ fn weapon(
                     radius,
                     team: *team,
                 })
+                //
                 .insert(RigidBody::Dynamic)
                 .insert(Collider::ball(radius))
                 .insert(PhysicsType::Projectile.rapier())

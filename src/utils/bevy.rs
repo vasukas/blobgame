@@ -76,8 +76,8 @@ impl GlamVec2 for Vec2 {
         // TODO: why negative
         -self
             .try_normalize()
-            .unwrap_or(Vec2::X)
-            .angle_between(Vec2::X)
+            .unwrap_or(Vec2::Y)
+            .angle_between(Vec2::Y)
     }
 
     fn in_bounds(&self, min: Self, max: Self) -> bool {

@@ -122,9 +122,9 @@ fn spawn(
                 .spawn_bundle(GeometryBuilder::build_as(
                     &shapes::Polygon {
                         points: vec![
-                            vec2(radius, 0.),
-                            vec2(radius, 0.).rotated(150f32.to_radians()),
-                            vec2(radius, 0.).rotated(-150f32.to_radians()),
+                            vec2(0., radius),
+                            vec2(0., radius).rotated(150f32.to_radians()),
+                            vec2(0., radius).rotated(-150f32.to_radians()),
                         ],
                         closed: true,
                     },
@@ -132,7 +132,8 @@ fn spawn(
                         fill_mode: FillMode::color(Color::ORANGE),
                         outline_mode: StrokeMode::new(Color::YELLOW, 0.05),
                     },
-                    Transform::new_2d(-world_size / 3.),
+                    // Transform::new_2d(-world_size / 3.),
+                    Transform::new_2d(vec2(-5., 0.)),
                 ))
                 .insert(Target::Player)
                 .insert(LosCheck::default())
@@ -142,7 +143,7 @@ fn spawn(
                 })
                 .insert(
                     AttackPattern::default()
-                        .stage(1, Duration::from_secs(1), AttackStage::Wait)
+                        // .stage(1, Duration::from_secs(1), AttackStage::Wait)
                         .stage(
                             5,
                             Duration::from_millis(300),
