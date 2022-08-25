@@ -1,4 +1,4 @@
-use super::light::Light;
+use super::{light::Light, sound::Sound};
 use crate::{common::*, mechanics::health::DeathEvent};
 
 // Event
@@ -9,6 +9,13 @@ pub struct Explosion {
     pub color1: Color,
     pub time: Duration,
     pub radius: f32,
+    pub power: ExplosionPower,
+}
+
+#[derive(Clone, Copy)]
+pub enum ExplosionPower {
+    None,
+    Small,
 }
 
 impl Explosion {
@@ -50,7 +57,8 @@ struct TemporaryHack;
 fn explosion(
     mut commands: Commands, mut events: EventReader<Explosion>,
     mut explosions: Query<(Entity, &ExplosionState, &mut Light)>, time: Res<GameTime>,
-    hack: Query<Entity, With<TemporaryHack>>,
+    hack: Query<Entity, With<TemporaryHack>>, mut sounds: EventWriter<Sound>,
+    server: Res<AssetServer>,
 ) {
     for event in events.iter() {
         commands
@@ -67,6 +75,15 @@ fn explosion(
                 radius: 0.,
                 color: (event.color0 + event.color1) * 0.5,
             });
+        if let Some(sound) = match event.power {
+            ExplosionPower::None => None,
+            ExplosionPower::Small => Some("sounds/explosion_bot_1.ogg"),
+        } {
+            sounds.send(Sound {
+                sound: server.load(sound),
+                position: Some(event.origin),
+            });
+        }
     }
 
     for (entity, state, mut light) in explosions.iter_mut() {
@@ -124,6 +141,7 @@ fn spawn_effect(
             color1: Color::rgb(0.8, 1., 1.),
             time: Duration::from_millis(400),
             radius: effect.radius,
+            power: ExplosionPower::None,
         })
     }
 }

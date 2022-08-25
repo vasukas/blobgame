@@ -1,7 +1,10 @@
 use crate::{
     common::*,
     mechanics::{damage::*, health::Damage, physics::CollectContacts},
-    present::{effect::Explosion, light::Light},
+    present::{
+        effect::{Explosion, ExplosionPower},
+        light::Light,
+    },
 };
 
 /// Command event
@@ -67,6 +70,7 @@ fn weapon(
                         color1: Color::RED,
                         time: Duration::from_millis(400),
                         radius: 0.5,
+                        power: ExplosionPower::Small,
                     }
                     .death(),
                 )

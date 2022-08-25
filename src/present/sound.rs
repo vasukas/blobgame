@@ -15,6 +15,8 @@ pub struct AudioListener;
 
 //
 
+const K_VOLUME: f64 = 0.25; // since apparently all sound assets are normalized
+
 pub struct SoundPlugin;
 
 impl Plugin for SoundPlugin {
@@ -112,7 +114,7 @@ fn play_sounds(
 
         let mut cmd = audio.play(event.sound.clone());
         cmd.with_playback_rate(thread_rng().gen_range(0.9..1.2))
-            .with_volume(volume)
+            .with_volume(volume * K_VOLUME)
             .with_panning(panning);
         if let Some(pos) = event.position {
             commands
@@ -135,7 +137,7 @@ fn update_positional(
                 commands.entity(entity).despawn_recursive()
             } else {
                 let (volume, panning) = config.calculate(pos.pos_2d(), 1.);
-                instance.set_volume(volume, tween());
+                instance.set_volume(volume * K_VOLUME, tween());
                 instance.set_panning(panning, tween());
             }
         } else {
