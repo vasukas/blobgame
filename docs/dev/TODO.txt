@@ -28,6 +28,7 @@ Important bugs
         Am using bevy_web_resizer; without it size changes are completely ignored.
 - playtest fucking EVERYTHING
 - add LICENSE file and list used assets, with source and license
+- DONT FORGET TO GREP AND FIX ALL TODOS
 ...
 
 
@@ -37,11 +38,11 @@ Needs to be done ASAP
     + walls and player movement
         + spawn
         + simple kinematic controller
-    - turret enemy
+    + turret enemy
         + rotating turret
-        - health
-        - projectiles (ALL attacks in game are projectiles, techically)
-        - respawn
+        + health
+        + projectiles (ALL attacks in game are projectiles, techically)
+        + respawn
     - player weapons
         - melee (F, cone; hitting projectile sends it at cursor)
             ? charge to make shockwave which stuns enemies (also increases damage)

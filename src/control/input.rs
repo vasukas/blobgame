@@ -9,6 +9,8 @@ pub enum InputAction {
     MoveRight,
     MoveUp,
     MoveDown,
+
+    Respawn,
 }
 
 impl InputAction {
@@ -18,6 +20,8 @@ impl InputAction {
             InputAction::MoveRight => "Move right",
             InputAction::MoveUp => "Move up",
             InputAction::MoveDown => "Move down",
+
+            InputAction::Respawn => "Retry",
         }
     }
 }
@@ -67,6 +71,8 @@ impl Default for InputMap {
                 MoveRight => (InputKey::Key(KeyCode::D), InputType::Hold),
                 MoveUp => (InputKey::Key(KeyCode::W), InputType::Hold),
                 MoveDown => (InputKey::Key(KeyCode::S), InputType::Hold),
+
+                Respawn => (InputKey::Key(KeyCode::R), InputType::Click),
             },
         }
     }

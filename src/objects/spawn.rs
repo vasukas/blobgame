@@ -135,6 +135,7 @@ fn spawn(
                     // Transform::new_2d(-world_size / 3.),
                     Transform::new_2d(vec2(-5., 0.)),
                 ))
+                .insert(GameplayObject)
                 .insert(Target::Player)
                 .insert(LosCheck::default())
                 .insert(FaceTarget {

@@ -1,6 +1,6 @@
 use crate::{
     common::*,
-    mechanics::{damage::*, health::Damage},
+    mechanics::{damage::*, health::Damage, physics::CollectContacts},
     present::light::Light,
 };
 
@@ -34,6 +34,7 @@ fn weapon(
     use bevy_lyon::*;
     weapon.iter_cmd_mut(&mut source, |weapon, (transform, team)| match *weapon {
         Weapon::None => log::warn!("Shooting Weapon::None"),
+
         Weapon::Turret => {
             let radius = 0.25;
             let (transform, velocity) = make_origin(transform, 1.5, 10.);
@@ -53,15 +54,15 @@ fn weapon(
                 .insert(Depth::Projectile)
                 .insert(Light {
                     radius: 2.,
-                    color: Color::rgb(1., 1., 0.8).with_a(0.1),
+                    color: Color::rgb(1., 1., 0.8).with_a(0.07),
                 })
                 //
                 .insert(GameplayObject)
-                .insert(DamageCircle {
-                    damage: Damage::new(1.),
-                    radius,
-                    team: *team,
-                })
+                .insert(Damage::new(1.))
+                .insert(*team)
+                .insert(DamageOnContact)
+                .insert(DieOnContact)
+                .insert(CollectContacts::default())
                 //
                 .insert(RigidBody::Dynamic)
                 .insert(Collider::ball(radius))
@@ -69,6 +70,7 @@ fn weapon(
                 .insert(PhysicsType::Projectile.rapier())
                 .insert(Velocity::linear(velocity));
         }
+
         Weapon::PlayerGun => {
             // TODO: implement
         }

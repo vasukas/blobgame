@@ -1,3 +1,4 @@
+use super::damage::Team;
 use crate::common::*;
 
 /// Entity will be despawned after death in First
@@ -5,7 +6,9 @@ use crate::common::*;
 pub struct Health {
     pub value: f32,
     pub max: f32,
+
     pub invincible: bool,
+    pub armor: bool, // reduced damage from explosions
 }
 
 impl Health {
@@ -14,7 +17,13 @@ impl Health {
             value,
             max: value,
             invincible: false,
+            armor: false,
         }
+    }
+
+    pub fn armor(mut self) -> Self {
+        self.armor = true;
+        self
     }
 }
 
@@ -34,26 +43,39 @@ impl DieAfter {
     }
 }
 
-/// Entity event
-#[derive(Clone, Copy, Default)]
+#[derive(Component, Clone, Copy, Default)]
 pub struct Damage {
     pub value: f32,
-    /// Explodes projectiles
     pub powerful: bool,
+    pub explosion: bool,
 }
 
 impl Damage {
     pub fn new(value: f32) -> Self {
         Self { value, ..default() }
     }
+
     /// Explodes projectiles
     pub fn powerful(mut self) -> Self {
         self.powerful = true;
         self
     }
+
+    /// Reduced damage to some entities
+    pub fn explosion(mut self) -> Self {
+        self.explosion = true;
+        self
+    }
 }
 
 /// Entity event
+pub struct DamageEvent {
+    pub damage: Damage,
+    pub team: Team,
+}
+
+/// Entity event
+#[derive(Default)]
 pub struct DeathEvent;
 
 //
@@ -63,9 +85,8 @@ pub struct HealthPlugin;
 impl Plugin for HealthPlugin {
     fn build(&self, app: &mut App) {
         app.add_event::<(Entity, DeathEvent)>()
-            .add_event::<(Entity, Damage)>()
+            .add_event::<(Entity, DamageEvent)>()
             .add_system(die_after)
-            .add_system(death_event)
             .add_system(damage)
             .add_system_to_stage(CoreStage::First, despawn_dead.exclusive_system());
     }
@@ -88,20 +109,18 @@ fn die_after(
     }
 }
 
-fn death_event(
-    mut death: CmdWriter<DeathEvent>, health: Query<(Entity, &Health), Changed<Health>>,
+fn damage(
+    mut damage: CmdReader<DamageEvent>, mut entities: Query<(Entity, &mut Health, &Team)>,
+    mut death: CmdWriter<DeathEvent>,
 ) {
-    for (entity, health) in health.iter() {
-        if health.value <= 0. {
-            death.send((entity, DeathEvent))
-        }
-    }
-}
-
-fn damage(mut damage: CmdReader<Damage>, mut entities: Query<&mut Health>) {
-    damage.iter_cmd_mut(&mut entities, |damage, mut health| {
-        if !health.invincible {
-            health.value -= damage.value
+    damage.iter_cmd_mut(&mut entities, |event, (entity, mut health, team)| {
+        if *team != event.team && !health.invincible {
+            health.value -=
+                event.damage.value * if event.damage.explosion && health.armor { 0.5 } else { 1. };
+            if health.value <= 0. {
+                // TODO: statistics
+                death.send((entity, DeathEvent))
+            }
         }
     })
 }
