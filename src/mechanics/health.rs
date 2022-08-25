@@ -35,6 +35,25 @@ impl DieAfter {
 }
 
 /// Entity event
+#[derive(Clone, Copy, Default)]
+pub struct Damage {
+    pub value: f32,
+    /// Explodes projectiles
+    pub powerful: bool,
+}
+
+impl Damage {
+    pub fn new(value: f32) -> Self {
+        Self { value, ..default() }
+    }
+    /// Explodes projectiles
+    pub fn powerful(mut self) -> Self {
+        self.powerful = true;
+        self
+    }
+}
+
+/// Entity event
 pub struct DeathEvent;
 
 //
@@ -44,8 +63,10 @@ pub struct HealthPlugin;
 impl Plugin for HealthPlugin {
     fn build(&self, app: &mut App) {
         app.add_event::<(Entity, DeathEvent)>()
+            .add_event::<(Entity, Damage)>()
             .add_system(die_after)
             .add_system(death_event)
+            .add_system(damage)
             .add_system_to_stage(CoreStage::First, despawn_dead.exclusive_system());
     }
 }
@@ -75,6 +96,14 @@ fn death_event(
             death.send((entity, DeathEvent))
         }
     }
+}
+
+fn damage(mut damage: CmdReader<Damage>, mut entities: Query<&mut Health>) {
+    damage.iter_cmd_mut(&mut entities, |damage, mut health| {
+        if !health.invincible {
+            health.value -= damage.value
+        }
+    })
 }
 
 fn despawn_dead(mut commands: Commands, mut deaths: EventReader<(Entity, DeathEvent)>) {

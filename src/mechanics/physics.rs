@@ -6,14 +6,17 @@ use bevy::utils::HashSet;
 #[derive(Clone, Copy)]
 pub enum PhysicsType {
     Solid,
+    Projectile,
 }
 
 impl PhysicsType {
     pub fn rapier(self) -> CollisionGroups {
         let obstacle = 1;
+        let projectile = 2;
 
         let (memberships, filters) = match self {
-            PhysicsType::Solid => (obstacle, obstacle),
+            PhysicsType::Solid => (obstacle, obstacle | projectile),
+            PhysicsType::Projectile => (projectile, obstacle),
         };
         CollisionGroups {
             memberships,

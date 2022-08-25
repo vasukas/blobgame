@@ -52,7 +52,7 @@ fn main() {
     .add_plugin(RapierPhysicsPlugin::<()>::pixels_per_meter(1.))
     .insert_resource({
         let mut config = bevy_rapier2d::plugin::RapierConfiguration::default();
-        config.gravity = -Vec2::Y * 9.81;
+        config.gravity = Vec2::ZERO;
         config
     })
     .add_system_to_stage(CoreStage::Last, exit_on_esc_system)

@@ -6,6 +6,7 @@ pub enum Depth {
     Light,
     Player,
     Wall,
+    Projectile,
 }
 
 impl Depth {
@@ -13,6 +14,7 @@ impl Depth {
         match self {
             Depth::Light => 110.,
             Depth::Player => 300.,
+            Depth::Projectile => 500.,
             Depth::Wall => 900.,
         }
     }

@@ -1,11 +1,15 @@
-use crate::{common::*, present::sound::Sound};
+use crate::{
+    common::*,
+    mechanics::{damage::*, health::Damage},
+};
 
 /// Command event
 #[derive(Clone, Copy, Default)]
 pub enum Weapon {
     #[default]
     None,
-    TurretTest,
+    Turret,
+    PlayerGun,
 }
 
 #[derive(SystemLabel)]
@@ -24,17 +28,48 @@ impl Plugin for WeaponPlugin {
 
 fn weapon(
     mut commands: Commands, mut weapon: CmdReader<Weapon>,
-    mut source: Query<(Entity, &GlobalTransform)>, mut sounds: EventWriter<Sound>,
-    server: Res<AssetServer>,
+    mut source: Query<(&GlobalTransform, &Team)>,
 ) {
-    weapon.iter_cmd_mut(&mut source, |weapon, (entity, transform)| match *weapon {
+    use bevy_lyon::*;
+    weapon.iter_cmd_mut(&mut source, |weapon, (transform, team)| match *weapon {
         Weapon::None => log::warn!("Shooting Weapon::None"),
-        Weapon::TurretTest => {
-            sounds.send(Sound {
-                sound: server.load("sounds/explosion_bot_1.ogg"),
-                position: Some(transform.pos_2d()),
-            });
-            // TODO: implement actual weapons
+        Weapon::Turret => {
+            println!("WTF");
+
+            let radius = 0.25;
+            commands
+                .spawn_bundle(GeometryBuilder::build_as(
+                    &shapes::Polygon {
+                        points: vec![
+                            vec2(radius * 3., 0.),
+                            vec2(radius, 0.).rotated(160f32.to_radians()),
+                            vec2(radius, 0.).rotated(-160f32.to_radians()),
+                        ],
+                        closed: true,
+                    },
+                    DrawMode::Fill(FillMode::color(Color::ORANGE_RED)),
+                    forward(transform, 1.5),
+                ))
+                .insert(Depth::Projectile)
+                .insert(GameplayObject)
+                .insert(DamageCircle {
+                    damage: Damage::new(1.),
+                    radius,
+                    team: *team,
+                })
+                .insert(RigidBody::Dynamic)
+                .insert(Collider::ball(radius))
+                .insert(PhysicsType::Projectile.rapier())
+                .insert(Velocity::linear((transform.forward() * 10.).truncate()));
+        }
+        Weapon::PlayerGun => {
+            // TODO: implement
         }
     });
+}
+
+fn forward(pos: &GlobalTransform, distance: f32) -> Transform {
+    let mut pos: Transform = (*pos).into();
+    pos.translation += pos.forward() * distance;
+    pos
 }

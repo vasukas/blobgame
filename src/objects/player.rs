@@ -1,7 +1,7 @@
 use crate::{
     common::*,
     control::input::InputAction,
-    mechanics::movement::*,
+    mechanics::{damage::Team, movement::*},
     present::{simple_sprite::SimpleSprite, sound::AudioListener},
 };
 
@@ -52,7 +52,8 @@ fn spawn_player(
                     default(),
                 ));
             })
-            .insert(AudioListener);
+            .insert(AudioListener)
+            .insert(Team::Player);
     }
 }
 

@@ -1,5 +1,10 @@
 use super::player::Player;
-use crate::{common::*, mechanics::ai::*, objects::weapon::Weapon, present::camera::WorldCamera};
+use crate::{
+    common::*,
+    mechanics::{ai::*, damage::Team},
+    objects::weapon::Weapon,
+    present::camera::WorldCamera,
+};
 
 /// Object which must be despawned
 #[derive(Component)]
@@ -141,13 +146,14 @@ fn spawn(
                         .stage(
                             5,
                             Duration::from_millis(300),
-                            AttackStage::Shoot(Weapon::TurretTest),
+                            AttackStage::Shoot(Weapon::Turret),
                         )
                         .stage(1, Duration::from_secs(1), AttackStage::Wait),
                 )
                 .insert(RigidBody::Fixed)
                 .insert(PhysicsType::Solid.rapier())
-                .insert(Collider::ball(radius));
+                .insert(Collider::ball(radius))
+                .insert(Team::Enemy);
         }
     }
 }
