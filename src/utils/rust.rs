@@ -1,17 +1,5 @@
-// use std::time::Duration;
-//
-// pub trait DurationExtended {
-//     fn div_duration_f32(&self, rhs: Duration) -> f32;
-// }
-//
-// impl DurationExtended for Duration {
-//     fn div_duration_f32(&self, rhs: Duration) -> f32 {
-//         self.as_secs_f32() / rhs.as_secs_f32()
-//     }
-// }
-
 pub trait BoolExtended {
-    /// Sets value to the opposite of current and returns new value
+    /// Sets value to the opposite of current one and returns new value
     fn flip(&mut self) -> Self;
 }
 
@@ -25,7 +13,12 @@ impl BoolExtended for bool {
 //
 
 pub trait RandomSelect<T> {
+    /// Returns random element.
+    /// 
+    /// Panics if there are no elements to select from.
     fn random(self) -> T;
+
+    /// Returns random element or None if there are no elements to select from
     fn get_random(self) -> Option<T>;
 }
 

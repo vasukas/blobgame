@@ -1,5 +1,3 @@
-//#![allow(unstable_name_collisions)] // I swear I don't do anything too weird with this
-
 use bevy::{app::AppExit, prelude::*, window::PresentMode};
 use bevy_egui::EguiPlugin;
 use bevy_rapier2d::plugin::RapierPhysicsPlugin;

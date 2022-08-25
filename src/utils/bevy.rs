@@ -7,14 +7,20 @@ use bevy::{
 // 2D transform
 
 pub trait BevyTransform2d {
+    /// Same as `Transform::from_translation(pos.extend(0.))`
     fn new_2d(pos: Vec2) -> Self;
+    /// Returns 2D translation (without Z)
     fn pos_2d(&self) -> Vec2;
+    /// Returns 2D angle. Zero points to Y axis
     fn angle_2d(&self) -> f32;
 }
 
 pub trait BevyTransform2dMut {
+    /// Sets 2D translation, Z is unchanged
     fn add_2d(&mut self, value: Vec2);
+    /// Sets 2D translation, Z is unchanged
     fn set_2d(&mut self, value: Vec2);
+    /// Sets 2D angle. Zero points to Y axis
     fn set_angle_2d(&mut self, value: f32);
 }
 
@@ -61,10 +67,14 @@ impl BevyTransform2d for GlobalTransform {
 // Glam
 
 pub trait GlamVec2 {
+    /// `x * y`
     fn area(&self) -> f32;
+    /// Angle relative to Y axis
     fn angle(&self) -> f32;
 
+    /// Does this point lie inside rectangle (or on its borders) specified by min and max
     fn in_bounds(&self, min: Self, max: Self) -> bool;
+    /// Returns copy of this vector rotated by specified angle (0 points to Y axis)
     fn rotated(&self, angle: f32) -> Self;
 }
 
@@ -93,6 +103,7 @@ impl GlamVec2 for Vec2 {
 // Log
 
 pub trait LogResult<T> {
+    /// Logs error
     fn ok_or_log(self) -> Option<T>;
 }
 

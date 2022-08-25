@@ -5,4 +5,6 @@ TODO: check and fill everything in
     * uses Soniss free GDC bundle: https://sonniss.com/gameaudiogdc
   * sprites - made by vasukas for this game
     * Public Domain or whatever
+  * font - https://github.com/googlefonts/Inconsolata
+    * SIL Open Font License
 * crates - see Cargo.toml, should be all MIT/Apache 2.0

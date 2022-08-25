@@ -2,7 +2,14 @@ use bevy::prelude::*;
 use bevy_egui::{egui, EguiContext};
 
 pub trait BevyEguiContextExtended {
+    /// Non-decorated fixed UI window.
+    /// Anchor specifies positon relatively to the center of the screen, i.e. (-1, -1) is bottom-left.
+    /// Optionally can have frame and background.
     fn popup(&mut self, name: &str, anchor: Vec2, background: bool, f: impl FnOnce(&mut egui::Ui));
+
+    /// Fill screen with solid-colored rectangle.
+    /// Name must unique among calls in the same frame.
+    /// TODO: window size probably can be queried from context, but it's that way for now.
     fn fill_screen(&mut self, name: &str, color: egui::Color32, window_size: Vec2);
 }
 

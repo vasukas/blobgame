@@ -27,7 +27,7 @@ Important bugs
         Happens if with python server too, but fixes itself after about five seconds.
         Am using bevy_web_resizer; without it size changes are completely ignored.
 - playtest fucking EVERYTHING
-- add LICENSE file and list used assets, with source and license
++ add LICENSE file and list used assets, with source and license
 - DONT FORGET TO GREP AND FIX ALL TODOS
 - bevy_kira_audio::audio_output: Failed to set volume for instance: CommandQueueFul
 ...
