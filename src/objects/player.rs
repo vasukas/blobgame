@@ -32,6 +32,8 @@ fn spawn_player(
                 radius,
                 ..default()
             })
+            .insert(RigidBody::KinematicPositionBased)
+            .insert(Collider::ball(radius * 0.9))
             .insert(PhysicsType::Solid.rapier())
             //
             .insert(Depth::Player)

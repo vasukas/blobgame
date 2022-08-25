@@ -18,7 +18,7 @@ impl PhysicsType {
 
         let (memberships, filters) = match self {
             PhysicsType::Solid => (obstacle, obstacle | projectile | mov_controller),
-            PhysicsType::Projectile => (projectile, obstacle | projectile),
+            PhysicsType::Projectile => (projectile, obstacle),
             PhysicsType::MovementController => (mov_controller, obstacle),
         };
         CollisionGroups {

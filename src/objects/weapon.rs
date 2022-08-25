@@ -1,6 +1,7 @@
 use crate::{
     common::*,
     mechanics::{damage::*, health::Damage},
+    present::light::Light,
 };
 
 /// Command event
@@ -35,6 +36,7 @@ fn weapon(
         Weapon::None => log::warn!("Shooting Weapon::None"),
         Weapon::Turret => {
             let radius = 0.25;
+            let (transform, velocity) = make_origin(transform, 1.5, 10.);
             commands
                 .spawn_bundle(GeometryBuilder::build_as(
                     &shapes::Polygon {
@@ -46,9 +48,14 @@ fn weapon(
                         closed: true,
                     },
                     DrawMode::Fill(FillMode::color(Color::rgb(1., 1., 0.6))),
-                    forward(transform, 1.5),
+                    transform,
                 ))
                 .insert(Depth::Projectile)
+                .insert(Light {
+                    radius: 2.,
+                    color: Color::rgb(1., 1., 0.8).with_a(0.1),
+                })
+                //
                 .insert(GameplayObject)
                 .insert(DamageCircle {
                     damage: Damage::new(1.),
@@ -58,8 +65,9 @@ fn weapon(
                 //
                 .insert(RigidBody::Dynamic)
                 .insert(Collider::ball(radius))
+                .insert(ColliderMassProperties::Mass(1.))
                 .insert(PhysicsType::Projectile.rapier())
-                .insert(Velocity::linear((transform.forward() * 10.).truncate()));
+                .insert(Velocity::linear(velocity));
         }
         Weapon::PlayerGun => {
             // TODO: implement
@@ -67,8 +75,9 @@ fn weapon(
     });
 }
 
-fn forward(pos: &GlobalTransform, distance: f32) -> Transform {
+fn make_origin(pos: &GlobalTransform, distance: f32, speed: f32) -> (Transform, Vec2) {
     let mut pos: Transform = (*pos).into();
-    pos.translation += pos.forward() * distance;
-    pos
+    let forward = pos.local_y().truncate();
+    pos.add_2d(forward * distance);
+    (pos, forward * speed)
 }
