@@ -89,7 +89,7 @@ Needs to be done ASAP
     - combining smaller enemies into bigger ones?
 
 - graphics
-    - explosions
+    + explosions
     - particles? like blood/oil splatters, debree from asters, etc
 
 - audio

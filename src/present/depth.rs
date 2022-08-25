@@ -7,6 +7,7 @@ pub enum Depth {
     Player,
     Wall,
     Projectile,
+    Effect,
 }
 
 impl Depth {
@@ -15,7 +16,8 @@ impl Depth {
             Depth::Light => 110.,
             Depth::Player => 300.,
             Depth::Projectile => 500.,
-            Depth::Wall => 900.,
+            Depth::Wall => 800.,
+            Depth::Effect => 900.,
         }
     }
 

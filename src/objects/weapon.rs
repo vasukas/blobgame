@@ -1,7 +1,7 @@
 use crate::{
     common::*,
     mechanics::{damage::*, health::Damage, physics::CollectContacts},
-    present::light::Light,
+    present::{effect::Explosion, light::Light},
 };
 
 /// Command event
@@ -60,6 +60,16 @@ fn weapon(
                     radius: 2.,
                     color: Color::rgb(1., 1., 0.8).with_a(0.07),
                 })
+                .insert(
+                    Explosion {
+                        origin: Vec2::ZERO,
+                        color0: Color::YELLOW,
+                        color1: Color::RED,
+                        time: Duration::from_millis(400),
+                        radius: 0.5,
+                    }
+                    .death(),
+                )
                 //
                 .insert(GameplayObject)
                 .insert(Damage::new(1.))

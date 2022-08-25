@@ -3,7 +3,7 @@ use crate::{
     common::*,
     mechanics::{ai::*, damage::Team},
     objects::weapon::Weapon,
-    present::camera::WorldCamera,
+    present::{camera::WorldCamera, effect::SpawnEffect},
 };
 
 /// Object which must be despawned
@@ -114,7 +114,8 @@ fn spawn(
             commands
                 .spawn_bundle(SpatialBundle::default())
                 .insert(Player::default())
-                .insert(GameplayObject);
+                .insert(GameplayObject)
+                .insert(SpawnEffect { radius: 2. });
 
             // test turret
             let radius = 0.6;
@@ -135,8 +136,12 @@ fn spawn(
                     // Transform::new_2d(-world_size / 3.),
                     Transform::new_2d(vec2(-5., 0.)),
                 ))
+                .insert(Depth::Player)
+                .insert(SpawnEffect { radius: 1. })
+                //
                 .insert(GameplayObject)
                 .insert(Target::Player)
+                .insert(Team::Enemy)
                 .insert(LosCheck::default())
                 .insert(FaceTarget {
                     rotation_speed: TAU * 0.4,
@@ -152,10 +157,10 @@ fn spawn(
                         )
                         .stage(1, Duration::from_secs(1), AttackStage::Wait),
                 )
+                //
                 .insert(RigidBody::Fixed)
                 .insert(PhysicsType::Solid.rapier())
-                .insert(Collider::ball(radius))
-                .insert(Team::Enemy);
+                .insert(Collider::ball(radius));
         }
     }
 }
