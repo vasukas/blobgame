@@ -58,7 +58,7 @@ fn explosion(
     mut commands: Commands, mut events: EventReader<Explosion>,
     mut explosions: Query<(Entity, &ExplosionState, &mut Light)>, time: Res<GameTime>,
     hack: Query<Entity, With<TemporaryHack>>, mut sounds: EventWriter<Sound>,
-    server: Res<AssetServer>,
+    assets: Res<MyAssets>,
 ) {
     for event in events.iter() {
         commands
@@ -77,10 +77,10 @@ fn explosion(
             });
         if let Some(sound) = match event.power {
             ExplosionPower::None => None,
-            ExplosionPower::Small => Some("sounds/explosion_bot_1.ogg"),
+            ExplosionPower::Small => Some(&assets.explosion_small),
         } {
             sounds.send(Sound {
-                sound: server.load(sound),
+                sound: sound.clone(),
                 position: Some(event.origin),
             });
         }

@@ -1,7 +1,6 @@
+use super::camera::WindowInfo;
 use crate::common::*;
 use bevy_kira_audio::prelude::*;
-
-use super::camera::WindowInfo;
 
 /// Event
 #[derive(Default)]
@@ -22,25 +21,12 @@ pub struct SoundPlugin;
 impl Plugin for SoundPlugin {
     fn build(&self, app: &mut App) {
         app.add_plugin(bevy_kira_audio::AudioPlugin)
-            .init_resource::<SoundCollection>()
             .init_resource::<ListenerConfig>()
             .add_event::<Sound>()
             .add_system(apply_settings)
             .add_system(update_listener_config)
             .add_system(play_sounds)
             .add_system(update_positional.exclusive_system().at_start());
-    }
-}
-
-/// Keep sounds loaded; this is a hack
-#[derive(Default)]
-struct SoundCollection {
-    sounds: HashMap<bevy::asset::HandleId, Handle<AudioSource>>,
-}
-
-impl SoundCollection {
-    fn add(&mut self, sound: &Handle<AudioSource>) {
-        self.sounds.entry(sound.id).or_insert_with(|| sound.clone());
     }
 }
 
@@ -65,14 +51,12 @@ impl ListenerConfig {
         let t_distance = inverse_lerp(distance, min_distance, max_distance).clamp(0., 1.);
         let volume = 1. - t_distance;
 
-        // TODO: fix, invalid
-        // let t_panning =
-        //     inverse_lerp(min_panning_distance, max_panning_distance, distance).clamp(0., 1.);
-        // let kxy = (delta / distance.max(0.1)).dot(Vec2::X);
-        // let pan = kxy.abs().min(max_panning).copysign(kxy);
+        let t_panning =
+            inverse_lerp(distance, min_panning_distance, max_panning_distance).clamp(0., 1.);
+        let kxy = (delta / distance.max(0.1)).dot(Vec2::X);
+        let pan = kxy.abs().min(max_panning).copysign(kxy);
 
-        // (volume as f64, (pan * t_panning * 0.5 + 0.5) as f64)
-        (volume as f64, 0.5)
+        (volume as f64, (pan * t_panning * 0.5 + 0.5) as f64)
     }
 }
 
@@ -100,12 +84,10 @@ fn update_listener_config(
 }
 
 fn play_sounds(
-    mut events: EventReader<Sound>, audio: Res<Audio>, mut collection: ResMut<SoundCollection>,
-    config: Res<ListenerConfig>, mut commands: Commands,
+    mut events: EventReader<Sound>, audio: Res<Audio>, config: Res<ListenerConfig>,
+    mut commands: Commands,
 ) {
     for event in events.iter() {
-        collection.add(&event.sound);
-
         use rand::*;
         let (volume, panning) = event
             .position

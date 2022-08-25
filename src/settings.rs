@@ -23,7 +23,9 @@ impl Settings {
 
 impl Default for Settings {
     fn default() -> Self {
-        Self { master_volume: 0.5 }
+        Self {
+            master_volume: 0.25,
+        }
     }
 }
 

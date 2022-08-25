@@ -1,11 +1,16 @@
 use crate::{common::*, present::simple_sprite::ImageVec};
+use bevy_kira_audio::AudioSource;
 use std::sync::Arc;
 
 #[derive(Default)]
 pub struct MyAssets {
+    // graphics
     pub crystal: Handle<Image>,
     pub glow: Handle<Image>,
     pub player: ImageVec,
+
+    // sounds
+    pub explosion_small: Handle<AudioSource>,
 }
 
 //
@@ -31,4 +36,6 @@ fn load_assets(mut assets: ResMut<MyAssets>, server: Res<AssetServer>) {
                 .collect(),
         )
     }
+
+    assets.explosion_small = server.load("sounds/explosion_bot_1.ogg");
 }

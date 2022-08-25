@@ -29,6 +29,7 @@ Important bugs
 - playtest fucking EVERYTHING
 - add LICENSE file and list used assets, with source and license
 - DONT FORGET TO GREP AND FIX ALL TODOS
+- bevy_kira_audio::audio_output: Failed to set volume for instance: CommandQueueFul
 ...
 
 
