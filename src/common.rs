@@ -2,6 +2,7 @@ pub use crate::{
     assets::MyAssets,
     control::time::GameTime,
     mechanics::physics::PhysicsType,
+    objects::spawn::GameplayObject,
     present::depth::Depth,
     settings::Settings,
     utils::{bevy::*, bevy_egui::*, math::*, rust::*},

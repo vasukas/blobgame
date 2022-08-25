@@ -3,6 +3,7 @@
 use bevy::{app::AppExit, prelude::*, window::PresentMode};
 use bevy_egui::EguiPlugin;
 use bevy_rapier2d::plugin::RapierPhysicsPlugin;
+use control::menu::PlayNowHack;
 
 // TODO: use leafwing-input-manager for ALL input except debug ones; also add keybinds
 
@@ -17,10 +18,23 @@ mod utils;
 
 fn main() {
     let mut app = App::new();
+
     #[cfg(target_arch = "wasm32")]
     {
         app.add_plugin(bevy_web_resizer::Plugin);
     }
+
+    let mut args = std::env::args();
+    args.next(); // skip program name
+    if let Some(arg) = args.next() {
+        match arg.as_str() {
+            "play" => {
+                app.insert_resource(PlayNowHack(true));
+            }
+            _ => panic!("Invalid command-line argument"),
+        }
+    }
+
     app.insert_resource(WindowDescriptor {
             title: "BlobFight".to_string(),
             width: 1280.,

@@ -1,9 +1,13 @@
-use bevy::{log, prelude::*};
+use bevy::{
+    ecs::query::{QueryItem, WorldQuery},
+    log,
+    prelude::*,
+};
 
 // 2D transform
 
 pub trait BevyTransform2d {
-    fn new_2d(pos: Vec2, z_level: f32) -> Self;
+    fn new_2d(pos: Vec2) -> Self;
     fn pos_2d(&self) -> Vec2;
 }
 
@@ -13,8 +17,8 @@ pub trait BevyTransform2dMut {
 }
 
 impl BevyTransform2d for Transform {
-    fn new_2d(pos: Vec2, z_level: f32) -> Self {
-        Self::from_xyz(pos.x, pos.y, z_level)
+    fn new_2d(pos: Vec2) -> Self {
+        Self::from_translation(pos.extend(0.))
     }
     fn pos_2d(&self) -> Vec2 {
         self.translation.truncate()
@@ -33,8 +37,8 @@ impl BevyTransform2dMut for Transform {
 }
 
 impl BevyTransform2d for GlobalTransform {
-    fn new_2d(pos: Vec2, z_level: f32) -> Self {
-        Transform::new_2d(pos, z_level).into()
+    fn new_2d(pos: Vec2) -> Self {
+        Transform::new_2d(pos).into()
     }
     fn pos_2d(&self) -> Vec2 {
         self.translation().truncate()
@@ -94,5 +98,29 @@ pub trait BevyColorExtended {
 impl BevyColorExtended for Color {
     fn with_a(mut self, alpha: f32) -> Self {
         *self.set_a(alpha)
+    }
+}
+
+// Command events
+
+pub type CmdReader<'w, 's, Event> = EventReader<'w, 's, (Entity, Event)>;
+pub type CmdWriter<'w, 's, Event> = EventWriter<'w, 's, (Entity, Event)>;
+
+pub trait CmdReaderExtended<Event> {
+    /// Iterate over all existing entities which received an event
+    fn iter_cmd_mut<'w2, 's2, Q: WorldQuery, F: WorldQuery>(
+        &mut self, query: &mut Query<'w2, 's2, Q, F>, apply: impl FnMut(&Event, QueryItem<Q>),
+    );
+}
+
+impl<'w, 's, Event: 'static + Send + Sync> CmdReaderExtended<Event> for CmdReader<'w, 's, Event> {
+    fn iter_cmd_mut<'w2, 's2, Q: WorldQuery, F: WorldQuery>(
+        &mut self, query: &mut Query<'w2, 's2, Q, F>, mut apply: impl FnMut(&Event, QueryItem<Q>),
+    ) {
+        for (entity, cmd) in self.iter() {
+            if let Ok(data) = query.get_mut(*entity) {
+                apply(cmd, data)
+            }
+        }
     }
 }

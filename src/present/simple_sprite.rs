@@ -31,7 +31,7 @@ fn spawn_sprite(
     mut commands: Commands, mut sprites: Query<(Entity, &mut SimpleSprite), Added<SimpleSprite>>,
 ) {
     for (entity, mut sprite) in sprites.iter_mut() {
-        if let Some((frame, image)) = sprite.images.iter().enumerate().get_random_select() {
+        if let Some((frame, image)) = sprite.images.iter().enumerate().get_random() {
             commands
                 .entity(entity)
                 .insert(Sprite {

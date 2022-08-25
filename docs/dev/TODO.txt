@@ -34,9 +34,9 @@ Important bugs
 Needs to be done ASAP
 =====================
 - mechanics (minimal)
-    - walls and player movement
-        - spawn
-        - simple kinematic controller
+    + walls and player movement
+        + spawn
+        + simple kinematic controller
     - turret enemy
         - health
         - projectiles (ALL attacks in game are projectiles, techically)
@@ -145,8 +145,9 @@ Additional features
 Would be nice to have but not important
 =======================================
 - settings
-    - remappable controls (may or may not include debug ones)
+    - remappable controls (just make UI for InputMap)
     - play sound when adjusting volume - when user stops moving slider
+? gamepad and touch support - probably will be unplayable
 
 
 Only after jam

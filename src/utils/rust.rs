@@ -25,16 +25,16 @@ impl BoolExtended for bool {
 //
 
 pub trait RandomSelect<T> {
-    fn random_select(self) -> T;
-    fn get_random_select(self) -> Option<T>;
+    fn random(self) -> T;
+    fn get_random(self) -> Option<T>;
 }
 
 impl<Iter: ExactSizeIterator + Clone> RandomSelect<Iter::Item> for Iter {
-    fn random_select(self) -> Iter::Item {
-        self.get_random_select().unwrap()
+    fn random(self) -> Iter::Item {
+        self.get_random().unwrap()
     }
 
-    fn get_random_select(self) -> Option<Iter::Item> {
+    fn get_random(self) -> Option<Iter::Item> {
         use rand::*;
         let len = self.len();
         if len == 0 {
