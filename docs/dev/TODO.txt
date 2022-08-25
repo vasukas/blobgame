@@ -38,6 +38,7 @@ Needs to be done ASAP
         + spawn
         + simple kinematic controller
     - turret enemy
+        + rotating turret
         - health
         - projectiles (ALL attacks in game are projectiles, techically)
         - respawn
@@ -112,16 +113,18 @@ Needs to be done ASAP
         - idea is there would be several drones of different tones, which could warn the player about
             being low on HP, boss appearing, etc
 
-    - sound playback
+    + sound playback
         - features
             - positional sound (not all sounds are positional)
-                - has fixed position or follows specified entity
-                - panning and volume change depending on distance and direction relatively to player
+                + has fixed position
+                ? follows specified entity
+                + panning and volume change depending on distance and direction relatively to player
+                - fix panning
                 ? startup delay depending on distance
                 ? doppler effect, but not sure if it would be even heard
-            - slightly randomized parameters - volume, speed, panning
-                ? delay before start
-        - event (just play sound once)
+            + slightly randomized parameters - volume, speed, panning
+            ? delay before start
+        + event (just play sound once)
         ? loop (play looped sound when component is added to the entity; removal doesn't matter for now)
             - sound pitch should be controlled, probably via same component
 
@@ -147,6 +150,7 @@ Would be nice to have but not important
 - settings
     - remappable controls (just make UI for InputMap)
     - play sound when adjusting volume - when user stops moving slider
+- player cursor / laser sight - to indicate where shots will go
 ? gamepad and touch support - probably will be unplayable
 
 

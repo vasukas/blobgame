@@ -11,7 +11,7 @@ pub use bevy::{log, math::vec2, prelude::*, utils::HashMap};
 pub use bevy_egui::{egui, EguiContext};
 pub use bevy_prototype_lyon::prelude as bevy_lyon;
 pub use bevy_rapier2d::prelude::*;
-pub use std::time::Duration;
+pub use std::{f32::consts::TAU, time::Duration};
 
 //
 

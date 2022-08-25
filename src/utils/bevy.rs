@@ -9,11 +9,13 @@ use bevy::{
 pub trait BevyTransform2d {
     fn new_2d(pos: Vec2) -> Self;
     fn pos_2d(&self) -> Vec2;
+    fn angle_2d(&self) -> f32;
 }
 
 pub trait BevyTransform2dMut {
     fn add_2d(&mut self, value: Vec2);
     fn set_2d(&mut self, value: Vec2);
+    fn set_angle_2d(&mut self, value: f32);
 }
 
 impl BevyTransform2d for Transform {
@@ -22,6 +24,9 @@ impl BevyTransform2d for Transform {
     }
     fn pos_2d(&self) -> Vec2 {
         self.translation.truncate()
+    }
+    fn angle_2d(&self) -> f32 {
+        self.rotation.angle_between(default())
     }
 }
 
@@ -34,6 +39,9 @@ impl BevyTransform2dMut for Transform {
         self.translation.x = value.x;
         self.translation.y = value.y;
     }
+    fn set_angle_2d(&mut self, value: f32) {
+        self.rotation = Quat::from_axis_angle(Vec3::Z, value);
+    }
 }
 
 impl BevyTransform2d for GlobalTransform {
@@ -42,6 +50,11 @@ impl BevyTransform2d for GlobalTransform {
     }
     fn pos_2d(&self) -> Vec2 {
         self.translation().truncate()
+    }
+    fn angle_2d(&self) -> f32 {
+        self.to_scale_rotation_translation()
+            .1
+            .angle_between(default())
     }
 }
 
@@ -52,6 +65,7 @@ pub trait GlamVec2 {
     fn angle(&self) -> f32;
 
     fn in_bounds(&self, min: Self, max: Self) -> bool;
+    fn rotated(&self, angle: f32) -> Self;
 }
 
 impl GlamVec2 for Vec2 {
@@ -68,6 +82,11 @@ impl GlamVec2 for Vec2 {
 
     fn in_bounds(&self, min: Self, max: Self) -> bool {
         self.cmpge(min).all() && self.cmplt(max).all()
+    }
+    fn rotated(&self, angle: f32) -> Self {
+        let cos = angle.cos();
+        let sin = angle.sin();
+        Self::new(self.x * cos - self.y * sin, self.x * sin + self.y * cos)
     }
 }
 

@@ -10,7 +10,7 @@ pub struct KinematicController {
     pub state: (),
 }
 
-/// Event - entity command.
+/// Entity command
 pub enum KinematicCommand {
     Move { dir: Vec2 },
 }

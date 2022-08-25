@@ -1,5 +1,9 @@
-use super::movement::*;
-use crate::{common::*, control::input::InputAction, present::simple_sprite::SimpleSprite};
+use crate::{
+    common::*,
+    control::input::InputAction,
+    mechanics::movement::*,
+    present::{simple_sprite::SimpleSprite, sound::AudioListener},
+};
 
 pub struct PlayerPlugin;
 
@@ -28,7 +32,7 @@ fn spawn_player(
                 radius,
                 ..default()
             })
-            .insert(PhysicsType::Player.rapier())
+            .insert(PhysicsType::Solid.rapier())
             //
             .insert(Depth::Player)
             .insert(SimpleSprite {
@@ -47,7 +51,8 @@ fn spawn_player(
                     DrawMode::Fill(FillMode::color(Color::CYAN * 0.5)),
                     default(),
                 ));
-            });
+            })
+            .insert(AudioListener);
     }
 }
 

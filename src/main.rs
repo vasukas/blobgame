@@ -50,7 +50,6 @@ fn main() {
     .add_plugin(EguiPlugin)
     .add_plugin(bevy_prototype_lyon::plugin::ShapePlugin)
     .add_plugin(RapierPhysicsPlugin::<()>::pixels_per_meter(1.))
-    .add_plugin(bevy_kira_audio::AudioPlugin)
     .insert_resource({
         let mut config = bevy_rapier2d::plugin::RapierConfiguration::default();
         config.gravity = -Vec2::Y * 9.81;

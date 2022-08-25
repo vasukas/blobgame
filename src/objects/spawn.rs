@@ -1,5 +1,5 @@
 use super::player::Player;
-use crate::{common::*, present::camera::WorldCamera};
+use crate::{common::*, mechanics::ai::*, objects::weapon::Weapon, present::camera::WorldCamera};
 
 /// Object which must be despawned
 #[derive(Component)]
@@ -44,7 +44,7 @@ fn create_wall(commands: &mut Commands, origin: Vec2, extents: Vec2) {
         .insert(Depth::Wall)
         //
         .insert(RigidBody::Fixed)
-        .insert(PhysicsType::Obstacle.rapier())
+        .insert(PhysicsType::Solid.rapier())
         .insert(Collider::cuboid(extents.x / 2., extents.y / 2.));
 }
 
@@ -58,38 +58,37 @@ fn spawn(
         }
         control.spawned = respawn;
         if respawn {
+            use bevy_lyon::*;
+
             let world_ratio = 16. / 9.;
             let world_size = vec2(40., 40. / world_ratio);
             camera.single_mut().target_size = world_size;
 
             // world border
-            {
-                use bevy_lyon::*;
-                commands
-                    .spawn_bundle(GeometryBuilder::build_as(
-                        &shapes::Rectangle {
-                            extents: world_size,
-                            origin: RectangleOrigin::Center,
-                        },
-                        DrawMode::Stroke(StrokeMode::new(Color::WHITE * 0.3, 0.1)),
-                        default(),
-                    ))
-                    .insert(GameplayObject)
-                    .insert(Depth::Wall)
-                    //
-                    .insert(RigidBody::Fixed)
-                    .insert(PhysicsType::Obstacle.rapier())
-                    .insert(Collider::polyline(
-                        vec![
-                            vec2(-world_size.x / 2., -world_size.y / 2.),
-                            vec2(world_size.x / 2., -world_size.y / 2.),
-                            vec2(world_size.x / 2., world_size.y / 2.),
-                            vec2(-world_size.x / 2., world_size.y / 2.),
-                            vec2(-world_size.x / 2., -world_size.y / 2.),
-                        ],
-                        None,
-                    ));
-            }
+            commands
+                .spawn_bundle(GeometryBuilder::build_as(
+                    &shapes::Rectangle {
+                        extents: world_size,
+                        origin: RectangleOrigin::Center,
+                    },
+                    DrawMode::Stroke(StrokeMode::new(Color::WHITE * 0.3, 0.1)),
+                    default(),
+                ))
+                .insert(GameplayObject)
+                .insert(Depth::Wall)
+                //
+                .insert(RigidBody::Fixed)
+                .insert(PhysicsType::Solid.rapier())
+                .insert(Collider::polyline(
+                    vec![
+                        vec2(-world_size.x / 2., -world_size.y / 2.),
+                        vec2(world_size.x / 2., -world_size.y / 2.),
+                        vec2(world_size.x / 2., world_size.y / 2.),
+                        vec2(-world_size.x / 2., world_size.y / 2.),
+                        vec2(-world_size.x / 2., -world_size.y / 2.),
+                    ],
+                    None,
+                ));
 
             // static walls
             for pos in [
@@ -112,7 +111,43 @@ fn spawn(
                 .insert(Player::default())
                 .insert(GameplayObject);
 
-            // TODO: spawn more stuff
+            // test turret
+            let radius = 0.6;
+            commands
+                .spawn_bundle(GeometryBuilder::build_as(
+                    &shapes::Polygon {
+                        points: vec![
+                            vec2(radius, 0.),
+                            vec2(radius, 0.).rotated(150f32.to_radians()),
+                            vec2(radius, 0.).rotated(-150f32.to_radians()),
+                        ],
+                        closed: true,
+                    },
+                    DrawMode::Outlined {
+                        fill_mode: FillMode::color(Color::ORANGE),
+                        outline_mode: StrokeMode::new(Color::YELLOW, 0.05),
+                    },
+                    Transform::new_2d(-world_size / 3.),
+                ))
+                .insert(Target::Player)
+                .insert(LosCheck::default())
+                .insert(FaceTarget {
+                    rotation_speed: TAU * 0.4,
+                    ..default()
+                })
+                .insert(
+                    AttackPattern::default()
+                        .stage(1, Duration::from_secs(1), AttackStage::Wait)
+                        .stage(
+                            5,
+                            Duration::from_millis(300),
+                            AttackStage::Shoot(Weapon::TurretTest),
+                        )
+                        .stage(1, Duration::from_secs(1), AttackStage::Wait),
+                )
+                .insert(RigidBody::Fixed)
+                .insert(PhysicsType::Solid.rapier())
+                .insert(Collider::ball(radius));
         }
     }
 }

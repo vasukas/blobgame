@@ -1,4 +1,4 @@
-use std::f32::consts::TAU;
+use std::f32::consts::{PI, TAU};
 
 /// Linear interpolation
 pub fn lerp<T: std::ops::Add<Output = T> + std::ops::Mul<f32, Output = T>>(
@@ -12,6 +12,17 @@ pub fn inverse_lerp<T: std::ops::Sub<Output = T> + std::ops::Div<Output = f32> +
     value: T, v0: T, v1: T,
 ) -> f32 {
     (value - v0) / (v1 - v0)
+}
+
+/// Shortest difference, output range is \[-π; +π\]
+pub fn angle_delta(target: f32, current: f32) -> f32 {
+    // Source: https://stackoverflow.com/a/28037434
+    let diff = (target - current + PI) % TAU - PI;
+    if diff < -PI {
+        diff + TAU
+    } else {
+        diff
+    }
 }
 
 //
