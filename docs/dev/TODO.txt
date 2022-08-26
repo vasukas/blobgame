@@ -20,12 +20,7 @@ General reminder
 
 Important bugs
 ==============
-- ask about this on discord
-    - (WASM; WORKS IN CHROMIUM) switching to fullscreen SOMETIMES doesn't work on itch.io with Firefox
-        Window size changes, but actual view is distorted with horizontal black bars.
-        At least in some cases, pressing fullscreen button quickly just after start works fine.
-        Happens if with python server too, but fixes itself after about five seconds.
-        Am using bevy_web_resizer; without it size changes are completely ignored.
+- (discord/github) switch between windowed/fullscreen doesn't work on Firefox, only Chromium
 - playtest fucking EVERYTHING
 + add LICENSE file and list used assets, with source and license
 - DONT FORGET TO GREP AND FIX ALL TODOS

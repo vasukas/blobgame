@@ -17,9 +17,17 @@ mod utils;
 fn main() {
     let mut app = App::new();
 
-    #[cfg(target_arch = "wasm32")]
+    // exit app on Ctrl+Q
+    #[cfg(not(target_arch = "wasm32"))]
     {
-        app.add_plugin(bevy_web_resizer::Plugin);
+        app.add_system_to_stage(
+            CoreStage::Last,
+            |keys: Res<Input<KeyCode>>, mut exit: EventWriter<AppExit>| {
+                if keys.pressed(KeyCode::LControl) && keys.just_pressed(KeyCode::Q) {
+                    exit.send_default();
+                }
+            },
+        );
     }
 
     let mut args = std::env::args();
@@ -53,7 +61,6 @@ fn main() {
         config.gravity = Vec2::ZERO; //-Vec2::Y * 10.;
         config
     })
-    .add_system_to_stage(CoreStage::Last, exit_on_esc_system)
     .add_startup_system(setup)
     .add_plugin(control::ControlPlugin)
     .add_plugin(mechanics::MechanicsPlugin)
@@ -66,10 +73,4 @@ fn main() {
 fn setup(mut windows: ResMut<Windows>, server: Res<AssetServer>) {
     windows.primary_mut().set_maximized(true);
     server.watch_for_changes().unwrap();
-}
-
-fn exit_on_esc_system(keys: Res<Input<KeyCode>>, mut exit: EventWriter<AppExit>) {
-    if keys.pressed(KeyCode::LControl) && keys.just_pressed(KeyCode::Q) {
-        exit.send_default();
-    }
 }

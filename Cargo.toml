@@ -36,7 +36,6 @@ serde = {version = "1", features = ["derive"]}
 
 # WASM-specific
 [target.'cfg(target_arch = "wasm32")'.dependencies]
-bevy-web-resizer = "3.0"
 wasm-cookies = "0.1"
 
 [patch.crates-io]
