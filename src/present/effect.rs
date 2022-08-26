@@ -1,5 +1,8 @@
 use super::{light::Light, sound::Sound};
-use crate::{common::*, mechanics::health::DeathEvent};
+use crate::{
+    common::*,
+    mechanics::health::{Damage, DeathEvent, Health, ReceivedDamage},
+};
 
 // Event
 #[derive(Clone, Copy)]
@@ -44,6 +47,12 @@ pub struct Flash {
     pub color1: Color,
 }
 
+/// Event
+pub struct HitSparks {
+    pub origin: Vec2,
+    pub damage: f32,
+}
+
 //
 
 pub struct EffectPlugin;
@@ -51,11 +60,14 @@ pub struct EffectPlugin;
 impl Plugin for EffectPlugin {
     fn build(&self, app: &mut App) {
         app.add_event::<Explosion>()
+            .add_event::<HitSparks>()
             .add_system(explosion.exclusive_system())
             .add_system_to_stage(CoreStage::PostUpdate, death_explosion)
             .add_system_to_stage(CoreStage::Last, spawn_effect)
             .add_system_to_stage(CoreStage::PostUpdate, spawn_flash)
-            .add_system(update_flash.exclusive_system());
+            .add_system(update_flash.exclusive_system())
+            .add_system(hit_sparks)
+            .add_system_to_stage(CoreStage::PostUpdate, hit_sparks_on_damage);
     }
 }
 
@@ -234,4 +246,91 @@ fn update_flash(
             state.child = hack.get();
         }
     }
+}
+
+#[derive(Component)]
+struct Spark {
+    velocity: Vec2,
+    angular: f32,
+    start: Duration,
+    duration: Duration,
+}
+
+fn hit_sparks(
+    mut commands: Commands, mut events: EventReader<HitSparks>,
+    mut sparks: Query<(Entity, &Spark, &mut Transform)>, time: Res<GameTime>,
+) {
+    // new sparks
+    for event in events.iter() {
+        use bevy_lyon::*;
+        use rand::*;
+
+        let count = event.damage as usize * 3;
+        for _ in 0..count {
+            let radius = thread_rng().gen_range(0.02..0.15);
+            let offset = thread_rng().gen_range(0.5..0.7);
+            let dir = Vec2::X.rotated(thread_rng().gen_range(0. ..TAU));
+
+            let k_star = 0.3;
+            commands
+                .spawn_bundle(GeometryBuilder::build_as(
+                    &shapes::Polygon {
+                        // star shape
+                        points: vec![
+                            vec2(radius, 0.),
+                            vec2(radius * k_star, radius * k_star),
+                            vec2(0., radius),
+                            vec2(-radius * k_star, radius * k_star),
+                            vec2(-radius, 0.),
+                            vec2(-radius * k_star, -radius * k_star),
+                            vec2(0., -radius),
+                            vec2(radius * k_star, -radius * k_star),
+                        ],
+                        closed: true,
+                    },
+                    DrawMode::Fill(FillMode::color(Color::YELLOW)),
+                    Transform::new_2d(event.origin + dir * offset),
+                ))
+                .insert(Depth::ImportantEffect)
+                .insert(Spark {
+                    velocity: dir * thread_rng().gen_range(1. ..3.),
+                    angular: thread_rng().gen_range(-1. ..1.) * 2. * TAU,
+                    start: time.now(),
+                    duration: Duration::from_secs_f32(thread_rng().gen_range(0.6..1.2)),
+                })
+                .insert(GameplayObject);
+        }
+    }
+
+    // update sparks
+    for (entity, spark, mut transform) in sparks.iter_mut() {
+        let t = time.t_passed(spark.start, spark.duration);
+        if t >= 1. {
+            commands.entity(entity).despawn_recursive();
+        } else {
+            transform.add_2d(spark.velocity * time.delta_seconds());
+            let new_angle = transform.angle_2d() + spark.angular * time.delta_seconds();
+            transform.set_angle_2d(new_angle);
+            transform.scale = Vec3::new(1. - t, 1. - t, 1.);
+        }
+    }
+}
+
+fn hit_sparks_on_damage(
+    mut sparks: EventWriter<HitSparks>, mut damage: CmdReader<ReceivedDamage>,
+    mut entities: Query<&GlobalTransform, Or<(With<Health>, With<Damage>)>>,
+    mut death: CmdReader<DeathEvent>,
+) {
+    damage.iter_cmd_mut(&mut entities, |event, pos| {
+        sparks.send(HitSparks {
+            origin: pos.pos_2d(),
+            damage: event.damage.value,
+        })
+    });
+    death.iter_cmd_mut(&mut entities, |_, pos| {
+        sparks.send(HitSparks {
+            origin: pos.pos_2d(),
+            damage: 1.5,
+        })
+    });
 }

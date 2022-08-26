@@ -97,7 +97,10 @@ Needs to be done ASAP
 
 - graphics
     + explosions
-    ? particles, like blood/oil splatters, debree from asters, etc
+    - particles
+        + hit sparks
+        - dust from asters
+    - animated rays
 
 - audio
     - play beats, controlled by level via state:
