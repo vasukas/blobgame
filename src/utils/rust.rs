@@ -14,7 +14,7 @@ impl BoolExtended for bool {
 
 pub trait RandomSelect<T> {
     /// Returns random element.
-    /// 
+    ///
     /// Panics if there are no elements to select from.
     fn random(self) -> T;
 

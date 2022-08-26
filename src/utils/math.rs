@@ -15,7 +15,7 @@ pub fn inverse_lerp<T: std::ops::Sub<Output = T> + std::ops::Div<Output = f32> +
 }
 
 /// Smallest difference between angles, output range is \[-π; +π\]
-/// 
+///
 /// Adding result of this function to `current` will make it equal to `target`.
 pub fn angle_delta(target: f32, current: f32) -> f32 {
     // Source: https://stackoverflow.com/a/28037434
@@ -31,7 +31,7 @@ pub fn angle_delta(target: f32, current: f32) -> f32 {
 
 pub trait FloatExtended {
     /// Same as `(self * TAU).sin() * 0.5 + 0.5`.
-    /// 
+    ///
     /// Useful for transforming linear `[0; 1]` into sinusoidal `[0; 1]` for interpolation
     fn t_sin(self) -> Self;
 }

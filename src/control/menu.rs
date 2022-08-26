@@ -1,5 +1,9 @@
 use super::input::{InputLock, InputMap};
-use crate::{common::*, objects::spawn::SpawnControl, present::camera::WindowInfo};
+use crate::{
+    common::*,
+    objects::{player::Player, spawn::SpawnControl},
+    present::camera::WindowInfo,
+};
 use bevy::app::AppExit;
 use bevy_egui::EguiSettings;
 
@@ -140,11 +144,11 @@ fn show_menu(
     }
 }
 
-fn set_time(mut time: ResMut<GameTime>, state: Res<MenuState>) {
+fn set_time(mut time: ResMut<GameTime>, state: Res<MenuState>, player: Query<(), With<Player>>) {
     time.scale = match *state {
         MenuState::None => 1.,
         _ => 0.,
-    }
+    } * if player.is_empty() { 0. } else { 1. }
 }
 
 // TODO: correctly setup fonts instead of *this*
