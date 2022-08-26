@@ -1,6 +1,5 @@
 use crate::common::*;
 
-pub mod debug;
 pub mod input;
 pub mod menu;
 pub mod time;
@@ -11,7 +10,6 @@ impl Plugin for ControlPlugin {
     fn build(&self, app: &mut App) {
         app.add_plugin(time::TimePlugin)
             .add_plugin(menu::MenuPlugin)
-            .add_plugin(debug::DebugPlugin)
             .add_plugin(input::InputPlugin);
     }
 }

@@ -1,9 +1,5 @@
 Also just notes
 
-Debug controls:
-* F2 to bring up menu
-* F3 to switch between fullscreen and windowed
-
 how to read this todo:
 - feature not yet done
     - sub-feature (part of the parent feature)
