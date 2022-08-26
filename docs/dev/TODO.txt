@@ -20,7 +20,7 @@ General reminder
 
 Important bugs
 ==============
-- ESC/F10/F3 buttons might not work in browsers! they're used by browsers themselves
++ ESC/F10/F3 buttons might not work in browsers! they're used by browsers themselves
 - ask about this on discord
     - (WASM; WORKS IN CHROMIUM) switching to fullscreen SOMETIMES doesn't work on itch.io with Firefox
         Window size changes, but actual view is distorted with horizontal black bars.
@@ -31,6 +31,7 @@ Important bugs
 + add LICENSE file and list used assets, with source and license
 - DONT FORGET TO GREP AND FIX ALL TODOS
 - (sometimes) bevy_kira_audio::audio_output: Failed to set volume for instance: CommandQueueFul
+- sometimes player seems to be hit by projectiles but isn't damaged
 ...
 
 

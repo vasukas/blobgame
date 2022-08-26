@@ -4,6 +4,7 @@ pub use serde::{Deserialize, Serialize};
 #[derive(Serialize, Deserialize)]
 pub struct Settings {
     pub master_volume: f32,
+    pub fullscreen: bool,
 }
 
 impl Settings {
@@ -15,6 +16,7 @@ impl Settings {
                 .add(egui::Slider::new(&mut self.master_volume, 0. ..=1.))
                 .changed();
         });
+        changed |= ui.checkbox(&mut self.fullscreen, "Fullscreen").changed();
         if changed {
             self.save()
         }
@@ -25,6 +27,7 @@ impl Default for Settings {
     fn default() -> Self {
         Self {
             master_volume: 0.25,
+            fullscreen: false,
         }
     }
 }

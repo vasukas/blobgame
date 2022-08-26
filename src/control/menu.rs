@@ -24,7 +24,7 @@ impl Plugin for MenuPlugin {
             .init_resource::<PlayNowHack>()
             .add_system(show_menu.label(UiMenuSystem))
             .add_system_to_stage(CoreStage::First, set_time)
-            .add_startup_system(setup_egui_scale)
+            .add_startup_system(setup)
             .add_startup_system(play_now_hack);
     }
 }
@@ -40,8 +40,9 @@ fn show_menu(
     mut ctx: ResMut<EguiContext>, mut state: ResMut<MenuState>, keys: Res<Input<KeyCode>>,
     mut exit_app: EventWriter<AppExit>, mut spawn: ResMut<SpawnControl>, window: Res<WindowInfo>,
     mut settings: ResMut<Settings>, mut input_lock: ResMut<InputLock>, input_map: Res<InputMap>,
+    mut windows: ResMut<Windows>,
 ) {
-    if keys.any_just_pressed([KeyCode::Escape, KeyCode::F10]) {
+    if keys.any_just_pressed([KeyCode::Escape, KeyCode::M]) {
         match *state {
             MenuState::None => *state = MenuState::Root,
             MenuState::Root => {
@@ -94,13 +95,18 @@ fn show_menu(
 
                                 ui.label(""); // separator
                                 ui.heading("SETTINGS");
+                                let was_fullscreen = settings.fullscreen;
                                 settings.menu(ui);
+                                if was_fullscreen != settings.fullscreen {
+                                    set_fullscreen(&mut windows, settings.fullscreen);
+                                }
 
                                 ui.label(""); // separator
                                 ui.label("Made with Bevy Engine");
                                 // TODO: add credits?
                             });
                         });
+
                         // root right pane
                         ui.vertical(|ui| {
                             ui.group(|ui| {
@@ -117,10 +123,7 @@ fn show_menu(
                                     }
                                 }
                                 help.push(("".to_string(), "".to_string()));
-                                help.push((
-                                    "ESC or F10".to_string(),
-                                    "toggle this menu".to_string(),
-                                ));
+                                help.push(("ESC or M".to_string(), "toggle this menu".to_string()));
                                 help.push(("Ctrl + Q".to_string(), "exit app".to_string()));
 
                                 // poor man's table
@@ -152,9 +155,10 @@ fn set_time(mut time: ResMut<GameTime>, state: Res<MenuState>, player: Query<(),
     } * if player.is_empty() { 0. } else { 1. }
 }
 
-// TODO: correctly setup fonts instead of *this*
-fn setup_egui_scale(mut egui: ResMut<EguiSettings>) {
-    egui.scale_factor *= 2.
+fn setup(mut egui: ResMut<EguiSettings>, settings: Res<Settings>, mut windows: ResMut<Windows>) {
+    // TODO: correctly setup fonts instead of *this*
+    egui.scale_factor *= 2.;
+    set_fullscreen(&mut windows, settings.fullscreen);
 }
 
 fn play_now_hack(
@@ -164,4 +168,10 @@ fn play_now_hack(
         spawn.despawn = Some(true);
         *state = MenuState::None;
     }
+}
+
+fn set_fullscreen(windows: &mut Windows, set: bool) {
+    use bevy::window::WindowMode::*;
+    let window = windows.primary_mut();
+    window.set_mode(if set { BorderlessFullscreen } else { Windowed });
 }
