@@ -17,6 +17,11 @@ mod utils;
 fn main() {
     let mut app = App::new();
 
+    // detect window size changes
+    #[cfg(target_arch = "wasm32")]
+    {
+        app.add_plugin(bevy_web_resizer::Plugin);
+    }
     // exit app on Ctrl+Q
     #[cfg(not(target_arch = "wasm32"))]
     {
