@@ -149,7 +149,7 @@ fn spawn(
                 })
                 .insert(
                     AttackPattern::default()
-                        // .stage(1, Duration::from_secs(1), AttackStage::Wait)
+                        .stage(1, Duration::from_secs(1), AttackStage::Wait)
                         .stage(
                             5,
                             Duration::from_millis(300),

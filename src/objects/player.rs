@@ -6,7 +6,9 @@ use crate::{
         menu::UiMenuSystem,
     },
     mechanics::{damage::Team, health::Health, movement::*},
-    present::{camera::WindowInfo, simple_sprite::SimpleSprite, sound::AudioListener},
+    present::{
+        camera::WindowInfo, effect::Flash, simple_sprite::SimpleSprite, sound::AudioListener,
+    },
 };
 
 pub struct PlayerPlugin;
@@ -15,26 +17,46 @@ impl Plugin for PlayerPlugin {
     fn build(&self, app: &mut App) {
         app.add_system_to_stage(CoreStage::PreUpdate, spawn_player.exclusive_system())
             .add_system(controls.before(MovementSystemLabel))
-            .add_system(respawn.before(UiMenuSystem));
+            .add_system(respawn.before(UiMenuSystem))
+            .add_system(update_player);
     }
 }
 
 #[derive(Component, Default)]
 pub struct Player {
-    //
+    exhaustion: f32,
+    dash_until: Option<Duration>,
+    prev_move: Vec2,
+}
+
+impl Player {
+    const RADIUS: f32 = 0.5;
+    const MAX_EXHAUSTION: f32 = 3.;
+    const DASH_DURATION: Duration = Duration::from_millis(250);
+
+    fn exhaust(&mut self, value: f32) -> bool {
+        if self.exhaustion + value <= Player::MAX_EXHAUSTION {
+            self.exhaustion += value;
+            true
+        } else {
+            false
+        }
+    }
 }
 
 fn spawn_player(
     mut commands: Commands, player: Query<Entity, Added<Player>>, assets: Res<MyAssets>,
 ) {
     for entity in player.iter() {
-        let radius = 0.5;
+        let radius = Player::RADIUS;
 
         commands
             .entity(entity)
             .insert(KinematicController {
-                speed: 8.,
+                speed: 7.,
                 radius,
+                dash_distance: 4.5,
+                dash_duration: Player::DASH_DURATION,
                 ..default()
             })
             .insert(RigidBody::KinematicPositionBased)
@@ -68,13 +90,15 @@ fn spawn_player(
 }
 
 fn controls(
-    mut player: Query<(Entity, &mut Player)>, mut input: EventReader<InputAction>,
-    mut kinematic: CmdWriter<KinematicCommand>,
+    mut player: Query<(Entity, &GlobalTransform, &mut Player)>,
+    mut input: EventReader<InputAction>, mut kinematic: CmdWriter<KinematicCommand>,
+    window: Res<WindowInfo>, time: Res<GameTime>, mut commands: Commands,
 ) {
-    let (entity, mut _player) = match player.get_single_mut() {
+    let (entity, pos, mut player) = match player.get_single_mut() {
         Ok(v) => v,
         Err(_) => return,
     };
+    let pos = pos.pos_2d();
 
     let mut mov = Vec2::ZERO;
     for action in input.iter() {
@@ -83,10 +107,33 @@ fn controls(
             InputAction::MoveRight => mov.x += 1.,
             InputAction::MoveUp => mov.y += 1.,
             InputAction::MoveDown => mov.y -= 1.,
+
+            InputAction::Dash | InputAction::TargetDash => {
+                if player.dash_until.is_none() && player.exhaust(1.) {
+                    player.dash_until = Some(time.now() + Player::DASH_DURATION);
+                    commands.entity(entity).insert(Flash {
+                        radius: Player::RADIUS,
+                        duration: Player::DASH_DURATION,
+                        color0: Color::WHITE,
+                        color1: Color::rgb(0.8, 1., 1.),
+                    });
+                    kinematic.send((
+                        entity,
+                        KinematicCommand::Dash {
+                            dir: if *action == InputAction::Dash {
+                                player.prev_move
+                            } else {
+                                window.cursor - pos
+                            },
+                        },
+                    ));
+                }
+            }
             _ => (),
         }
     }
     if let Some(dir) = mov.try_normalize() {
+        player.prev_move = dir;
         kinematic.send((entity, KinematicCommand::Move { dir }))
     }
 }
@@ -133,5 +180,24 @@ fn respawn(
         }
     } else {
         data.death_start = None;
+    }
+}
+
+fn update_player(mut player: Query<(&mut Player, &mut Health)>, time: Res<GameTime>) {
+    let exhaust_restore_speed = 1.;
+
+    for (mut player, mut health) in player.iter_mut() {
+        // dash
+        if let Some(until) = player.dash_until {
+            let still_dashing = !time.reached(until);
+            health.invincible = still_dashing;
+            if !still_dashing {
+                player.dash_until = None;
+            }
+        }
+
+        // reduce exhaustion
+        player.exhaustion =
+            (player.exhaustion - time.delta_seconds() * exhaust_restore_speed).max(0.);
     }
 }

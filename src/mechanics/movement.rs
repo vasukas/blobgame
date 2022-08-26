@@ -5,14 +5,17 @@ pub struct KinematicController {
     // config
     pub speed: f32,
     pub radius: f32,
+    pub dash_distance: f32,
+    pub dash_duration: Duration,
 
     // internal state
-    pub state: (),
+    pub dash: Option<(Vec2, Duration)>, // (velocity, until)
 }
 
 /// Entity command
 pub enum KinematicCommand {
     Move { dir: Vec2 },
+    Dash { dir: Vec2 },
 }
 
 #[derive(SystemLabel)]
@@ -34,39 +37,70 @@ fn kinematic_controller(
         Entity,
         &GlobalTransform,
         &mut Transform,
-        &KinematicController,
+        &mut KinematicController,
     )>,
     time: Res<GameTime>, mut cmds: CmdReader<KinematicCommand>, phy: Res<RapierContext>,
 ) {
+    // process commands
     cmds.iter_cmd_mut(
         &mut entities,
-        |cmd, (entity, global_pos, mut transform, kinematic)| {
-            match *cmd {
-                // horizontal movement
-                KinematicCommand::Move { dir } => {
-                    let ray_margin = -kinematic.speed * time.delta_seconds();
-
-                    let global_pos = global_pos.pos_2d();
-                    let filter = QueryFilter::new()
-                        .exclude_rigid_body(entity)
-                        .groups(PhysicsType::MovementController.into());
-
-                    let speed = kinematic.speed * time.delta_seconds();
-
-                    if phy
-                        .cast_ray(
-                            global_pos,
-                            dir,
-                            kinematic.radius + speed + ray_margin,
-                            true,
-                            filter,
-                        )
-                        .is_none()
-                    {
-                        transform.add_2d(dir * speed);
-                    }
+        |cmd, (entity, global_pos, mut transform, mut kinematic)| match *cmd {
+            KinematicCommand::Move { dir } => {
+                if kinematic.dash.is_some() {
+                    return;
                 }
+
+                let ray_margin = -kinematic.speed * time.delta_seconds();
+
+                let global_pos = global_pos.pos_2d();
+                let filter = QueryFilter::new()
+                    .exclude_rigid_body(entity)
+                    .groups(PhysicsType::MovementController.into());
+
+                let speed = kinematic.speed * time.delta_seconds();
+
+                if phy
+                    .cast_ray(
+                        global_pos,
+                        dir,
+                        kinematic.radius + speed + ray_margin,
+                        true,
+                        filter,
+                    )
+                    .is_none()
+                {
+                    transform.add_2d(dir * speed);
+                }
+            }
+            KinematicCommand::Dash { dir } => {
+                let speed = kinematic.dash_distance / kinematic.dash_duration.as_secs_f32();
+                kinematic.dash = Some((
+                    dir.normalize_or_zero() * speed,
+                    time.now() + kinematic.dash_duration,
+                ))
             }
         },
     );
+
+    // process dash
+    for (entity, global_pos, mut transform, mut kinematic) in entities.iter_mut() {
+        if let Some((velocity, until)) = kinematic.dash {
+            if time.reached(until) {
+                kinematic.dash = None
+            } else {
+                let global_pos = global_pos.pos_2d();
+                let filter = QueryFilter::new()
+                    .exclude_rigid_body(entity)
+                    .groups(PhysicsType::MovementController.into());
+
+                let offset = velocity * time.delta_seconds();
+                if phy
+                    .cast_ray(global_pos, offset, 1.1, true, filter)
+                    .is_none()
+                {
+                    transform.add_2d(offset);
+                }
+            }
+        }
+    }
 }

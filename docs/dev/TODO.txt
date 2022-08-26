@@ -43,7 +43,7 @@ Needs to be done ASAP
         + projectiles (ALL attacks in game are projectiles, techically)
         + respawn
     - player
-        - dash
+        + dash
         - fire
             - ray: hits first target
             - hitting projectile will destroy it
@@ -55,41 +55,45 @@ Needs to be done ASAP
                 - also if it enemy's, makes it player's and deflects it to cursor
             - during dash applied to whole trajectory, not just in front of player
             ? does x2 damage if executed immediatly after dash (and x4 damage to punched projectile instead of x2)
-        - craft
-            - enemies drop parts: (group 1: sphere, ray; group 2: laser, magnet)
-            - parts can be combined, replacing current mega-weapon
-            - mega-weapons have limited uses and can't be stored
-            - weapons
-                - rocket (sphere + laser)
-                    - just projectile
-                - shield (sphere + magnet)
-                    - when equipped, appears in front of the player
-                    - absorbs projectiles
-                    - deflects rays (still gets damaged, but less)
-                - railgun (ray + laser)
-                    - just powerful ray which goes through all targets
-                - deflector (ray + magnet)
-                    - pushes all projectiles away (and turns them into player's)
+    - spawn waves
+    - asteroids (just big rocks, what else is there?)
+        - would be fun to split them in parts on hit
+    - healing? drops and from some enemies?
+
+- mechanics (intermediate)
+    - interface etc
+        - HUD
+        - player reaction to being hit - particles, pulsating color, shaking, changing color, HUD, sound, etc
+        - tutorial messages (and tutorial wave)
+    - craft
+        - enemies drop parts: (group 1: sphere, ray; group 2: laser, magnet)
+        - parts can be combined, replacing current mega-weapon
+        - mega-weapons have limited uses and can't be stored
+        - weapons
+            - rocket (sphere + laser)
+                - just projectile
+            - shield (sphere + magnet)
+                - when equipped, appears in front of the player
+                - absorbs projectiles
+                - deflects rays (still gets damaged, but less)
+            - railgun (ray + laser)
+                - just powerful ray which goes through all targets
+            - deflector (ray + magnet)
+                - pushes all projectiles away (and turns them into player's)
     - advanced enemies
         - turret patterns
+        - mini-bosses (like shield robot)
         - movement
             - patterns
             - player-based
             ? collision avoidance
-        - statistics
-- spawn waves
-- asteroids (just big rocks, what else is there?)
-    - would be fun to split them in parts on hit
-- mini-bosses (like shield robot)
-- bosses
-- other important stuff
-    - player reaction to being hit - particles, pulsating color, shaking, changing color, HUD, sound, etc
-    - healing? drops and from some enemies?
-    - tutorial wave & messages
-    - HUD (explosion shaking?)
-    - maybe add shop? points are from asters
-    - combining smaller enemies into bigger ones?
-    - add warning that it's playable only with kb & mouse (or add gamepad/touch support)
+        ? statistics
+
+- mechanics (advanced)
+    - bosses
+    ? maybe add shop? points are from asters
+    ? combining smaller enemies into bigger ones
+    ? add gamepad/touch support
 
 - graphics
     + explosions

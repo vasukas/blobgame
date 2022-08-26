@@ -24,12 +24,24 @@ impl Explosion {
     }
 }
 
+/// Show explosion on death
 #[derive(Component)]
 pub struct DeathExplosion(pub Explosion);
 
+/// Show spawn effect once after creation
 #[derive(Component)]
 pub struct SpawnEffect {
     pub radius: f32,
+}
+
+/// Colored flash on an entity, once.
+/// Gradually changes color during duration.
+#[derive(Component)]
+pub struct Flash {
+    pub radius: f32,
+    pub duration: Duration,
+    pub color0: Color,
+    pub color1: Color,
 }
 
 //
@@ -41,7 +53,9 @@ impl Plugin for EffectPlugin {
         app.add_event::<Explosion>()
             .add_system(explosion.exclusive_system())
             .add_system_to_stage(CoreStage::PostUpdate, death_explosion)
-            .add_system_to_stage(CoreStage::Last, spawn_effect);
+            .add_system_to_stage(CoreStage::Last, spawn_effect)
+            .add_system_to_stage(CoreStage::PostUpdate, spawn_flash)
+            .add_system(update_flash.exclusive_system());
     }
 }
 
@@ -147,5 +161,77 @@ fn spawn_effect(
             radius: effect.radius,
             power: ExplosionPower::None,
         })
+    }
+}
+
+#[derive(Component)]
+struct FlashState {
+    start: Duration,
+    child: Entity,
+}
+
+fn spawn_flash(
+    mut commands: Commands, entities: Query<(Entity, &Flash), Added<Flash>>, time: Res<GameTime>,
+) {
+    for (entity, flash) in entities.iter() {
+        let mut hack = BadEntityHack::default();
+        commands
+            .entity(entity)
+            .with_children(|parent| {
+                use bevy_lyon::*;
+                hack.set(
+                    parent
+                        .spawn_bundle(GeometryBuilder::build_as(
+                            &shapes::Circle {
+                                radius: flash.radius,
+                                center: default(),
+                            },
+                            DrawMode::Fill(FillMode::color(flash.color0)),
+                            default(),
+                        ))
+                        .insert(Depth::ImportantEffect)
+                        .id(),
+                );
+            })
+            .insert(FlashState {
+                start: time.now(),
+                child: hack.get(),
+            });
+    }
+}
+
+fn update_flash(
+    mut commands: Commands, mut entities: Query<(Entity, &Flash, &mut FlashState)>,
+    time: Res<GameTime>,
+) {
+    for (entity, flash, mut state) in entities.iter_mut() {
+        commands.entity(state.child).despawn_recursive();
+
+        let t = time.t_passed(state.start, flash.duration);
+        if t >= 1. {
+            commands
+                .entity(entity)
+                .remove::<Flash>()
+                .remove::<FlashState>();
+        } else {
+            let mut hack = BadEntityHack::default();
+            commands.entity(entity).with_children(|parent| {
+                use bevy_lyon::*;
+                hack.set(
+                    parent
+                        .spawn_bundle(GeometryBuilder::build_as(
+                            &shapes::Circle {
+                                radius: flash.radius,
+                                center: default(),
+                            },
+                            DrawMode::Fill(FillMode::color(lerp(flash.color0, flash.color1, t))),
+                            default(),
+                        ))
+                        .insert(Depth::ImportantEffect)
+                        .id(),
+                );
+            });
+            state.child = hack.get();
+        }
     }
 }
