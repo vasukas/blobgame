@@ -66,9 +66,9 @@ impl Settings {
 
     pub fn load() -> Option<Self> {
         match wasm_cookies::get(Self::NAME) {
-            Some(Ok(data)) => Self::load_ron(std::str::from_utf8(&Self::decode(&data).ok()?).ok()?),
+            Some(Ok(data)) => Self::load_ron(std::str::from_utf8(&Self::decode(&data)?).ok()?),
             Some(Err(error)) => {
-                log::warn!("wasm read error: {}", error);
+                log::warn!("cookie read error: {}", error);
                 None
             }
             None => None,
@@ -85,10 +85,11 @@ impl Settings {
                 s
             })
     }
-    fn decode(data: &str) -> anyhow::Result<Vec<u8>> {
+    fn decode(data: &str) -> Option<Vec<u8>> {
         use itertools::Itertools;
         if data.len() % 2 != 0 {
-            return Err(anyhow::anyhow!("Invalid length"));
+            log::error!("Invalid length");
+            return None;
         }
         data.chars()
             .tuples()
@@ -100,9 +101,13 @@ impl Settings {
                         s.push(n as u8);
                         Ok(s)
                     }
-                    None => Err(anyhow::anyhow!("Invalid character")),
+                    None => {
+                        log::error!("Invalid character");
+                        Err(())
+                    }
                 },
             )
+            .ok()
     }
 }
 

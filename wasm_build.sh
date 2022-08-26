@@ -2,6 +2,12 @@
 #
 # Script for building Rust games for wasm.
 # Tested only on Linux, but probably works on Windows too.
+# Public Domain or whatever.
+#
+# Builds crate for wasm.
+# Optionally runs it on local server and opens it in browser.
+# Optionally uploads build to itch.
+# If you don't use itch, ready to upload version should be in "target/wasm_package".
 #
 # Options:
 #     --run [ADDR:PORT]
@@ -11,7 +17,7 @@
 #
 #     --browser <PATH>
 #         Set path to the browser used with '--run'.
-#         By default xdg-open (Linux) is used to open default one.
+#         If not specified, usess xdg-open to open default one.
 #
 #     --http [ADDR:PORT]
 #         Same as --run but doesn't open browser
@@ -24,20 +30,21 @@
 #         PROJECT is a project name (as in URL);
 #         CHANNEL is a channel name, whatever you want.
 #            (see https://itch.io/docs/butler/pushing.html#channel-names)
+#         i.e. "username/awesome-game:web-beta"
 #
 #     --flags <STRING>
 #         Passed to "cargo build", unquoted.
-#         If not present, "--release --no-default-features" is used.
+#         If not specified, "--release --no-default-features" is used.
 #
 # Prerequisites:
-# * bash, cargo
+# * bash, cargo, sed
 # * wasm-bindgen (install with "cargo install wasm-bindgen-cli")
 # * python3 (for --run option)
 # * butler (for --itch option)
 #
 # Butler configuration:
 # * install: https://itch.io/docs/butler/installing.html
-#     at least on Arch there is already package for that (AUR)
+#     on Arch it's available as AUR package
 # * run "butler login" (needed only once)
 # * that's it!
 #
