@@ -95,7 +95,11 @@ fn explosion(
         let radius = lerp(state.e.radius * 0.05, state.e.radius, t);
         let color = lerp(state.e.color0, state.e.color1, t);
         let alpha = 1. - t * t;
-        let width = radius * 0.4;
+        let mut width = radius * 0.4;
+
+        if radius + width >= state.e.radius {
+            width = state.e.radius - radius
+        }
 
         use bevy_lyon::*;
         commands.entity(entity).with_children(|parent| {

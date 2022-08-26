@@ -45,26 +45,34 @@ Needs to be done ASAP
         + health
         + projectiles (ALL attacks in game are projectiles, techically)
         + respawn
-    - player weapons
-        - melee (F, cone; hitting projectile sends it at cursor)
-            ? charge to make shockwave which stuns enemies (also increases damage)
-        - gun (LMB, simple hitscan)
-            - hitting projectile will explode it and stop the shot
-                hitting most projectiles will simply destroy them
-            ? charge (break it on receiving damage or what? feels weak)
-        - gun (RMB, alt.fire - slow projectile)
-            ? charge (longer charge makes it fly even slower but deals more damage)
-                note that enemies also can destroy projectiles (but some attacks will still explode it)
-        - cannon (4, slowly re-charging ultrapowerful hitscan)
-            - if deals overdamage, makes enemy explode
-            ? figure out way to reduce usage on bosses
-                - takes moment before attack
-                - if you don't kill anything with it, it takes 1 HP
-                    (unless there are no enemies left on arena; also it never kills you)
-        ? figure out combos
-    - advanced movement
+    - player
         - dash
-        - combos with weapons
+        - fire
+            - ray: hits first target
+            - hitting projectile will destroy it
+            - hitting Volatile projectile will explode it
+            - during dash makes x2 damage if shot goes in 90 arc in dash direction
+            ? if button held, makes charged shot, which will fire a projectile when released
+        - punch
+            - hitting volatile projectile will make it do x2 damage and fly x2 faster
+                - also if it enemy's, makes it player's and deflects it to cursor
+            - during dash applied to whole trajectory, not just in front of player
+            ? does x2 damage if executed immediatly after dash (and x4 damage to punched projectile instead of x2)
+        - craft
+            - enemies drop parts: (group 1: sphere, ray; group 2: laser, magnet)
+            - parts can be combined, replacing current mega-weapon
+            - mega-weapons have limited uses and can't be stored
+            - weapons
+                - rocket (sphere + laser)
+                    - just projectile
+                - shield (sphere + magnet)
+                    - when equipped, appears in front of the player
+                    - absorbs projectiles
+                    - deflects rays (still gets damaged, but less)
+                - railgun (ray + laser)
+                    - just powerful ray which goes through all targets
+                - deflector (ray + magnet)
+                    - pushes all projectiles away (and turns them into player's)
     - advanced enemies
         - turret patterns
         - movement
@@ -72,11 +80,6 @@ Needs to be done ASAP
             - player-based
             ? collision avoidance
         - statistics
-    ? parts & combine
-        - temporary weapons
-        - collecting parts from enemies
-        - combine menu
-        ? actually some weapons parts can be shot off from enemies?
 - spawn waves
 - asteroids (just big rocks, what else is there?)
     - would be fun to split them in parts on hit
@@ -93,7 +96,7 @@ Needs to be done ASAP
 
 - graphics
     + explosions
-    - particles? like blood/oil splatters, debree from asters, etc
+    ? particles, like blood/oil splatters, debree from asters, etc
 
 - audio
     - play beats, controlled by level via state:

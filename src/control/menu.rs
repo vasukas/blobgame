@@ -83,6 +83,7 @@ fn show_menu(
                                     }
                                 } else {
                                     if ui.button("Play").clicked() {
+                                        *state = MenuState::None;
                                         spawn.despawn = Some(true)
                                     }
                                 }

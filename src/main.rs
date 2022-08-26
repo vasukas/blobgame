@@ -1,4 +1,4 @@
-use bevy::{app::AppExit, prelude::*, window::PresentMode};
+use bevy::{app::AppExit, log::LogSettings, prelude::*, window::PresentMode};
 use bevy_egui::EguiPlugin;
 use bevy_rapier2d::plugin::RapierPhysicsPlugin;
 use control::menu::PlayNowHack;
@@ -56,6 +56,10 @@ fn main() {
             ..default()
         })
     .insert_resource(ClearColor(Color::rgb(0.1, 0.1, 0.1)))
+    .insert_resource(LogSettings {
+        filter: "wgpu=error,symphonia=error".into(),
+        level: bevy::log::Level::INFO,
+    })
     .insert_resource(settings::Settings::load().unwrap_or_default())
     .add_plugins(DefaultPlugins)
     .add_plugin(EguiPlugin)
