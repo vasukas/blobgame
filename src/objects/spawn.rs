@@ -2,7 +2,7 @@ use super::{player::Player, stats::Stats};
 use crate::{
     common::*,
     mechanics::{ai::*, damage::Team, health::Health},
-    objects::weapon::Weapon,
+    objects::{loot::Loot, weapon::Weapon},
     present::{camera::WorldCamera, effect::SpawnEffect},
 };
 
@@ -63,6 +63,7 @@ fn spawn(
         }
 
         if !respawn {
+            control.wave_spawned = None;
             return;
         }
 
@@ -238,22 +239,22 @@ fn create_turret(commands: &mut Commands, origin: Vec2) -> Entity {
     use bevy_lyon::*;
 
     let radius = 0.6;
+    let mut commands = commands.spawn_bundle(GeometryBuilder::build_as(
+        &shapes::Polygon {
+            points: vec![
+                vec2(0., radius),
+                vec2(0., radius).rotated(150f32.to_radians()),
+                vec2(0., radius).rotated(-150f32.to_radians()),
+            ],
+            closed: true,
+        },
+        DrawMode::Outlined {
+            fill_mode: FillMode::color(Color::ORANGE),
+            outline_mode: StrokeMode::new(Color::YELLOW, 0.05),
+        },
+        Transform::new_2d(origin),
+    ));
     commands
-        .spawn_bundle(GeometryBuilder::build_as(
-            &shapes::Polygon {
-                points: vec![
-                    vec2(0., radius),
-                    vec2(0., radius).rotated(150f32.to_radians()),
-                    vec2(0., radius).rotated(-150f32.to_radians()),
-                ],
-                closed: true,
-            },
-            DrawMode::Outlined {
-                fill_mode: FillMode::color(Color::ORANGE),
-                outline_mode: StrokeMode::new(Color::YELLOW, 0.05),
-            },
-            Transform::new_2d(origin),
-        ))
         .insert(Depth::Player)
         .insert(SpawnEffect { radius: 1. })
         //
@@ -279,6 +280,12 @@ fn create_turret(commands: &mut Commands, origin: Vec2) -> Entity {
         //
         .insert(RigidBody::Fixed)
         .insert(PhysicsType::Solid.rapier())
-        .insert(Collider::ball(radius))
-        .id()
+        .insert(Collider::ball(radius));
+
+    use rand::*;
+    if thread_rng().gen_bool(0.33) {
+        commands.insert(Loot::Health { value: 2. });
+    }
+
+    commands.id()
 }

@@ -1,4 +1,5 @@
 use super::{
+    loot::LootPicker,
     spawn::{SpawnControl, WaveEnded},
     stats::Stats,
     weapon::Weapon,
@@ -64,7 +65,7 @@ fn spawn_player(
                 ..default()
             })
             .insert(RigidBody::KinematicPositionBased)
-            .insert(Collider::ball(radius * 0.9))
+            .insert(Collider::ball(radius * 0.66))
             .insert(PhysicsType::Solid.rapier())
             //
             .insert(Depth::Player)
@@ -89,7 +90,11 @@ fn spawn_player(
             //
             .insert(Team::Player)
             // TODO: increase health back
-            .insert(Health::new(3.).armor());
+            .insert(Health::new(3.).armor())
+            .insert(LootPicker {
+                radius: Player::RADIUS,
+                ..default()
+            });
     }
 }
 

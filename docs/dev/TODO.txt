@@ -34,7 +34,7 @@ Important bugs
 
 Needs to be done ASAP
 =====================
-- mechanics (minimal)
++ mechanics (minimal)
     + walls and player movement
         + spawn
         + simple kinematic controller
@@ -53,9 +53,7 @@ Needs to be done ASAP
                 + hit point is invalid if origin.x < 0 ??? (invalid angle math)
             + hitting projectile will destroy it
     + spawn waves
-    - asteroids (just big rocks, what else is there?)
-        - would be fun to split them in parts on hit
-    - healing? drops and from some enemies?
+    + healing loot
 
 - mechanics (intermediate)
     - interface etc
@@ -85,7 +83,10 @@ Needs to be done ASAP
             - player-based
     - simple statistics (point counting)
     - add lore
+        - rename the project
+        - add description on itch
     - add difficulty selection (may just scale HP/damage)
+    - expand healing mechanics
 
 - delayed features
     - player
@@ -100,6 +101,8 @@ Needs to be done ASAP
             ? does x2 damage if executed immediatly after dash (and x4 damage to punched projectile instead of x2)
     - advanced enemies
         - collision avoidance
+    - asteroids (just big rocks, what else is there?)
+        - would be fun to split them in parts on hit
 
 - mechanics (advanced)
     - bosses
@@ -114,6 +117,7 @@ Needs to be done ASAP
         - dust from asters
     + animated rays
     + world text
+    - player model (instead of the blob thing)
 
 - audio
     - play beats, controlled by level via state:
