@@ -24,9 +24,6 @@ pub enum Weapon {
     },
 }
 
-#[derive(SystemLabel)]
-pub struct WeaponSystemLabel;
-
 //
 
 pub struct WeaponPlugin;
@@ -34,7 +31,7 @@ pub struct WeaponPlugin;
 impl Plugin for WeaponPlugin {
     fn build(&self, app: &mut App) {
         app.add_event::<(Entity, Weapon)>()
-            .add_system(weapon.label(WeaponSystemLabel));
+            .add_system_to_stage(CoreStage::PostUpdate, weapon);
     }
 }
 
@@ -112,6 +109,13 @@ fn weapon(
                             color: Color::CYAN.with_a(0.4),
                             width: 0.4,
                             fade_time: Duration::from_millis(300),
+                            ..default()
+                        }),
+                        explosion_effect: Some(Explosion {
+                            color0: Color::WHITE,
+                            color1: Color::WHITE,
+                            time: Duration::from_millis(300),
+                            radius: 1.,
                             ..default()
                         }),
                         ..default()

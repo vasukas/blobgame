@@ -1,9 +1,6 @@
 use crate::{
     common::*,
-    objects::{
-        player::Player,
-        weapon::{Weapon, WeaponSystemLabel},
-    },
+    objects::{player::Player, weapon::Weapon},
 };
 
 /// What should be targeted
@@ -72,7 +69,7 @@ impl Plugin for AiPlugin {
             .add_system(update_target)
             .add_system(los_check.after(update_target))
             .add_system(face_target.after(los_check))
-            .add_system(attack_pattern.after(face_target).before(WeaponSystemLabel));
+            .add_system(attack_pattern.after(face_target));
     }
 }
 

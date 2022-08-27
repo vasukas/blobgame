@@ -94,7 +94,7 @@ impl Plugin for HealthPlugin {
         app.add_event::<(Entity, DeathEvent)>()
             .add_event::<(Entity, DamageEvent)>()
             .add_event::<(Entity, ReceivedDamage)>()
-            .add_system(die_after)
+            .add_system_to_stage(CoreStage::Last, die_after)
             .add_system(damage)
             .add_system_to_stage(CoreStage::First, despawn_dead.exclusive_system());
     }

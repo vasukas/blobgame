@@ -32,7 +32,7 @@ impl BevyTransform2d for Transform {
         self.translation.truncate()
     }
     fn angle_2d(&self) -> f32 {
-        self.rotation.angle_between(default())
+        self.rotation.to_euler(EulerRot::ZXY).0
     }
 }
 
@@ -58,9 +58,8 @@ impl BevyTransform2d for GlobalTransform {
         self.translation().truncate()
     }
     fn angle_2d(&self) -> f32 {
-        self.to_scale_rotation_translation()
-            .1
-            .angle_between(default())
+        // TODO: suboptimal
+        Transform::from(*self).angle_2d()
     }
 }
 

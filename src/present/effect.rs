@@ -5,7 +5,7 @@ use crate::{
 };
 
 // Event
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Default)]
 pub struct Explosion {
     pub origin: Vec2,
     pub color0: Color,
@@ -15,8 +15,9 @@ pub struct Explosion {
     pub power: ExplosionPower,
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Default)]
 pub enum ExplosionPower {
+    #[default]
     None,
     Small,
 }
@@ -101,11 +102,15 @@ fn explosion(
     hack: Query<Entity, With<TemporaryHack>>, mut sounds: EventWriter<Sound>,
     assets: Res<MyAssets>,
 ) {
+    let scale = 3.; // TODO: this is a hack to force lyon draw circles with more points
+
     for event in events.iter() {
         commands
-            .spawn_bundle(SpatialBundle::from_transform(Transform::new_2d(
-                event.origin,
-            )))
+            .spawn_bundle(SpatialBundle::from_transform({
+                let mut t = Transform::new_2d(event.origin);
+                t.scale = Vec3::new(1. / scale, 1. / scale, 1.);
+                t
+            }))
             .insert(GameplayObject)
             .insert(Depth::Effect)
             .insert(ExplosionState {
@@ -141,6 +146,9 @@ fn explosion(
         if radius + width >= state.e.radius {
             width = state.e.radius - radius
         }
+
+        let radius = radius * scale;
+        let width = width * scale;
 
         use bevy_lyon::*;
         commands.entity(entity).with_children(|parent| {

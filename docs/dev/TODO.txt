@@ -40,13 +40,13 @@ Needs to be done ASAP
         + respawn
     - player
         + dash
-            - dash to cursor, to the exact point if it's in range
+            + dash to cursor, to the exact point if it's in range
         - fire
             + ray: hits first target
             - fix ray
-                - damage applied multiple times (and effect spawned multiple times too)
-                - at least visually hit point often is invalid
-            - hitting projectile will destroy it
+                + damage applied multiple times (and effect spawned multiple times too)
+                + hit point is invalid if origin.x < 0 ??? (invalid angle math)
+            + hitting projectile will destroy it
             - hitting Volatile projectile will explode it
             - during dash makes x2 damage if shot goes in 90 arc in dash direction
             ? if button held, makes charged shot, which will fire a projectile when released
@@ -88,6 +88,7 @@ Needs to be done ASAP
             - player-based
             ? collision avoidance
         ? statistics
+    - add lore
 
 - mechanics (advanced)
     - bosses

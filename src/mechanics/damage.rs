@@ -1,5 +1,8 @@
 use super::{health::*, physics::CollectContacts};
-use crate::{common::*, present::effect::RayEffect};
+use crate::{
+    common::*,
+    present::effect::{Explosion, RayEffect},
+};
 
 #[derive(Component, Clone, Copy, PartialEq, Eq)]
 pub enum Team {
@@ -18,6 +21,7 @@ pub struct DieOnContact;
 #[derive(Component, Default)]
 pub struct DamageRay {
     pub spawn_effect: Option<RayEffect>, // length will be set on hit
+    pub explosion_effect: Option<Explosion>, // show explosion where it hits
 
                                          // TODO: other parameters
 }
@@ -83,7 +87,7 @@ fn die_on_contact(
 fn damage_ray(
     rays: Query<(&GlobalTransform, &DamageRay, &Damage, &Team)>,
     targets: Query<&Team, With<Health>>, mut damage_cmd: CmdWriter<DamageEvent>,
-    phy: Res<RapierContext>, mut commands: Commands,
+    phy: Res<RapierContext>, mut commands: Commands, mut explode: EventWriter<Explosion>,
 ) {
     let huge_distance = 1000.;
 
@@ -127,6 +131,10 @@ fn damage_ray(
                     .spawn_bundle(SpatialBundle::from_transform((*pos).into()))
                     .insert(GameplayObject)
                     .insert(effect);
+            }
+            if let Some(mut explosion) = ray.explosion_effect {
+                explosion.origin = point;
+                explode.send(explosion)
             }
         } else {
             log::warn!("ray didn't hit anything!");

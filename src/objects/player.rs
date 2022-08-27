@@ -126,6 +126,7 @@ fn controls(
                             } else {
                                 window.cursor - pos
                             },
+                            exact: *action == InputAction::TargetDash,
                         },
                     ));
                 }

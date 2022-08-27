@@ -15,7 +15,7 @@ pub struct KinematicController {
 /// Entity command
 pub enum KinematicCommand {
     Move { dir: Vec2 },
-    Dash { dir: Vec2 },
+    Dash { dir: Vec2, exact: bool },
 }
 
 #[derive(SystemLabel)]
@@ -72,8 +72,12 @@ fn kinematic_controller(
                     transform.add_2d(dir * speed);
                 }
             }
-            KinematicCommand::Dash { dir } => {
-                let speed = kinematic.dash_distance / kinematic.dash_duration.as_secs_f32();
+            KinematicCommand::Dash { dir, exact } => {
+                let speed = if exact && dir.length() < kinematic.dash_distance {
+                    dir.length() / kinematic.dash_duration.as_secs_f32()
+                } else {
+                    kinematic.dash_distance / kinematic.dash_duration.as_secs_f32()
+                };
                 kinematic.dash = Some((
                     dir.normalize_or_zero() * speed,
                     time.now() + kinematic.dash_duration,
