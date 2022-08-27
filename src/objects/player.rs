@@ -171,20 +171,27 @@ fn respawn(
         ctx.fill_screen(
             "player::respawn.bg",
             egui::Color32::from_black_alpha((t * 255.).min(255.) as u8),
+            egui::Order::Background,
             window.size,
         );
-        ctx.popup("player::respawn", Vec2::ZERO, false, |ui| {
-            ui.heading("~= YOU DIED =~");
+        ctx.popup(
+            "player::respawn",
+            Vec2::ZERO,
+            false,
+            egui::Order::Middle,
+            |ui| {
+                ui.heading("~= YOU DIED =~");
 
-            ui.horizontal(|ui| {
-                // TODO: where should be a better way to make multicolored text
-                ui.label("Press [");
-                ui.visuals_mut().override_text_color = Some(egui::Color32::RED);
-                ui.label(input_map.map[InputAction::Respawn].0.to_string());
-                ui.visuals_mut().override_text_color = None;
-                ui.label("] to restart from checkpoint");
-            });
-        });
+                ui.horizontal(|ui| {
+                    // TODO: where should be a better way to make multicolored text
+                    ui.label("Press [");
+                    ui.visuals_mut().override_text_color = Some(egui::Color32::RED);
+                    ui.label(input_map.map[InputAction::Respawn].0.to_string());
+                    ui.visuals_mut().override_text_color = None;
+                    ui.label("] to restart from checkpoint");
+                });
+            },
+        );
         for action in input.iter() {
             match action {
                 InputAction::Respawn => spawn.despawn = Some(true),

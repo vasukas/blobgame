@@ -60,86 +60,97 @@ fn show_menu(
             ctx.fill_screen(
                 "menu::show_menu.bg",
                 egui::Color32::from_black_alpha(255),
+                egui::Order::Foreground,
                 window.size,
             );
-            ctx.popup("menu::show_menu", vec2(0., 0.), false, |ui| {
-                egui::ScrollArea::both().show(ui, |ui| {
-                    ui.horizontal(|ui| {
-                        // root left pane
-                        ui.vertical(|ui| {
-                            ui.group(|ui| {
-                                ui.heading("BLOBFIGHT");
-                                ui.label(""); // separator
+            ctx.popup(
+                "menu::show_menu",
+                vec2(0., 0.),
+                false,
+                egui::Order::Foreground,
+                |ui| {
+                    egui::ScrollArea::both().show(ui, |ui| {
+                        ui.horizontal(|ui| {
+                            // root left pane
+                            ui.vertical(|ui| {
+                                ui.group(|ui| {
+                                    ui.heading("BLOBFIGHT");
+                                    ui.label(""); // separator
 
-                                if ingame {
-                                    if ui.button("Continue").clicked() {
-                                        *state = MenuState::None
+                                    if ingame {
+                                        if ui.button("Continue").clicked() {
+                                            *state = MenuState::None
+                                        }
+                                        if ui.button("Exit to main menu").clicked() {
+                                            spawn.despawn = Some(false)
+                                        }
+                                    } else {
+                                        if ui.button("Play").clicked() {
+                                            *state = MenuState::None;
+                                            spawn.despawn = Some(true)
+                                        }
                                     }
-                                    if ui.button("Exit to main menu").clicked() {
-                                        spawn.despawn = Some(false)
+                                    #[cfg(not(target_arch = "wasm32"))]
+                                    if ui.button("Exit to desktop").clicked() {
+                                        exit_app.send_default()
                                     }
-                                } else {
-                                    if ui.button("Play").clicked() {
-                                        *state = MenuState::None;
-                                        spawn.despawn = Some(true)
-                                    }
-                                }
-                                #[cfg(not(target_arch = "wasm32"))]
-                                if ui.button("Exit to desktop").clicked() {
-                                    exit_app.send_default()
-                                }
 
-                                ui.label(""); // separator
-                                ui.heading("SETTINGS");
-                                let was_fullscreen = settings.fullscreen;
-                                settings.menu(ui);
-                                if was_fullscreen != settings.fullscreen {
-                                    set_fullscreen(&mut windows, settings.fullscreen);
-                                }
+                                    ui.label(""); // separator
+                                    ui.heading("SETTINGS");
+                                    let was_fullscreen = settings.fullscreen;
+                                    settings.menu(ui);
+                                    if was_fullscreen != settings.fullscreen {
+                                        set_fullscreen(&mut windows, settings.fullscreen);
+                                    }
 
-                                ui.label(""); // separator
-                                ui.label("Made with Bevy Engine");
-                                // TODO: add credits?
+                                    ui.label(""); // separator
+                                    ui.label("Made with Bevy Engine");
+                                    // TODO: add credits?
+                                });
                             });
-                        });
 
-                        // root right pane
-                        ui.vertical(|ui| {
-                            ui.group(|ui| {
-                                ui.heading("CONTROLS");
+                            // root right pane
+                            ui.vertical(|ui| {
+                                ui.group(|ui| {
+                                    ui.heading("CONTROLS");
 
-                                let mut help = vec![];
-                                for (i, (action, (key, ty))) in input_map.map.iter().enumerate() {
-                                    help.push((
-                                        action.description().to_string(),
-                                        format!("{} ({})", key.to_string(), ty.description()),
-                                    ));
-                                    if i % 4 == 3 {
-                                        help.push(("".to_string(), "".to_string()));
+                                    let mut help = vec![];
+                                    for (i, (action, (key, ty))) in input_map.map.iter().enumerate()
+                                    {
+                                        help.push((
+                                            action.description().to_string(),
+                                            format!("{} ({})", key.to_string(), ty.description()),
+                                        ));
+                                        if i % 4 == 3 {
+                                            help.push(("".to_string(), "".to_string()));
+                                        }
                                     }
-                                }
-                                help.push(("".to_string(), "".to_string()));
-                                help.push(("ESC or M".to_string(), "toggle this menu".to_string()));
-                                help.push(("Ctrl + Q".to_string(), "exit app".to_string()));
+                                    help.push(("".to_string(), "".to_string()));
+                                    help.push((
+                                        "ESC or M".to_string(),
+                                        "toggle this menu".to_string(),
+                                    ));
+                                    help.push(("Ctrl + Q".to_string(), "exit app".to_string()));
 
-                                // poor man's table
-                                ui.horizontal(|ui| {
-                                    ui.vertical(|ui| {
-                                        for v in &help {
-                                            ui.label(&v.0);
-                                        }
-                                    });
-                                    ui.vertical(|ui| {
-                                        for v in &help {
-                                            ui.label(&v.1);
-                                        }
+                                    // poor man's table
+                                    ui.horizontal(|ui| {
+                                        ui.vertical(|ui| {
+                                            for v in &help {
+                                                ui.label(&v.0);
+                                            }
+                                        });
+                                        ui.vertical(|ui| {
+                                            for v in &help {
+                                                ui.label(&v.1);
+                                            }
+                                        });
                                     });
                                 });
                             });
                         });
                     });
-                });
-            });
+                },
+            );
         }
     }
 }

@@ -17,7 +17,9 @@ General reminder
 Important bugs
 ==============
 - really important
-    - sometimes screen is black - egui actually draws windows in random order!
+    - sometimes screen is black - egui actually draws windows in random order??
+        + fixed (except for main menu, which seems to work correctly anyway)
+        - not thoroughly tested
 - reminder
     - playtest fucking EVERYTHING
     - DONT FORGET TO GREP AND FIX ALL TODOS
@@ -83,6 +85,7 @@ Needs to be done ASAP
             - player-based
     - simple statistics (point counting)
     - add lore
+    - add difficulty selection (may just scale HP/damage)
 
 - delayed features
     - player
