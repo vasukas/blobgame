@@ -41,20 +41,12 @@ Needs to be done ASAP
     - player
         + dash
             + dash to cursor, to the exact point if it's in range
-        - fire
+        + fire
             + ray: hits first target
-            - fix ray
+            + fix ray
                 + damage applied multiple times (and effect spawned multiple times too)
                 + hit point is invalid if origin.x < 0 ??? (invalid angle math)
             + hitting projectile will destroy it
-            - hitting Volatile projectile will explode it
-            - during dash makes x2 damage if shot goes in 90 arc in dash direction
-            ? if button held, makes charged shot, which will fire a projectile when released
-        - punch
-            - hitting volatile projectile will make it do x2 damage and fly x2 faster
-                - also if it enemy's, makes it player's and deflects it to cursor
-            - during dash applied to whole trajectory, not just in front of player
-            ? does x2 damage if executed immediatly after dash (and x4 damage to punched projectile instead of x2)
     - spawn waves
     - asteroids (just big rocks, what else is there?)
         - would be fun to split them in parts on hit
@@ -89,6 +81,18 @@ Needs to be done ASAP
             ? collision avoidance
         ? statistics
     - add lore
+
+- delayed features
+    - player
+        - fire
+            - hitting Volatile projectile will explode it
+            - during dash makes x2 damage if shot goes in 90 arc in dash direction
+            ? if button held, makes charged shot, which will fire a projectile when released
+        - punch
+            - hitting volatile projectile will make it do x2 damage and fly x2 faster
+                - also if it enemy's, makes it player's and deflects it to cursor
+            - during dash applied to whole trajectory, not just in front of player
+            ? does x2 damage if executed immediatly after dash (and x4 damage to punched projectile instead of x2)
 
 - mechanics (advanced)
     - bosses
