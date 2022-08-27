@@ -3,23 +3,27 @@ use crate::common::*;
 /// Note that this can't be changed after initial creation
 #[derive(Component, Clone, Copy)]
 pub enum Depth {
+    BackgroundGrid,
     Light,
     Player,
     Wall,
     Projectile,
     Effect,
     ImportantEffect,
+    WorldText,
 }
 
 impl Depth {
     fn z_exact(self) -> f32 {
         match self {
+            Depth::BackgroundGrid => 50.,
             Depth::Light => 110.,
             Depth::Player => 300.,
             Depth::Projectile => 500.,
             Depth::Wall => 800.,
             Depth::Effect => 900.,
             Depth::ImportantEffect => 950.,
+            Depth::WorldText => 970.,
         }
     }
 

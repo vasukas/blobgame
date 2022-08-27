@@ -3,6 +3,7 @@ use crate::common::*;
 pub mod camera;
 pub mod depth;
 pub mod effect;
+pub mod hud_elements;
 pub mod light;
 pub mod simple_sprite;
 pub mod sound;
@@ -16,6 +17,7 @@ impl Plugin for PresentationPlugin {
             .add_plugin(light::LightPlugin)
             .add_plugin(depth::DepthPlugin)
             .add_plugin(sound::SoundPlugin)
-            .add_plugin(effect::EffectPlugin);
+            .add_plugin(effect::EffectPlugin)
+            .add_plugin(hud_elements::HudElementsPlugin);
     }
 }

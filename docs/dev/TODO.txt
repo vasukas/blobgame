@@ -50,7 +50,7 @@ Needs to be done ASAP
                 + damage applied multiple times (and effect spawned multiple times too)
                 + hit point is invalid if origin.x < 0 ??? (invalid angle math)
             + hitting projectile will destroy it
-    - spawn waves
+    + spawn waves
     - asteroids (just big rocks, what else is there?)
         - would be fun to split them in parts on hit
     - healing? drops and from some enemies?
@@ -110,6 +110,7 @@ Needs to be done ASAP
         + hit sparks
         - dust from asters
     + animated rays
+    + world text
 
 - audio
     - play beats, controlled by level via state:
@@ -173,6 +174,7 @@ Would be nice to have but not important
     - remappable controls (just make UI for InputMap)
     - play sound when adjusting volume - when user stops moving slider
 - player cursor / laser sight - to indicate where shots will go
+- reduce amount of exclusive systems
 ? gamepad and touch support - probably will be unplayable
 
 

@@ -10,10 +10,6 @@ use bevy_egui::EguiSettings;
 #[derive(Default)]
 pub struct PlayNowHack(pub bool);
 
-/// In-game UI must be drawn before this!
-#[derive(SystemLabel)]
-pub struct UiMenuSystem;
-
 //
 
 pub struct MenuPlugin;
@@ -22,7 +18,7 @@ impl Plugin for MenuPlugin {
     fn build(&self, app: &mut App) {
         app.init_resource::<MenuState>()
             .init_resource::<PlayNowHack>()
-            .add_system(show_menu.label(UiMenuSystem))
+            .add_system(show_menu)
             .add_system_to_stage(CoreStage::First, set_time)
             .add_startup_system(setup)
             .add_startup_system(play_now_hack);
@@ -46,7 +42,7 @@ fn show_menu(
         match *state {
             MenuState::None => *state = MenuState::Root,
             MenuState::Root => {
-                if spawn.spawned {
+                if spawn.is_game_running() {
                     *state = MenuState::None
                 }
             }
@@ -60,7 +56,7 @@ fn show_menu(
     match *state {
         MenuState::None => (),
         MenuState::Root => {
-            let ingame = spawn.spawned;
+            let ingame = spawn.is_game_running();
             ctx.fill_screen(
                 "menu::show_menu.bg",
                 egui::Color32::from_black_alpha(255),
