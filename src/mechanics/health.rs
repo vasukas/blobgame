@@ -72,11 +72,13 @@ impl Damage {
 pub struct DamageEvent {
     pub damage: Damage,
     pub team: Team,
+    pub point: Vec2,
 }
 
 /// Entity event
 pub struct ReceivedDamage {
     pub damage: Damage,
+    pub point: Vec2,
 }
 
 /// Entity event
@@ -131,6 +133,7 @@ fn damage(
                 entity,
                 ReceivedDamage {
                     damage: event.damage,
+                    point: event.point,
                 },
             ));
         }

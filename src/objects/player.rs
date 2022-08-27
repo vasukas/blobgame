@@ -1,4 +1,4 @@
-use super::spawn::SpawnControl;
+use super::{spawn::SpawnControl, weapon::Weapon};
 use crate::{
     common::*,
     control::{
@@ -30,7 +30,7 @@ pub struct Player {
 }
 
 impl Player {
-    const RADIUS: f32 = 0.5;
+    pub const RADIUS: f32 = 0.5;
     const MAX_EXHAUSTION: f32 = 3.;
     const DASH_DURATION: Duration = Duration::from_millis(250);
 
@@ -93,6 +93,7 @@ fn controls(
     mut player: Query<(Entity, &GlobalTransform, &mut Player)>,
     mut input: EventReader<InputAction>, mut kinematic: CmdWriter<KinematicCommand>,
     window: Res<WindowInfo>, time: Res<GameTime>, mut commands: Commands,
+    mut weapon: CmdWriter<Weapon>,
 ) {
     let (entity, pos, mut player) = match player.get_single_mut() {
         Ok(v) => v,
@@ -129,6 +130,14 @@ fn controls(
                     ));
                 }
             }
+
+            InputAction::Fire => weapon.send((
+                entity,
+                Weapon::PlayerGun {
+                    dir: window.cursor - pos,
+                },
+            )),
+
             _ => (),
         }
     }

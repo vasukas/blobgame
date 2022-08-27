@@ -11,9 +11,8 @@ pub enum InputAction {
     MoveDown,
 
     Fire,
-    FireAlt,
+    FireMega,
     Melee,
-    Cannon,
 
     Dash,
     TargetDash,
@@ -29,9 +28,8 @@ impl InputAction {
             InputAction::MoveDown => "Move down",
 
             InputAction::Fire => "Fire",
-            InputAction::FireAlt => "FireAlt",
+            InputAction::FireMega => "Fire Megagun",
             InputAction::Melee => "Melee",
-            InputAction::Cannon => "Cannon",
 
             InputAction::Dash => "Dash",
             InputAction::TargetDash => "Dash to cursor",
@@ -86,10 +84,9 @@ impl Default for InputMap {
                 MoveUp => (InputKey::Key(KeyCode::W), InputType::Hold),
                 MoveDown => (InputKey::Key(KeyCode::S), InputType::Hold),
 
-                InputAction::Fire => (InputKey::Button(MouseButton::Left), InputType::Hold),
-                InputAction::FireAlt => (InputKey::Button(MouseButton::Right), InputType::Hold),
-                InputAction::Melee => (InputKey::Key(KeyCode::F), InputType::Hold),
-                InputAction::Cannon => (InputKey::Key(KeyCode::V), InputType::Click),
+                InputAction::Fire => (InputKey::Button(MouseButton::Left), InputType::Click),
+                InputAction::FireMega => (InputKey::Button(MouseButton::Right), InputType::Hold),
+                InputAction::Melee => (InputKey::Key(KeyCode::F), InputType::Click),
 
                 InputAction::Dash => (InputKey::Key(KeyCode::LShift), InputType::Click),
                 InputAction::TargetDash => (InputKey::Key(KeyCode::Space), InputType::Click),

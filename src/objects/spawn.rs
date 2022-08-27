@@ -1,7 +1,7 @@
 use super::player::Player;
 use crate::{
     common::*,
-    mechanics::{ai::*, damage::Team},
+    mechanics::{ai::*, damage::Team, health::Health},
     objects::weapon::Weapon,
     present::{camera::WorldCamera, effect::SpawnEffect},
 };
@@ -157,6 +157,7 @@ fn spawn(
                         )
                         .stage(1, Duration::from_secs(1), AttackStage::Wait),
                 )
+                .insert(Health::new(2.))
                 //
                 .insert(RigidBody::Fixed)
                 .insert(PhysicsType::Solid.rapier())

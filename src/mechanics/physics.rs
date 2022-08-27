@@ -8,6 +8,7 @@ pub enum PhysicsType {
     Solid,
     Projectile,
     MovementController,
+    Hitscan,
 }
 
 impl PhysicsType {
@@ -15,11 +16,13 @@ impl PhysicsType {
         let obstacle = 1;
         let projectile = 2;
         let mov_controller = 4;
+        let hitscan = 8;
 
         let (memberships, filters) = match self {
-            PhysicsType::Solid => (obstacle, obstacle | projectile | mov_controller),
-            PhysicsType::Projectile => (projectile, obstacle),
+            PhysicsType::Solid => (obstacle, obstacle | projectile | mov_controller | hitscan),
+            PhysicsType::Projectile => (projectile, obstacle | hitscan),
             PhysicsType::MovementController => (mov_controller, obstacle),
+            PhysicsType::Hitscan => (hitscan, obstacle | projectile),
         };
         CollisionGroups {
             memberships,

@@ -17,17 +17,13 @@ General reminder
 Important bugs
 ==============
 + ESC/F10/F3 buttons might not work in browsers! they're used by browsers themselves
-- ask about this on discord
-    - (WASM; WORKS IN CHROMIUM) switching to fullscreen SOMETIMES doesn't work on itch.io with Firefox
-        Window size changes, but actual view is distorted with horizontal black bars.
-        At least in some cases, pressing fullscreen button quickly just after start works fine.
-        Happens if with python server too, but fixes itself after about five seconds.
-        Am using bevy_web_resizer; without it size changes are completely ignored.
+- switching to fullscreen SOMETIMES doesn't work on itch.io with Firefox
 - playtest fucking EVERYTHING
 + add LICENSE file and list used assets, with source and license
 - DONT FORGET TO GREP AND FIX ALL TODOS
 - (sometimes) bevy_kira_audio::audio_output: Failed to set volume for instance: CommandQueueFul
 - sometimes player seems to be hit by projectiles but isn't damaged
+- sometimes screen is black - egui actually draws windows in random order!
 ...
 
 
@@ -44,8 +40,12 @@ Needs to be done ASAP
         + respawn
     - player
         + dash
+            - dash to cursor, to the exact point if it's in range
         - fire
-            - ray: hits first target
+            + ray: hits first target
+            - fix ray
+                - damage applied multiple times (and effect spawned multiple times too)
+                - at least visually hit point often is invalid
             - hitting projectile will destroy it
             - hitting Volatile projectile will explode it
             - during dash makes x2 damage if shot goes in 90 arc in dash direction

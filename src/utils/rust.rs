@@ -38,3 +38,19 @@ impl<Iter: ExactSizeIterator + Clone> RandomSelect<Iter::Item> for Iter {
         }
     }
 }
+
+//
+
+pub trait OptionExtended<T> {
+    /// Folds on self
+    fn while_some(self, f: impl FnMut(T) -> Self);
+}
+
+impl<T> OptionExtended<T> for Option<T> {
+    fn while_some(self, mut f: impl FnMut(T) -> Self) {
+        let mut next = self;
+        while let Some(value) = next {
+            next = f(value)
+        }
+    }
+}

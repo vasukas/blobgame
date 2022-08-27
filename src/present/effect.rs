@@ -53,6 +53,20 @@ pub struct HitSparks {
     pub damage: f32,
 }
 
+/// Don't generate on damage / on death sparks
+#[derive(Component)]
+pub struct DontSparkMe;
+
+#[derive(Component, Clone, Copy, Default)]
+pub struct RayEffect {
+    pub color: Color,
+    pub length: f32,
+    pub width: f32,
+    pub duration: Duration,
+    pub fade_time: Duration,
+    pub destroy_parent: bool,
+}
+
 //
 
 pub struct EffectPlugin;
@@ -67,7 +81,8 @@ impl Plugin for EffectPlugin {
             .add_system_to_stage(CoreStage::PostUpdate, spawn_flash)
             .add_system(update_flash.exclusive_system())
             .add_system(hit_sparks)
-            .add_system_to_stage(CoreStage::PostUpdate, hit_sparks_on_damage);
+            .add_system_to_stage(CoreStage::PostUpdate, hit_sparks_on_damage)
+            .add_system(ray.exclusive_system());
     }
 }
 
@@ -213,37 +228,22 @@ fn spawn_flash(
 }
 
 fn update_flash(
-    mut commands: Commands, mut entities: Query<(Entity, &Flash, &mut FlashState)>,
-    time: Res<GameTime>,
+    mut commands: Commands, entities: Query<(Entity, &Flash, &FlashState)>,
+    mut flashes: Query<&mut bevy_lyon::DrawMode>, time: Res<GameTime>,
 ) {
-    for (entity, flash, mut state) in entities.iter_mut() {
-        commands.entity(state.child).despawn_recursive();
-
+    for (entity, flash, state) in entities.iter() {
         let t = time.t_passed(state.start, flash.duration);
         if t >= 1. {
+            commands.entity(state.child).despawn_recursive();
             commands
                 .entity(entity)
                 .remove::<Flash>()
                 .remove::<FlashState>();
         } else {
-            let mut hack = BadEntityHack::default();
-            commands.entity(entity).with_children(|parent| {
+            if let Ok(mut draw) = flashes.get_mut(state.child) {
                 use bevy_lyon::*;
-                hack.set(
-                    parent
-                        .spawn_bundle(GeometryBuilder::build_as(
-                            &shapes::Circle {
-                                radius: flash.radius,
-                                center: default(),
-                            },
-                            DrawMode::Fill(FillMode::color(lerp(flash.color0, flash.color1, t))),
-                            default(),
-                        ))
-                        .insert(Depth::ImportantEffect)
-                        .id(),
-                );
-            });
-            state.child = hack.get();
+                *draw = DrawMode::Fill(FillMode::color(lerp(flash.color0, flash.color1, t)))
+            }
         }
     }
 }
@@ -318,19 +318,71 @@ fn hit_sparks(
 
 fn hit_sparks_on_damage(
     mut sparks: EventWriter<HitSparks>, mut damage: CmdReader<ReceivedDamage>,
-    mut entities: Query<&GlobalTransform, Or<(With<Health>, With<Damage>)>>,
+    mut entities: Query<&GlobalTransform, (Or<(With<Health>, With<Damage>)>, Without<DontSparkMe>)>,
     mut death: CmdReader<DeathEvent>,
 ) {
-    damage.iter_cmd_mut(&mut entities, |event, pos| {
+    damage.iter_cmd_mut(&mut entities, |event, _| {
         sparks.send(HitSparks {
-            origin: pos.pos_2d(),
+            origin: event.point,
             damage: event.damage.value,
         })
     });
+    // this is intended for projectiles which hit walls
     death.iter_cmd_mut(&mut entities, |_, pos| {
         sparks.send(HitSparks {
             origin: pos.pos_2d(),
             damage: 1.5,
         })
     });
+}
+
+#[derive(Component)]
+struct RayState {
+    effect: RayEffect,
+    start: Duration,
+}
+
+fn ray(
+    mut commands: Commands, new: Query<(Entity, &RayEffect), Added<RayEffect>>,
+    mut rays: Query<(Entity, &RayState, &mut bevy_lyon::DrawMode, &Parent)>, time: Res<GameTime>,
+) {
+    use bevy_lyon::*;
+
+    // new rays
+    for (entity, effect) in new.iter() {
+        commands.entity(entity).with_children(|parent| {
+            parent
+                .spawn_bundle(GeometryBuilder::build_as(
+                    &shapes::Line(Vec2::ZERO, Vec2::Y * effect.length),
+                    DrawMode::Stroke(StrokeMode::new(effect.color, effect.width)),
+                    default(),
+                ))
+                .insert(Depth::ImportantEffect)
+                .insert(RayState {
+                    effect: *effect,
+                    start: time.now(),
+                });
+        });
+    }
+
+    // update rays
+    for (entity, state, mut draw, parent) in rays.iter_mut() {
+        let t = time.t_passed(state.start, state.effect.duration);
+        if t >= 1. {
+            let t = time.t_passed(state.start + state.effect.duration, state.effect.fade_time);
+            if t >= 1. {
+                if state.effect.destroy_parent {
+                    commands.entity(parent.get()).despawn_recursive();
+                } else {
+                    commands.entity(entity).despawn_recursive();
+                }
+            } else {
+                let t = 1. - t;
+                *draw = DrawMode::Stroke(StrokeMode::new(
+                    state.effect.color.with_a(t),
+                    state.effect.width * t,
+                ));
+            }
+        }
+    }
 }

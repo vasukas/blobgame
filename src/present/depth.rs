@@ -44,18 +44,17 @@ impl Plugin for DepthPlugin {
 
 fn set_depth(
     mut entities: Query<(&mut Transform, &Depth, Option<&Parent>), Added<Depth>>,
-    all: Query<(&Depth, Option<&Parent>)>,
+    parents: Query<(&Depth, Option<&Parent>)>,
 ) {
     for (mut transform, depth, parent) in entities.iter_mut() {
         let mut z = depth.z_fuzzy();
 
-        let mut parent = parent.map(|p| p.get());
-        while let Some(entity) = parent {
-            if let Ok((depth, grandparent)) = all.get(entity) {
+        parent.map(|p| p.get()).while_some(|parent| {
+            parents.get(parent).ok().and_then(|(depth, next_parent)| {
                 z -= depth.z_exact();
-                parent = grandparent.map(|p| p.get());
-            }
-        }
+                next_parent.map(|p| p.get())
+            })
+        });
 
         transform.translation.z = z;
     }
