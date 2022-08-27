@@ -8,7 +8,8 @@ use crate::{
     control::input::{InputAction, InputMap},
     mechanics::{damage::Team, health::Health, movement::*},
     present::{
-        camera::WindowInfo, effect::Flash, simple_sprite::SimpleSprite, sound::AudioListener,
+        camera::WindowInfo, effect::Flash, hud_elements::WorldText, simple_sprite::SimpleSprite,
+        sound::AudioListener,
     },
 };
 
@@ -222,8 +223,51 @@ fn update_player(mut player: Query<(&mut Player, &mut Health)>, time: Res<GameTi
     }
 }
 
+#[derive(Default)]
+struct NextWaveMenu {
+    text: Option<Entity>,
+}
+
 fn next_wave(
     mut wave: EventReader<WaveEnded>, mut stats: ResMut<Stats>, mut spawn: ResMut<SpawnControl>,
     mut commands: Commands, mut input: EventReader<InputAction>, input_map: Res<InputMap>,
+    mut data: Local<NextWaveMenu>,
 ) {
+    let input_action = InputAction::Respawn;
+
+    // begin user input
+    if wave.iter().any(|_| true) {
+        data.text = Some(
+            commands
+                .spawn_bundle(SpatialBundle::default())
+                .insert(WorldText {
+                    text: vec![
+                        ("Press [".to_string(), Color::WHITE),
+                        (input_map.map[input_action].0.to_string(), Color::RED),
+                        ("] for next wave".to_string(), Color::WHITE),
+                    ],
+                    size: 2.,
+                })
+                .id(),
+        );
+    }
+    // waiting for user input
+    else if let Some(text) = data.text {
+        if spawn.is_game_running() {
+            for input in input.iter() {
+                if *input == input_action {
+                    stats.wave += 1;
+                    spawn.despawn = Some(true);
+
+                    commands.entity(text).despawn_recursive();
+                    data.text = None;
+                    break;
+                }
+            }
+        } else {
+            // npott anymore
+            commands.entity(text).despawn_recursive();
+            data.text = None;
+        }
+    }
 }

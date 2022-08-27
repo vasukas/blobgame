@@ -32,6 +32,8 @@ fn load_the_font(mut font: ResMut<TheFont>, server: Res<AssetServer>) {
 fn spawn_world_text(
     mut commands: Commands, text: Query<(Entity, &WorldText), Added<WorldText>>, font: Res<TheFont>,
 ) {
+    let real_text_size = 32.;
+
     for (entity, text) in text.iter() {
         commands.entity(entity).with_children(|parent| {
             parent
@@ -44,13 +46,18 @@ fn spawn_world_text(
                                 value: string.clone(),
                                 style: TextStyle {
                                     font: font.font.clone(),
-                                    font_size: text.size,
+                                    font_size: real_text_size,
                                     color: *color,
                                 },
                             })
                             .collect(),
                         alignment: TextAlignment::CENTER,
                     },
+                    transform: Transform::from_scale(Vec3::new(
+                        text.size / real_text_size,
+                        text.size / real_text_size,
+                        1.,
+                    )),
                     ..default()
                 })
                 .insert(Depth::WorldText);
