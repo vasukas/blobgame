@@ -2,7 +2,7 @@ use super::{player::Player, stats::Stats};
 use crate::{
     common::*,
     mechanics::{ai::*, damage::Team, health::Health},
-    objects::{loot::Loot, weapon::Weapon},
+    objects::{grid::GridBar, loot::Loot, weapon::Weapon},
     present::{camera::WorldCamera, effect::SpawnEffect},
 };
 
@@ -27,7 +27,11 @@ impl SpawnControl {
 }
 
 /// Event, sent from here
-pub struct WaveEnded;
+#[derive(PartialEq, Eq)]
+pub enum WaveEvent {
+    Started,
+    Ended,
+}
 
 //
 
@@ -37,7 +41,7 @@ impl Plugin for SpawnPlugin {
     fn build(&self, app: &mut App) {
         app.init_resource::<SpawnControl>()
             .init_resource::<WaveData>()
-            .add_event::<WaveEnded>()
+            .add_event::<WaveEvent>()
             .add_system_to_stage(CoreStage::First, spawn.exclusive_system())
             .add_system(wave_end_detect);
     }
@@ -52,6 +56,7 @@ fn spawn(
     mut commands: Commands, mut control: ResMut<SpawnControl>,
     entities: Query<Entity, With<GameplayObject>>, mut camera: Query<&mut WorldCamera>,
     mut stats: ResMut<Stats>, mut wave_data: ResMut<WaveData>,
+    mut wave_event: EventWriter<WaveEvent>,
 ) {
     if let Some(respawn) = control.despawn.take() {
         // despawn all objects only if it's despawn or respawn, but not next if it's next wave
@@ -75,6 +80,7 @@ fn spawn(
 
         control.wave_spawned = Some(stats.wave);
         *wave_data = default();
+        wave_event.send(WaveEvent::Started);
 
         //
 
@@ -113,8 +119,7 @@ fn spawn(
                 ));
 
             // background grid
-            let cell_size = Player::DASH_DISTANCE;
-            let draw_mode = DrawMode::Stroke(StrokeMode::new(Color::BLUE.with_a(0.005), 0.2));
+            let cell_size = Player::DASH_DISTANCE / 2.;
             for i in 0..10000 {
                 let x = i as f32 * cell_size;
                 if x >= world_size.x / 2. {
@@ -124,11 +129,18 @@ fn spawn(
                     commands
                         .spawn_bundle(GeometryBuilder::build_as(
                             &shapes::Line(vec2(x, -world_size.y / 2.), vec2(x, world_size.y / 2.)),
-                            draw_mode,
+                            DrawMode::Stroke(StrokeMode::color(Color::NONE)),
                             default(),
                         ))
                         .insert(GameplayObject)
-                        .insert(Depth::BackgroundGrid);
+                        .insert(Depth::BackgroundGrid)
+                        .insert(GridBar {
+                            coord: x / world_size.x * 2.,
+                            vertical: true,
+                        });
+                    if x == 0. {
+                        break;
+                    }
                 }
             }
             for i in 0..10000 {
@@ -140,11 +152,18 @@ fn spawn(
                     commands
                         .spawn_bundle(GeometryBuilder::build_as(
                             &shapes::Line(vec2(-world_size.x / 2., y), vec2(world_size.x / 2., y)),
-                            draw_mode,
+                            DrawMode::Stroke(StrokeMode::color(Color::NONE)),
                             default(),
                         ))
                         .insert(GameplayObject)
-                        .insert(Depth::BackgroundGrid);
+                        .insert(Depth::BackgroundGrid)
+                        .insert(GridBar {
+                            coord: y / world_size.y * 2.,
+                            vertical: false,
+                        });
+                    if y == 0. {
+                        break;
+                    }
                 }
             }
 
@@ -200,13 +219,13 @@ fn spawn(
 
 fn wave_end_detect(
     control: Res<SpawnControl>, entities: Query<()>, mut wave_data: ResMut<WaveData>,
-    mut event: EventWriter<WaveEnded>,
+    mut event: EventWriter<WaveEvent>,
 ) {
     if control.is_game_running() {
         let was_empty = wave_data.entities.is_empty();
         wave_data.entities.retain(|e| entities.contains(*e));
         if wave_data.entities.is_empty() && !was_empty {
-            event.send(WaveEnded)
+            event.send(WaveEvent::Ended)
         }
     }
 }

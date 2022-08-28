@@ -1,6 +1,6 @@
 use super::{
     loot::LootPicker,
-    spawn::{SpawnControl, WaveEnded},
+    spawn::{SpawnControl, WaveEvent},
     stats::Stats,
     weapon::Weapon,
 };
@@ -234,14 +234,14 @@ struct NextWaveMenu {
 }
 
 fn next_wave(
-    mut wave: EventReader<WaveEnded>, mut stats: ResMut<Stats>, mut spawn: ResMut<SpawnControl>,
+    mut wave: EventReader<WaveEvent>, mut stats: ResMut<Stats>, mut spawn: ResMut<SpawnControl>,
     mut commands: Commands, mut input: EventReader<InputAction>, input_map: Res<InputMap>,
     mut data: Local<NextWaveMenu>,
 ) {
     let input_action = InputAction::Respawn;
 
     // begin user input
-    if wave.iter().any(|_| true) {
+    if wave.iter().any(|ev| *ev == WaveEvent::Ended) {
         data.text = Some(
             commands
                 .spawn_bundle(SpatialBundle::default())

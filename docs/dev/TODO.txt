@@ -60,6 +60,7 @@ Needs to be done ASAP
         - HUD
         - player reaction to being hit - particles, pulsating color, shaking, changing color, HUD, sound, etc
         - tutorial messages (and tutorial wave)
+        + animate background grid
     - craft
         - enemies drop parts: (group 1: sphere, ray; group 2: laser, magnet)
         - parts can be combined, replacing current mega-weapon
