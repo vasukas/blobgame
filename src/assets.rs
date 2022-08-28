@@ -9,11 +9,13 @@ pub struct MyAssets {
     pub glow: Handle<Image>,
     pub player: ImageVec,
 
-    // sounds
-    pub explosion_small: Handle<AudioSource>,
+    // UI sounds (MUST NOT BE USED AS POSITIONAL)
     pub ui_menu_drone: Handle<AudioSource>,
     pub ui_pickup: Handle<AudioSource>,
     pub ui_alert: Handle<AudioSource>,
+
+    // world sounds
+    pub explosion_small: Handle<AudioSource>,
     pub wpn_smg: Handle<AudioSource>,
 }
 
@@ -41,9 +43,12 @@ fn load_assets(mut assets: ResMut<MyAssets>, server: Res<AssetServer>) {
         )
     }
 
-    assets.explosion_small = server.load("sounds/explosion_2.ogg");
+    // UI sounds
     assets.ui_menu_drone = server.load("sounds/the_noise.ogg");
     assets.ui_pickup = server.load("sounds/ui_pickup.ogg");
     assets.ui_alert = server.load("sounds/ui_alert.ogg");
+
+    // world sounds
+    assets.explosion_small = server.load("sounds/explosion_2.ogg");
     assets.wpn_smg = server.load("sounds/wpn_smg.ogg");
 }

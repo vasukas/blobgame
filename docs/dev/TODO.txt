@@ -12,6 +12,7 @@ General reminder
 - Code quality. Doesn't. Matter. At. All.
     - as long as it mostly works and doesn't crash the game for no reason
         - silent errors are better than panicking :)
+- ALL WORLD (POSITIONAL) SOUNDS MUST BE PREFIXED with 250ms SILENCE !!!
 
 
 Important bugs
@@ -70,7 +71,7 @@ Needs to be done ASAP
         - sync to floor grid
         ? use two sets of beats - for when player is having good damage and for when player is low on HP
 
-    - startup delay for positional sounds, depends on distance
+    + startup delay for positional sounds, depends on distance
     - sounds for everything
 
 - UX

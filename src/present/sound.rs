@@ -61,6 +61,13 @@ impl ListenerConfig {
 
         (volume as f64, (pan * t_panning * 0.5 + 0.5) as f64)
     }
+
+    // seconds
+    fn startup_delay(&self, pos: Vec2) -> f64 {
+        let speed_of_sound = self.size.max_element() * 4.;
+        let distance = (pos - self.pos).length();
+        (distance / speed_of_sound) as f64
+    }
 }
 
 #[derive(Component)]
@@ -90,17 +97,25 @@ fn play_sounds(
     mut events: EventReader<Sound>, audio: Res<Audio>, config: Res<ListenerConfig>,
     mut commands: Commands,
 ) {
+    let leading_silence = 0.25; // TODO: this is atrocious hack since bevy_kira_audio doesn't expose kira's start time
+
     for event in events.iter() {
         use rand::*;
-        let (volume, panning) = event
+        let ((volume, panning), start_pos) = event
             .position
-            .map(|pos| config.calculate(pos, 1.))
-            .unwrap_or((1., 0.5));
+            .map(|pos| {
+                (
+                    config.calculate(pos, 1.),
+                    (leading_silence - config.startup_delay(pos)).max(0.),
+                )
+            })
+            .unwrap_or(((1., 0.5), 0.));
 
         let mut cmd = audio.play(event.sound.clone());
         cmd.with_playback_rate(thread_rng().gen_range(0.9..1.2))
             .with_volume(volume * K_VOLUME)
-            .with_panning(panning);
+            .with_panning(panning)
+            .start_from(start_pos);
         if let Some(pos) = event.position {
             commands
                 .spawn_bundle(SpatialBundle::from_transform(Transform::new_2d(pos)))
