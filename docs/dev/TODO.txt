@@ -58,8 +58,8 @@ Needs to be done ASAP
 - mechanics (intermediate)
     - interface etc
         - HUD
-        - player reaction to being hit - particles, pulsating color, shaking, changing color, HUD, sound, etc
-        - tutorial messages (and tutorial wave)
+        + player reaction to being hit - [x]particles, [x]pulsating color, shaking, changing color, HUD, sound, etc
+        - player hit sound
         + animate background grid
     - craft
         - enemies drop parts: (group 1: sphere, ray; group 2: laser, magnet)
@@ -82,12 +82,14 @@ Needs to be done ASAP
         - movement
             - patterns
             - player-based
+        - expand healing mechanics
     - simple statistics (point counting)
-    - add lore
-        - rename the project
-        - add description on itch
-    - add difficulty selection (may just scale HP/damage)
-    - expand healing mechanics
+    - UX
+        - add lore
+            - rename the project
+            - add description on itch
+        - tutorial messages (and tutorial wave)
+        - add difficulty selection (may just scale HP/damage)
 
 - delayed features
     - player
@@ -136,6 +138,7 @@ Needs to be done ASAP
                 period: Duration, // time between closest beats
                 level: u8, // or use separate struct/resource for it, doesn't matter
             }
+        - sync to floor grid
         ? use two sets of beats - for when player is having good damage and for when player is low on HP
 
     - play ambient drone (tbh really not sure if this will work; maybe just use some music)

@@ -1,5 +1,5 @@
 use super::camera::WindowInfo;
-use crate::common::*;
+use crate::{common::*, objects::spawn::SpawnControl};
 use bevy_kira_audio::prelude::*;
 
 /// Event
@@ -14,8 +14,6 @@ pub struct AudioListener;
 
 //
 
-const K_VOLUME: f64 = 0.25; // since apparently all sound assets are normalized
-
 pub struct SoundPlugin;
 
 impl Plugin for SoundPlugin {
@@ -26,9 +24,14 @@ impl Plugin for SoundPlugin {
             .add_system(apply_settings)
             .add_system(update_listener_config)
             .add_system(play_sounds)
-            .add_system(update_positional.exclusive_system().at_start());
+            .add_system(update_positional.exclusive_system().at_start())
+            .add_system(menu_drone);
     }
 }
+
+// base impl
+
+const K_VOLUME: f64 = 0.25; // since apparently all sound assets are normalized
 
 #[derive(Default)]
 struct ListenerConfig {
@@ -126,6 +129,28 @@ fn update_positional(
             // it doesn't exist if sound source wasn't loaded yet. which is entire other problem...
             // log::warn!("AudioInstance doesn't exist, this shouldn't happen");
             // commands.entity(entity).despawn_recursive()
+        }
+    }
+}
+
+// gameplay-related stuff
+
+fn menu_drone(
+    audio: Res<Audio>, mut sound: Local<Option<Handle<AudioInstance>>>,
+    mut instances: ResMut<Assets<AudioInstance>>, spawn: Res<SpawnControl>, assets: Res<MyAssets>,
+) {
+    match sound.as_ref() {
+        Some(sound) => {
+            if spawn.is_game_running() {
+                if let Some(sound) = instances.get_mut(sound) {
+                    sound.stop(AudioTween::linear(Duration::from_secs(1)));
+                }
+            }
+        }
+        None => {
+            if !spawn.is_game_running() {
+                *sound = Some(audio.play(assets.menu_drone.clone()).looped().handle())
+            }
         }
     }
 }
