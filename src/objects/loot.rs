@@ -1,13 +1,18 @@
 use crate::{
     common::*,
+    control::input::InputAction,
     mechanics::health::{DeathEvent, DieAfter, Health},
     present::{simple_sprite::SimpleSprite, sound::Sound},
 };
+use enum_map::Enum;
+
+use super::stats::Stats;
 
 /// If present, entity will drop that on death
 #[derive(Component, Clone, Copy)]
 pub enum Loot {
     Health { value: f32 },
+    CraftPart(CraftPart),
 }
 
 #[derive(Component)]
@@ -16,6 +21,30 @@ pub struct PickableLoot(pub Loot);
 #[derive(Component, Default)]
 pub struct LootPicker {
     pub radius: f32,
+}
+
+#[derive(Clone, Copy, Enum, Debug)]
+pub enum CraftPart {
+    Generator,
+    Emitter,
+    Laser,
+    Magnet,
+}
+
+impl CraftPart {
+    pub fn random() -> Self {
+        [Self::Generator, Self::Emitter, Self::Laser, Self::Magnet]
+            .into_iter()
+            .random()
+    }
+    pub fn description(&self) -> (InputAction, &'static str, usize) {
+        match self {
+            CraftPart::Generator => (InputAction::CraftSelect1, "Generator", 1),
+            CraftPart::Emitter => (InputAction::CraftSelect2, "Emitter", 1),
+            CraftPart::Laser => (InputAction::CraftSelect3, "Laser", 2),
+            CraftPart::Magnet => (InputAction::CraftSelect4, "Magnet", 2),
+        }
+    }
 }
 
 //
@@ -34,7 +63,10 @@ fn drop_loot(
     mut entities: Query<(&GlobalTransform, &Loot)>, assets: Res<MyAssets>,
 ) {
     death.iter_cmd_mut(&mut entities, |_, (pos, loot)| {
-        let radius = 0.3;
+        let (radius, color) = match loot {
+            Loot::Health { .. } => (0.3, Color::GREEN * 0.8),
+            Loot::CraftPart(_) => (0.4, Color::ORANGE_RED * 0.8),
+        };
         let lifetime = Duration::from_secs(8);
 
         commands
@@ -59,9 +91,7 @@ fn drop_loot(
                         radius: radius * 0.9,
                         center: Vec2::ZERO,
                     },
-                    DrawMode::Fill(FillMode::color(match loot {
-                        Loot::Health { .. } => Color::GREEN * 0.8,
-                    })),
+                    DrawMode::Fill(FillMode::color(color)),
                     default(),
                 ));
             })
@@ -74,6 +104,7 @@ fn pick_loot(
     mut commands: Commands, phy: Res<RapierContext>,
     mut picker: Query<(&GlobalTransform, &mut Health, &mut LootPicker)>,
     loot: Query<&PickableLoot>, mut sounds: EventWriter<Sound>, assets: Res<MyAssets>,
+    mut stats: ResMut<Stats>,
 ) {
     for (pos, mut health, picker) in picker.iter_mut() {
         let pos = pos.pos_2d();
@@ -90,12 +121,23 @@ fn pick_loot(
                             let new_health = (health.value + value).min(health.max);
                             if new_health > health.value {
                                 health.value = new_health;
+
                                 commands.entity(entity).despawn_recursive();
                                 sounds.send(Sound {
                                     sound: assets.ui_pickup.clone(),
                                     position: Some(pos),
                                 });
                             }
+                        }
+
+                        Loot::CraftPart(part) => {
+                            stats.player.craft_parts[part] += 1;
+
+                            commands.entity(entity).despawn_recursive();
+                            sounds.send(Sound {
+                                sound: assets.ui_pickup.clone(),
+                                position: Some(pos),
+                            });
                         }
                     }
                 }

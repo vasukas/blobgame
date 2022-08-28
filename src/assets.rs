@@ -14,6 +14,7 @@ pub struct MyAssets {
     pub ui_menu_drone: Handle<AudioSource>,
     pub ui_pickup: Handle<AudioSource>,
     pub ui_alert: Handle<AudioSource>,
+    pub wpn_smg: Handle<AudioSource>,
 }
 
 //
@@ -44,4 +45,5 @@ fn load_assets(mut assets: ResMut<MyAssets>, server: Res<AssetServer>) {
     assets.ui_menu_drone = server.load("sounds/the_noise.ogg");
     assets.ui_pickup = server.load("sounds/ui_pickup.ogg");
     assets.ui_alert = server.load("sounds/ui_alert.ogg");
+    assets.wpn_smg = server.load("sounds/wpn_smg.ogg");
 }

@@ -25,10 +25,9 @@ Needs to be done ASAP
 =====================
 - mechanics (intermediate)
     - craft
-        - enemies drop parts: (group 1: sphere, ray; group 2: laser, magnet)
-        - parts can be combined, replacing current mega-weapon
-        - mega-weapons have limited uses and can't be stored
-        - weapons (player can keep only two at once)
+        + enemies drop parts: (group 1: sphere, ray; group 2: laser, magnet)
+        + parts can be combined, replacing current mega-weapon
+        - weapons (player can keep only two at once; have limited uses)
             - rocket (sphere & laser)
                 - just projectile
             - shield (sphere & magnet)
@@ -41,6 +40,8 @@ Needs to be done ASAP
             - deflector (ray & magnet)
                 - pushes all projectiles away (and turns them into player's)
     - combo-attacks & show them in world
+        + gun/dash combo
+    - ubercharge beats
     - advanced enemies
         - turret patterns
         - mini-bosses (like shield robot)
@@ -49,13 +50,6 @@ Needs to be done ASAP
             - player-based
         - expand healing mechanics
         - bosses
-    - UX
-        - add lore
-            - rename the project
-            - add description on itch
-            - maybe add player model (instead of blob)
-        - tutorial messages (and tutorial wave)
-        - add difficulty selection (may just scale HP/damage)
 
 - audio
     - play beats, controlled by level via state:
@@ -76,13 +70,27 @@ Needs to be done ASAP
         - sync to floor grid
         ? use two sets of beats - for when player is having good damage and for when player is low on HP
 
+    - startup delay for positional sounds, depends on distance
     - sounds for everything
+
+- UX
+    - add lore
+        - rename the project
+        - add description on itch
+        - maybe add player model (instead of blob)
+    - tutorial messages (and tutorial wave)
+    - add difficulty selection (may just scale HP/damage)
+- more enemy variety
+- more wave patterns
 
 ...
 
 
 Additional features
 ===================
+- coherent code
+- weapon and part icons
+
 ? more mechanics
 
 + mechanics (minimal)
@@ -159,7 +167,6 @@ Additional features
     ? advanced sound playback
         - positional sound
             - follows specified entity
-            - startup delay depending on distance
             - doppler effect, but not sure if it would be even heard
         - loop (play looped sound when component is added to the entity; removal doesn't matter for now)
             - sound pitch should be controlled, probably via same component

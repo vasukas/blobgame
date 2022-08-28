@@ -1,15 +1,40 @@
-use super::spawn::WaveEvent;
+use super::{loot::CraftPart, spawn::WaveEvent, weapon::CraftedWeapon};
 use crate::{common::*, mechanics::health::DeathEvent};
+use enum_map::EnumMap;
 
 #[derive(Default)]
 pub struct Stats {
     pub wave: usize,
-    pub points: usize,
     pub time: Duration,
     pub restarts: usize,
 
-    // used to restore after respawn
-    last_wave_points: usize,
+    pub player: PersistentPlayer,
+    last_wave: PersistentPlayer,
+}
+
+/// Stuff restored after respawn
+#[derive(Clone)]
+pub struct PersistentPlayer {
+    pub points: usize,
+    pub craft_parts: EnumMap<CraftPart, usize>, // count
+    pub weapon0: Option<(CraftedWeapon, f32)>,  // usage left
+    pub weapon1: Option<(CraftedWeapon, f32)>,
+}
+
+impl Default for PersistentPlayer {
+    fn default() -> Self {
+        Self {
+            points: Default::default(),
+            craft_parts: enum_map::enum_map! {
+                CraftPart::Generator => 2,
+                CraftPart::Emitter => 2,
+                CraftPart::Laser => 2,
+                CraftPart::Magnet => 2,
+            },
+            weapon0: Default::default(),
+            weapon1: Default::default(),
+        }
+    }
 }
 
 #[derive(Component)]
@@ -34,11 +59,11 @@ fn update_stats(
         match ev {
             WaveEvent::Started => *wave_now = true,
             WaveEvent::Ended => {
-                stats.last_wave_points = stats.points;
+                stats.last_wave = stats.player.clone();
                 *wave_now = false;
             }
             WaveEvent::Restart => {
-                stats.points = stats.last_wave_points;
+                stats.player = stats.last_wave.clone();
                 stats.restarts += 1;
             }
         }
@@ -47,5 +72,5 @@ fn update_stats(
         stats.time += time.delta()
     }
 
-    deaths.iter_cmd_mut(&mut diers, |_, points| stats.points += points.0);
+    deaths.iter_cmd_mut(&mut diers, |_, points| stats.player.points += points.0);
 }

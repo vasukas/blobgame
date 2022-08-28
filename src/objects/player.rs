@@ -1,12 +1,16 @@
 use super::{
-    loot::LootPicker,
+    loot::{CraftPart, LootPicker},
     spawn::{SpawnControl, WaveEvent},
     stats::Stats,
-    weapon::Weapon,
+    weapon::{CraftedWeapon, Weapon},
 };
 use crate::{
     common::*,
-    control::input::{InputAction, InputMap},
+    control::{
+        input::{InputAction, InputMap},
+        menu::is_exit_menu,
+        time::TimeMode,
+    },
     mechanics::{
         damage::Team,
         health::{Health, ReceivedDamage},
@@ -31,7 +35,8 @@ impl Plugin for PlayerPlugin {
             .add_system(update_player)
             .add_system(player_damage_reaction)
             .add_system(next_wave.exclusive_system())
-            .add_system(hud_panel);
+            .add_system(hud_panel)
+            .add_system(craft_menu);
     }
 }
 
@@ -111,7 +116,7 @@ fn controls(
     mut player: Query<(Entity, &GlobalTransform, &mut Player)>,
     mut input: EventReader<InputAction>, mut kinematic: CmdWriter<KinematicCommand>,
     window: Res<WindowInfo>, time: Res<GameTime>, mut commands: Commands,
-    mut weapon: CmdWriter<Weapon>,
+    mut weapon: CmdWriter<Weapon>, mut stats: ResMut<Stats>,
 ) {
     let (entity, pos, mut player) = match player.get_single_mut() {
         Ok(v) => v,
@@ -156,6 +161,19 @@ fn controls(
                     dir: window.cursor - pos,
                 },
             )),
+            InputAction::FireMega => weapon.send((
+                entity,
+                Weapon::PlayerCrafted {
+                    dir: window.cursor - pos,
+                },
+            )),
+            InputAction::ChangeWeapon => {
+                let stats = &mut *stats;
+                std::mem::swap(&mut stats.player.weapon0, &mut stats.player.weapon1)
+            }
+            InputAction::UberCharge => {
+                // TODO: implement
+            }
 
             _ => (),
         }
@@ -167,9 +185,8 @@ fn controls(
 }
 
 fn respawn(
-    mut ctx: ResMut<EguiContext>, player: Query<With<Player>>, time: Res<Time>,
-    mut spawn: ResMut<SpawnControl>, mut input: EventReader<InputAction>, input_map: Res<InputMap>,
-    window: Res<WindowInfo>,
+    mut ctx: ResMut<EguiContext>, player: Query<With<Player>>, mut spawn: ResMut<SpawnControl>,
+    mut input: EventReader<InputAction>, input_map: Res<InputMap>,
 ) {
     if !spawn.is_game_running() {
         return;
@@ -328,7 +345,7 @@ fn hud_panel(mut ctx: ResMut<EguiContext>, stats: Res<Stats>, player: Query<(&He
                 let stamina = (Player::MAX_EXHAUSTION - player.exhaustion) as u32;
                 ui.visuals_mut().override_text_color = Some(match stamina {
                     0 => egui::Color32::DARK_GRAY,
-                    1 => egui::Color32::LIGHT_YELLOW,
+                    1 => egui::Color32::YELLOW,
                     _ => egui::Color32::GREEN,
                 });
                 ui.label(format!("{}", stamina));
@@ -336,7 +353,7 @@ fn hud_panel(mut ctx: ResMut<EguiContext>, stats: Res<Stats>, player: Query<(&He
                 ui.label("");
 
                 ui.label("POINTS");
-                ui.label(format!("{}", stats.points));
+                ui.label(format!("{}", stats.player.points));
                 ui.label("");
 
                 ui.label("TIME");
@@ -346,10 +363,150 @@ fn hud_panel(mut ctx: ResMut<EguiContext>, stats: Res<Stats>, player: Query<(&He
                     stats.time.as_secs() % 60
                 ));
                 ui.label("");
+
+                ui.label("WEAPONS");
+                for v in [stats.player.weapon0, stats.player.weapon1] {
+                    if let Some((weapon, uses)) = v {
+                        let (name, _, max_uses) = weapon.description();
+                        ui.label(format!("{} {}%", name, (uses / max_uses * 100.) as u32));
+                    } else {
+                        ui.label("empty");
+                    }
+                }
+
+                // TODO: show crafted weapons state
             } else {
                 ui.visuals_mut().override_text_color = Some(egui::Color32::RED);
                 ui.label("DEAD");
             }
         },
     );
+}
+
+struct CraftMenu {
+    slot0: CraftPart,
+    slot1: CraftPart,
+    show: bool,
+}
+
+impl Default for CraftMenu {
+    fn default() -> Self {
+        Self {
+            slot0: CraftPart::Emitter,
+            slot1: CraftPart::Laser,
+            show: false,
+        }
+    }
+}
+
+fn craft_menu(
+    mut ctx: ResMut<EguiContext>, mut stats: ResMut<Stats>, input_map: Res<InputMap>,
+    mut input: EventReader<InputAction>, mut menu: Local<CraftMenu>, keys: Res<Input<KeyCode>>,
+    mut time_mode: ResMut<TimeMode>, player: Query<(), With<Player>>,
+) {
+    time_mode.craft_menu = menu.show;
+    time_mode.player_alive = !player.is_empty();
+
+    if menu.show {
+        if is_exit_menu(&keys) {
+            menu.show = false
+        }
+
+        let craft_result = match (menu.slot0, menu.slot1) {
+            (CraftPart::Generator, CraftPart::Laser) => Some(CraftedWeapon::Plasma),
+            (CraftPart::Generator, CraftPart::Magnet) => Some(CraftedWeapon::Shield),
+            (CraftPart::Emitter, CraftPart::Laser) => Some(CraftedWeapon::Railgun),
+            (CraftPart::Emitter, CraftPart::Magnet) => Some(CraftedWeapon::Repeller),
+            _ => {
+                log::error!("Invalid craft slots: {:?} and {:?}", menu.slot0, menu.slot1);
+                None
+            }
+        };
+
+        ctx.popup(
+            "player::craft_menu",
+            vec2(0., -1.),
+            true,
+            egui::Order::Background,
+            |ui| {
+                ui.label("Press [ESC] or [M] to close this menu"); // TODO: unhardcode
+                ui.group(|ui| {
+                    ui.label("Available parts");
+                    for (key, value) in stats.player.craft_parts.iter() {
+                        let (action, name, slot) = key.description();
+                        ui.visuals_mut().override_text_color = Some(if *value == 0 {
+                            egui::Color32::DARK_GRAY
+                        } else {
+                            egui::Color32::WHITE
+                        });
+                        ui.label(format!(
+                            "[slot {}: {}] {} x{}",
+                            slot,
+                            input_map.map[action].0.to_string(),
+                            name,
+                            *value
+                        ));
+                        ui.visuals_mut().override_text_color = None;
+                    }
+                });
+                ui.group(|ui| {
+                    ui.visuals_mut().override_text_color =
+                        Some(if stats.player.craft_parts[menu.slot0] == 0 {
+                            egui::Color32::DARK_GRAY
+                        } else {
+                            egui::Color32::WHITE
+                        });
+                    ui.label(format!("Slot 1: {}", menu.slot0.description().1));
+
+                    ui.visuals_mut().override_text_color =
+                        Some(if stats.player.craft_parts[menu.slot1] == 0 {
+                            egui::Color32::DARK_GRAY
+                        } else {
+                            egui::Color32::WHITE
+                        });
+                    ui.label(format!("Slot 2: {}", menu.slot1.description().1));
+                    ui.visuals_mut().override_text_color = None;
+
+                    if let Some(result) = craft_result {
+                        let (name, text, _) = result.description();
+                        ui.label(format!("Result: {}", name));
+                        ui.label(text);
+                    } else {
+                        ui.label("CRAFT IS BROKEN LOL");
+                        ui.label("TRY TO PUSH SOME BUTTONS");
+                    }
+                });
+                ui.label("Press [C] to craft new weapon (replaces current)");
+            },
+        );
+
+        for action in input.iter() {
+            match action {
+                InputAction::CraftSelect1 => menu.slot0 = CraftPart::Generator,
+                InputAction::CraftSelect2 => menu.slot0 = CraftPart::Emitter,
+                InputAction::CraftSelect3 => menu.slot1 = CraftPart::Laser,
+                InputAction::CraftSelect4 => menu.slot1 = CraftPart::Magnet,
+                InputAction::Craft => {
+                    if let Some(weapon) = craft_result {
+                        if stats.player.craft_parts[menu.slot0] != 0
+                            && stats.player.craft_parts[menu.slot1] != 0
+                        {
+                            stats.player.craft_parts[menu.slot0] -= 1;
+                            stats.player.craft_parts[menu.slot1] -= 1;
+                            menu.show = false;
+
+                            stats.player.weapon0 = Some((weapon, weapon.description().2))
+                        }
+                    }
+                }
+                _ => (),
+            }
+        }
+    } else {
+        for action in input.iter() {
+            if *action == InputAction::Craft {
+                menu.show = true
+            }
+        }
+    }
 }

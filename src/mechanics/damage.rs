@@ -121,7 +121,7 @@ fn damage_ray(
             if *team == Team::Player {
                 if let Ok((_, health)) = targets.get(entity) {
                     if health.max < 1. {
-                        stats.points += 1
+                        stats.player.points += 1
                     }
                 }
             }

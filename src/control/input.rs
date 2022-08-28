@@ -12,8 +12,15 @@ pub enum InputAction {
 
     Fire,
     FireMega,
-    Melee,
+    ChangeWeapon,
+    Craft,
 
+    CraftSelect1,
+    CraftSelect2,
+    CraftSelect3,
+    CraftSelect4,
+
+    UberCharge,
     Dash,
     TargetDash,
     Respawn,
@@ -29,8 +36,15 @@ impl InputAction {
 
             InputAction::Fire => "Fire",
             InputAction::FireMega => "Fire Megagun",
-            InputAction::Melee => "Melee",
+            InputAction::ChangeWeapon => "Change weapon",
+            InputAction::Craft => "Craft weapon",
 
+            InputAction::CraftSelect1 => "Select craft part 1",
+            InputAction::CraftSelect2 => "Select craft part 2",
+            InputAction::CraftSelect3 => "Select craft part 3",
+            InputAction::CraftSelect4 => "Select craft part 4",
+
+            InputAction::UberCharge => "Ubercharge",
             InputAction::Dash => "Dash",
             InputAction::TargetDash => "Dash to cursor",
             InputAction::Respawn => "Retry",
@@ -85,9 +99,16 @@ impl Default for InputMap {
                 MoveDown => (InputKey::Key(KeyCode::S), InputType::Hold),
 
                 InputAction::Fire => (InputKey::Button(MouseButton::Left), InputType::Click),
-                InputAction::FireMega => (InputKey::Button(MouseButton::Right), InputType::Hold),
-                InputAction::Melee => (InputKey::Key(KeyCode::F), InputType::Click),
+                InputAction::FireMega => (InputKey::Button(MouseButton::Right), InputType::Click),
+                InputAction::ChangeWeapon => (InputKey::Key(KeyCode::F), InputType::Click),
+                InputAction::Craft => (InputKey::Key(KeyCode::C), InputType::Click),
 
+                InputAction::CraftSelect1 => (InputKey::Key(KeyCode::Key1), InputType::Click),
+                InputAction::CraftSelect2 => (InputKey::Key(KeyCode::Key2), InputType::Click),
+                InputAction::CraftSelect3 => (InputKey::Key(KeyCode::Key3), InputType::Click),
+                InputAction::CraftSelect4 => (InputKey::Key(KeyCode::Key4), InputType::Click),
+
+                InputAction::UberCharge => (InputKey::Key(KeyCode::H), InputType::Click),
                 InputAction::Dash => (InputKey::Key(KeyCode::LShift), InputType::Click),
                 InputAction::TargetDash => (InputKey::Key(KeyCode::Space), InputType::Click),
                 Respawn => (InputKey::Key(KeyCode::R), InputType::Click),
@@ -100,6 +121,7 @@ impl Default for InputMap {
 #[derive(Default)]
 pub struct InputLock {
     pub active: bool,
+    pub allow_craft: bool, // TODO: another horrible hack
 }
 
 //
@@ -119,10 +141,18 @@ fn emit_action(
     lock: Res<InputLock>, map: Res<InputMap>, mut actions: EventWriter<InputAction>,
     keys: Res<Input<KeyCode>>, buttons: Res<Input<MouseButton>>,
 ) {
-    if lock.active {
-        return;
-    }
     for (action, (key, ty)) in map.map.iter() {
+        if match action {
+            InputAction::Craft
+            | InputAction::CraftSelect1
+            | InputAction::CraftSelect2
+            | InputAction::CraftSelect3
+            | InputAction::CraftSelect4 => lock.active && !lock.allow_craft,
+            _ => lock.active,
+        } {
+            continue;
+        }
+
         let active = match key {
             InputKey::Key(key) => match ty {
                 InputType::Click => keys.just_pressed(*key),

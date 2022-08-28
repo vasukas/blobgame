@@ -1,14 +1,18 @@
+use std::f32::consts::PI;
+
 use crate::{
     common::*,
     mechanics::{
         damage::*,
         health::{Damage, DieAfter, Health},
+        movement::KinematicController,
         physics::CollectContacts,
     },
     objects::player::Player,
     present::{
         effect::{DontSparkMe, Explosion, ExplosionPower, RayEffect},
         light::Light,
+        sound::Sound,
     },
 };
 
@@ -22,6 +26,33 @@ pub enum Weapon {
     PlayerGun {
         dir: Vec2,
     },
+    PlayerCrafted {
+        dir: Vec2,
+    },
+}
+
+#[derive(Clone, Copy)]
+pub enum CraftedWeapon {
+    Plasma,
+    Shield,
+    Railgun,
+    Repeller,
+}
+
+impl CraftedWeapon {
+    // (name, description, max uses)
+    pub fn description(&self) -> (&'static str, &'static str, f32) {
+        match self {
+            CraftedWeapon::Plasma => ("Plasma", "Shoots explosive energy balls", 15.),
+            CraftedWeapon::Shield => (
+                "Shield",
+                "Generates force-field which absorbs incoming projectiles",
+                10.,
+            ),
+            CraftedWeapon::Railgun => ("Railgun", "Shoots powerful piercing death ray", 15.),
+            CraftedWeapon::Repeller => ("Repeller", "Pushes projectiles away from you", 20.),
+        }
+    }
 }
 
 //
@@ -37,12 +68,18 @@ impl Plugin for WeaponPlugin {
 
 fn weapon(
     mut commands: Commands, mut weapon: CmdReader<Weapon>,
-    mut source: Query<(Entity, &GlobalTransform, &Team)>,
+    mut source: Query<(
+        Entity,
+        &GlobalTransform,
+        &Team,
+        Option<&KinematicController>,
+    )>,
+    mut sound: EventWriter<Sound>, assets: Res<MyAssets>,
 ) {
     use bevy_lyon::*;
     weapon.iter_cmd_mut(
         &mut source,
-        |weapon, (_entity, transform, team)| match *weapon {
+        |weapon, (_entity, transform, team, kinematic)| match *weapon {
             Weapon::None => log::warn!("Shooting Weapon::None"),
 
             Weapon::Turret => {
@@ -91,24 +128,41 @@ fn weapon(
                     .insert(ColliderMassProperties::Mass(1.))
                     .insert(PhysicsType::Projectile.rapier())
                     .insert(Velocity::linear(velocity));
+
+                sound.send(Sound {
+                    sound: assets.wpn_smg.clone(),
+                    position: Some(transform.pos_2d()),
+                });
             }
 
             Weapon::PlayerGun { dir } => {
                 let mut transform = Transform::new_2d(
                     transform.pos_2d() + dir.normalize_or_zero() * Player::RADIUS,
                 );
-                transform.set_angle_2d(dir.angle());
+                let angle = dir.angle();
+                transform.set_angle_2d(angle);
+
+                let powered = angle_delta(
+                    angle,
+                    kinematic
+                        .and_then(|ctr| ctr.dash.map(|v| v.0.angle()))
+                        .unwrap_or(angle + PI),
+                )
+                .abs()
+                    < 45f32.to_radians();
+
                 commands
                     .spawn_bundle(SpatialBundle::from_transform(transform))
                     .insert(GameplayObject)
-                    .insert(Damage::new(1.))
+                    .insert(Damage::new(if powered { 3. } else { 1. }))
                     .insert(*team)
                     .insert(DieAfter::one_frame())
                     .insert(DamageRay {
                         spawn_effect: Some(RayEffect {
-                            color: Color::CYAN.with_a(0.4),
+                            color: if powered { Color::ORANGE_RED } else { Color::CYAN }
+                                .with_a(0.4),
                             width: 0.4,
-                            fade_time: Duration::from_millis(300),
+                            fade_time: Duration::from_millis(if powered { 400 } else { 300 }),
                             ..default()
                         }),
                         explosion_effect: Some(Explosion {
@@ -121,6 +175,10 @@ fn weapon(
                         ..default()
                     })
                     .insert(DontSparkMe);
+            }
+
+            Weapon::PlayerCrafted { dir } => {
+                // TODO: implement
             }
         },
     );

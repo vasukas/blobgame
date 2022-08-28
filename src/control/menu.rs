@@ -1,14 +1,14 @@
-use super::input::{InputLock, InputMap};
-use crate::{
-    common::*,
-    objects::{player::Player, spawn::SpawnControl},
-    present::camera::WindowInfo,
-};
+use super::{input::InputMap, time::TimeMode};
+use crate::{common::*, objects::spawn::SpawnControl, present::camera::WindowInfo};
 use bevy::app::AppExit;
 use bevy_egui::EguiSettings;
 
 #[derive(Default)]
 pub struct PlayNowHack(pub bool);
+
+pub fn is_exit_menu(keys: &Input<KeyCode>) -> bool {
+    keys.any_just_pressed([KeyCode::Escape, KeyCode::M])
+}
 
 //
 
@@ -19,13 +19,12 @@ impl Plugin for MenuPlugin {
         app.init_resource::<MenuState>()
             .init_resource::<PlayNowHack>()
             .add_system(show_menu)
-            .add_system_to_stage(CoreStage::First, set_time)
             .add_startup_system(setup)
             .add_startup_system(play_now_hack);
     }
 }
 
-#[derive(Default)]
+#[derive(Default, PartialEq, Eq)]
 enum MenuState {
     None,
     #[default]
@@ -35,10 +34,10 @@ enum MenuState {
 fn show_menu(
     mut ctx: ResMut<EguiContext>, mut state: ResMut<MenuState>, keys: Res<Input<KeyCode>>,
     mut exit_app: EventWriter<AppExit>, mut spawn: ResMut<SpawnControl>, window: Res<WindowInfo>,
-    mut settings: ResMut<Settings>, mut input_lock: ResMut<InputLock>, input_map: Res<InputMap>,
-    mut windows: ResMut<Windows>,
+    mut settings: ResMut<Settings>, input_map: Res<InputMap>, mut windows: ResMut<Windows>,
+    mut time_ctl: ResMut<TimeMode>,
 ) {
-    if keys.any_just_pressed([KeyCode::Escape, KeyCode::M]) {
+    if is_exit_menu(&keys) && !time_ctl.craft_menu {
         match *state {
             MenuState::None => *state = MenuState::Root,
             MenuState::Root => {
@@ -48,10 +47,7 @@ fn show_menu(
             }
         }
     }
-    input_lock.active = match *state {
-        MenuState::None => false,
-        _ => true,
-    };
+    time_ctl.main_menu = *state != MenuState::None;
 
     match *state {
         MenuState::None => (),
@@ -153,13 +149,6 @@ fn show_menu(
             );
         }
     }
-}
-
-fn set_time(mut time: ResMut<GameTime>, state: Res<MenuState>, player: Query<(), With<Player>>) {
-    time.scale = match *state {
-        MenuState::None => 1.,
-        _ => 0.,
-    } * if player.is_empty() { 0. } else { 1. }
 }
 
 fn setup(mut egui: ResMut<EguiSettings>, settings: Res<Settings>, mut windows: ResMut<Windows>) {

@@ -2,7 +2,12 @@ use super::{player::Player, stats::Stats};
 use crate::{
     common::*,
     mechanics::{ai::*, damage::Team, health::Health},
-    objects::{grid::GridBar, loot::Loot, stats::DeathPoints, weapon::Weapon},
+    objects::{
+        grid::GridBar,
+        loot::{CraftPart, Loot},
+        stats::DeathPoints,
+        weapon::Weapon,
+    },
     present::{camera::WorldCamera, effect::SpawnEffect},
 };
 
@@ -310,8 +315,12 @@ fn create_turret(commands: &mut Commands, origin: Vec2) -> Entity {
         .insert(Collider::ball(radius));
 
     use rand::*;
-    if thread_rng().gen_bool(0.4) {
-        commands.insert(Loot::Health { value: 2. });
+    if thread_rng().gen_bool(0.7) {
+        if thread_rng().gen_bool(0.6) {
+            commands.insert(Loot::Health { value: 2. });
+        } else {
+            commands.insert(Loot::CraftPart(CraftPart::random()));
+        }
     }
 
     commands.id()
