@@ -80,7 +80,7 @@ Needs to be done ASAP
         - add description on itch
         - maybe add player model (instead of blob)
     - tutorial messages (and tutorial wave)
-    - add difficulty selection (may just scale HP/damage)
+    - add difficulty selection (scale HP and loot drop chance)
 - more enemy variety
 - more wave patterns
 

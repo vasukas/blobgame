@@ -4,7 +4,7 @@ use crate::{
     mechanics::{ai::*, damage::Team, health::Health},
     objects::{
         grid::GridBar,
-        loot::{CraftPart, Loot},
+        loot::{CraftPart, DropsLoot, Loot},
         stats::DeathPoints,
         weapon::Weapon,
     },
@@ -312,16 +312,18 @@ fn create_turret(commands: &mut Commands, origin: Vec2) -> Entity {
         //
         .insert(RigidBody::Fixed)
         .insert(PhysicsType::Solid.rapier())
-        .insert(Collider::ball(radius));
-
-    use rand::*;
-    if thread_rng().gen_bool(0.7) {
-        if thread_rng().gen_bool(0.6) {
-            commands.insert(Loot::Health { value: 2. });
-        } else {
-            commands.insert(Loot::CraftPart(CraftPart::random()));
-        }
-    }
+        .insert(Collider::ball(radius))
+        .insert(DropsLoot({
+            use rand::*;
+            let mut loot = vec![];
+            if thread_rng().gen_bool(0.66) {
+                loot.push(Loot::Health { value: 1.5 });
+            }
+            if thread_rng().gen_bool(0.33) {
+                loot.push(Loot::CraftPart(CraftPart::random()));
+            }
+            loot
+        }));
 
     commands.id()
 }

@@ -1,19 +1,24 @@
+use super::stats::Stats;
 use crate::{
     common::*,
     control::input::InputAction,
-    mechanics::health::{DeathEvent, DieAfter, Health},
+    mechanics::{
+        health::{DeathEvent, DieAfter, Health},
+        movement::DropSpread,
+    },
     present::{simple_sprite::SimpleSprite, sound::Sound},
 };
 use enum_map::Enum;
 
-use super::stats::Stats;
-
-/// If present, entity will drop that on death
-#[derive(Component, Clone, Copy)]
+#[derive(Clone, Copy)]
 pub enum Loot {
     Health { value: f32 },
     CraftPart(CraftPart),
 }
+
+/// If present, entity will drop that on death
+#[derive(Component)]
+pub struct DropsLoot(pub Vec<Loot>);
 
 #[derive(Component)]
 pub struct PickableLoot(pub Loot);
@@ -60,43 +65,46 @@ impl Plugin for LootPlugin {
 
 fn drop_loot(
     mut death: CmdReader<DeathEvent>, mut commands: Commands,
-    mut entities: Query<(&GlobalTransform, &Loot)>, assets: Res<MyAssets>,
+    mut entities: Query<(&GlobalTransform, &DropsLoot)>, assets: Res<MyAssets>,
 ) {
     death.iter_cmd_mut(&mut entities, |_, (pos, loot)| {
-        let (radius, color) = match loot {
-            Loot::Health { .. } => (0.3, Color::GREEN * 0.8),
-            Loot::CraftPart(_) => (0.4, Color::ORANGE_RED * 0.8),
-        };
-        let lifetime = Duration::from_secs(8);
+        for loot in &loot.0 {
+            let (radius, color) = match loot {
+                Loot::Health { .. } => (0.3, Color::GREEN * 0.8),
+                Loot::CraftPart(_) => (0.4, Color::ORANGE_RED * 0.8),
+            };
+            let lifetime = Duration::from_secs(8);
 
-        commands
-            .spawn_bundle(SpatialBundle::from_transform(Transform::new_2d(
-                pos.pos_2d(),
-            )))
-            .insert(GameplayObject)
-            .insert(RigidBody::Fixed)
-            .insert(Collider::ball(radius))
-            .insert(PhysicsType::Loot.rapier())
-            .insert(Depth::Player)
-            .insert(SimpleSprite {
-                images: assets.player.clone(),
-                frame_duration: Duration::from_millis(200),
-                size: Vec2::splat(radius * 2.),
-                ..default()
-            })
-            .with_children(|parent| {
-                use bevy_lyon::*;
-                parent.spawn_bundle(GeometryBuilder::build_as(
-                    &shapes::Circle {
-                        radius: radius * 0.9,
-                        center: Vec2::ZERO,
-                    },
-                    DrawMode::Fill(FillMode::color(color)),
-                    default(),
-                ));
-            })
-            .insert(PickableLoot(*loot))
-            .insert(DieAfter::new(lifetime));
+            commands
+                .spawn_bundle(SpatialBundle::from_transform(Transform::new_2d(
+                    pos.pos_2d(),
+                )))
+                .insert(GameplayObject)
+                .insert(RigidBody::KinematicPositionBased)
+                .insert(Collider::ball(radius))
+                .insert(PhysicsType::Loot.rapier())
+                .insert(Depth::Player)
+                .insert(SimpleSprite {
+                    images: assets.player.clone(),
+                    frame_duration: Duration::from_millis(200),
+                    size: Vec2::splat(radius * 2.),
+                    ..default()
+                })
+                .with_children(|parent| {
+                    use bevy_lyon::*;
+                    parent.spawn_bundle(GeometryBuilder::build_as(
+                        &shapes::Circle {
+                            radius: radius * 0.9,
+                            center: Vec2::ZERO,
+                        },
+                        DrawMode::Fill(FillMode::color(color)),
+                        default(),
+                    ));
+                })
+                .insert(PickableLoot(*loot))
+                .insert(DieAfter::new(lifetime))
+                .insert(DropSpread::default());
+        }
     })
 }
 

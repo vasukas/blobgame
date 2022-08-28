@@ -18,6 +18,9 @@ pub enum KinematicCommand {
     Dash { dir: Vec2, exact: bool },
 }
 
+#[derive(Component, Default)]
+pub struct DropSpread(Option<(Duration, Vec2)>);
+
 #[derive(SystemLabel)]
 pub struct MovementSystemLabel;
 
@@ -28,7 +31,8 @@ pub struct MovementPlugin;
 impl Plugin for MovementPlugin {
     fn build(&self, app: &mut App) {
         app.add_event::<(Entity, KinematicCommand)>()
-            .add_system(kinematic_controller.label(MovementSystemLabel));
+            .add_system(kinematic_controller.label(MovementSystemLabel))
+            .add_system(drop_spread);
     }
 }
 
@@ -105,6 +109,27 @@ fn kinematic_controller(
                     transform.add_2d(offset);
                 }
             }
+        }
+    }
+}
+
+fn drop_spread(mut entities: Query<(&mut Transform, &mut DropSpread)>, time: Res<GameTime>) {
+    let distance = 2.5; // approximate
+    let duration = Duration::from_millis(1500);
+
+    for (mut transform, mut spread) in entities.iter_mut() {
+        let (start, dir) = spread.0.get_or_insert_with(|| {
+            use rand::*;
+            (
+                time.now(),
+                Vec2::Y.rotated(thread_rng().gen_range(0. ..TAU)),
+            )
+        });
+        let t = time.t_passed(*start, duration);
+        if t < 1. {
+            let t = 1. - (t * TAU / 4.).sin();
+            let speed = distance / duration.as_secs_f32() * time.delta_seconds() * t;
+            transform.add_2d(*dir * speed)
         }
     }
 }
