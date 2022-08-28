@@ -4,6 +4,8 @@ use bevy::{
     prelude::*,
 };
 
+use crate::common::lerp;
+
 // 2D transform
 
 pub trait BevyTransform2d {
@@ -128,6 +130,11 @@ impl BevyColorExtended for Color {
     fn with_a(mut self, alpha: f32) -> Self {
         *self.set_a(alpha)
     }
+}
+
+/// Lerps both color components and alpha
+pub fn lerp_color(v0: Color, v1: Color, t: f32) -> Color {
+    lerp(v0, v1, t).with_a(lerp(v0.a(), v1.a(), t))
 }
 
 // Command events

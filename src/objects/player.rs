@@ -7,7 +7,11 @@ use super::{
 use crate::{
     common::*,
     control::input::{InputAction, InputMap},
-    mechanics::{damage::Team, health::Health, movement::*},
+    mechanics::{
+        damage::Team,
+        health::{Health, ReceivedDamage},
+        movement::*,
+    },
     present::{
         camera::WindowInfo, effect::Flash, hud_elements::WorldText, simple_sprite::SimpleSprite,
         sound::AudioListener,
@@ -22,6 +26,7 @@ impl Plugin for PlayerPlugin {
             .add_system(controls.before(MovementSystemLabel))
             .add_system(respawn)
             .add_system(update_player)
+            .add_system(player_damage)
             .add_system(next_wave.exclusive_system());
     }
 }
@@ -226,6 +231,20 @@ fn update_player(mut player: Query<(&mut Player, &mut Health)>, time: Res<GameTi
         player.exhaustion =
             (player.exhaustion - time.delta_seconds() * exhaust_restore_speed).max(0.);
     }
+}
+
+fn player_damage(
+    mut commands: Commands, mut player: Query<Entity, With<Player>>,
+    mut events: CmdReader<ReceivedDamage>,
+) {
+    events.iter_cmd_mut(&mut player, |_, entity| {
+        commands.entity(entity).insert(Flash {
+            radius: Player::RADIUS,
+            duration: Duration::from_millis(500),
+            color0: Color::RED,
+            color1: Color::NONE,
+        });
+    })
 }
 
 #[derive(Default)]

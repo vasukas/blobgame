@@ -8,7 +8,7 @@ use crate::{
 #[derive(Clone, Copy, Default)]
 pub struct Explosion {
     pub origin: Vec2,
-    pub color0: Color,
+    pub color0: Color, // alpha ignored for colors
     pub color1: Color,
     pub time: Duration,
     pub radius: f32,
@@ -250,7 +250,7 @@ fn update_flash(
         } else {
             if let Ok(mut draw) = flashes.get_mut(state.child) {
                 use bevy_lyon::*;
-                *draw = DrawMode::Fill(FillMode::color(lerp(flash.color0, flash.color1, t)))
+                *draw = DrawMode::Fill(FillMode::color(lerp_color(flash.color0, flash.color1, t)))
             }
         }
     }
