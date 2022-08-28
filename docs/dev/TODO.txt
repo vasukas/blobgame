@@ -16,24 +16,75 @@ General reminder
 
 Important bugs
 ==============
-- really important
-    - sometimes screen is black - egui actually draws windows in random order??
-        + fixed (except for main menu, which seems to work correctly anyway)
-        - not thoroughly tested
-- reminder
-    - playtest fucking EVERYTHING
-    - DONT FORGET TO GREP AND FIX ALL TODOS
-- don't care for know
-    - switching to fullscreen SOMETIMES doesn't work on itch.io with Firefox
-    - (sometimes) bevy_kira_audio::audio_output: Failed to set volume for instance: CommandQueueFul
-    - (seems fixed) sometimes player seems to be hit by projectiles but isn't damaged
-+ ESC/F10/F3 buttons might not work in browsers! they're used by browsers themselves
-+ add LICENSE file and list used assets, with source and license
+- DONT FORGET TO GREP AND FIX ALL TODOS
+- playtest everything
 ...
 
 
 Needs to be done ASAP
 =====================
+- mechanics (intermediate)
+    - craft
+        - enemies drop parts: (group 1: sphere, ray; group 2: laser, magnet)
+        - parts can be combined, replacing current mega-weapon
+        - mega-weapons have limited uses and can't be stored
+        - weapons (player can keep only two at once)
+            - rocket (sphere & laser)
+                - just projectile
+            - shield (sphere & magnet)
+                - when equipped, appears in front of the player
+                - absorbs projectiles
+                - deflects rays (still gets damaged, but less)
+            - railgun (ray & laser)
+                - just powerful ray which goes through all targets
+                - explodes projectiles
+            - deflector (ray & magnet)
+                - pushes all projectiles away (and turns them into player's)
+    - combo-attacks & show them in world
+    - advanced enemies
+        - turret patterns
+        - mini-bosses (like shield robot)
+        - movement
+            - patterns
+            - player-based
+        - expand healing mechanics
+        - bosses
+    - UX
+        - add lore
+            - rename the project
+            - add description on itch
+            - maybe add player model (instead of blob)
+        - tutorial messages (and tutorial wave)
+        - add difficulty selection (may just scale HP/damage)
+
+- audio
+    - play beats, controlled by level via state:
+        0 (no beats)
+        1 |       |
+        2 |   i   |   i  
+        3 | . i . | . i .
+            feel free to use other patterns, but you get the idea
+            also mb 3rd level would be too much, dunno
+        - beat timing should be adjustable (store them in resource)
+        - provide resource with timings - when beat will begin and how long till next one
+            // something like this - this is resource
+            struct BeatTimings {
+                next: Duration, // actually timestamp, not duration, based on GameTime::now()
+                period: Duration, // time between closest beats
+                level: u8, // or use separate struct/resource for it, doesn't matter
+            }
+        - sync to floor grid
+        ? use two sets of beats - for when player is having good damage and for when player is low on HP
+
+    - sounds for everything
+
+...
+
+
+Additional features
+===================
+? more mechanics
+
 + mechanics (minimal)
     + walls and player movement
         + spawn
@@ -55,41 +106,13 @@ Needs to be done ASAP
     + spawn waves
     + healing loot
 
-- mechanics (intermediate)
-    - interface etc
-        - HUD
-        + player reaction to being hit - [x]particles, [x]pulsating color, shaking, changing color, HUD, sound, etc
-        - player hit sound
++ mechanics (intermediate)
+    + interface etc
+        + HUD
+        + player reaction to being hit - [x]particles, [x]pulsating color, shaking, changing color, HUD, [x]sound, etc
+        + player hit sound
         + animate background grid
-    - craft
-        - enemies drop parts: (group 1: sphere, ray; group 2: laser, magnet)
-        - parts can be combined, replacing current mega-weapon
-        - mega-weapons have limited uses and can't be stored
-        - weapons
-            - rocket (sphere + laser)
-                - just projectile
-            - shield (sphere + magnet)
-                - when equipped, appears in front of the player
-                - absorbs projectiles
-                - deflects rays (still gets damaged, but less)
-            - railgun (ray + laser)
-                - just powerful ray which goes through all targets
-            - deflector (ray + magnet)
-                - pushes all projectiles away (and turns them into player's)
-    - advanced enemies
-        - turret patterns
-        - mini-bosses (like shield robot)
-        - movement
-            - patterns
-            - player-based
-        - expand healing mechanics
-    - simple statistics (point counting)
-    - UX
-        - add lore
-            - rename the project
-            - add description on itch
-        - tutorial messages (and tutorial wave)
-        - add difficulty selection (may just scale HP/damage)
+    + simple statistics (point counting)
 
 - delayed features
     - player
@@ -108,39 +131,18 @@ Needs to be done ASAP
         - would be fun to split them in parts on hit
 
 - mechanics (advanced)
-    - bosses
     ? maybe add shop? points are from asters
     ? combining smaller enemies into bigger ones
     ? add gamepad/touch support
 
-- graphics
++ graphics
     + explosions
-    - particles
+    + particles
         + hit sparks
-        - dust from asters
     + animated rays
     + world text
-    - player model (instead of the blob thing)
 
 - audio
-    - play beats, controlled by level via state:
-        0 (no beats)
-        1 |       |
-        2 |   i   |   i  
-        3 | . i . | . i .
-            feel free to use other patterns, but you get the idea
-            also mb 3rd level would be too much, dunno
-        - beat timing should be adjustable (store them in resource)
-        - provide resource with timings - when beat will begin and how long till next one
-            // something like this - this is resource
-            struct BeatTimings {
-                next: Duration, // actually timestamp, not duration, based on GameTime::now()
-                period: Duration, // time between closest beats
-                level: u8, // or use separate struct/resource for it, doesn't matter
-            }
-        - sync to floor grid
-        ? use two sets of beats - for when player is having good damage and for when player is low on HP
-
     - play ambient drone (tbh really not sure if this will work; maybe just use some music)
         - some system should control what to play; for now just change it over time
         - idea is there would be several drones of different tones, which could warn the player about
@@ -162,20 +164,23 @@ Needs to be done ASAP
         - loop (play looped sound when component is added to the entity; removal doesn't matter for now)
             - sound pitch should be controlled, probably via same component
 
-    - actual sounds
-        - some can be taken from here: https://github.com/vasukas/rodent/tree/binary_sounds/data/sounds
-            don't forget to convert them for kira
-        - actual list will be ready later
-
     ? would be nice to have volume limiter to avoid peaking, but that may be non-doable
 
 ...
 
 
-Additional features
-===================
-? more mechanics
-...
+Important bugs (old)
+==============
+- really important
+    - sometimes screen is black - egui actually draws windows in random order??
+        + fixed (except for main menu, which seems to work correctly anyway)
+        - not thoroughly tested
+- don't care for know
+    - switching to fullscreen SOMETIMES doesn't work on itch.io with Firefox
+    - (sometimes) bevy_kira_audio::audio_output: Failed to set volume for instance: CommandQueueFul
+    - (seems fixed) sometimes player seems to be hit by projectiles but isn't damaged
++ ESC/F10/F3 buttons might not work in browsers! they're used by browsers themselves
++ add LICENSE file and list used assets, with source and license
 
 
 

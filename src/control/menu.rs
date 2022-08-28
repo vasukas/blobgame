@@ -60,7 +60,7 @@ fn show_menu(
             ctx.fill_screen(
                 "menu::show_menu.bg",
                 egui::Color32::from_black_alpha(255),
-                egui::Order::Foreground,
+                egui::Order::Middle,
                 window.size,
             );
             ctx.popup(

@@ -70,16 +70,10 @@ fn main() {
         config.gravity = Vec2::ZERO; //-Vec2::Y * 10.;
         config
     })
-    .add_startup_system(setup)
     .add_plugin(control::ControlPlugin)
     .add_plugin(mechanics::MechanicsPlugin)
     .add_plugin(objects::ObjectsPlugin)
     .add_plugin(present::PresentationPlugin)
     .add_plugin(assets::MyAssetsPlugin)
     .run()
-}
-
-fn setup(mut windows: ResMut<Windows>, server: Res<AssetServer>) {
-    windows.primary_mut().set_maximized(true);
-    server.watch_for_changes().unwrap();
 }

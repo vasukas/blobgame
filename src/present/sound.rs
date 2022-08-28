@@ -95,7 +95,7 @@ fn play_sounds(
         let (volume, panning) = event
             .position
             .map(|pos| config.calculate(pos, 1.))
-            .unwrap_or((1., 0.));
+            .unwrap_or((1., 0.5));
 
         let mut cmd = audio.play(event.sound.clone());
         cmd.with_playback_rate(thread_rng().gen_range(0.9..1.2))
@@ -149,7 +149,7 @@ fn menu_drone(
         }
         None => {
             if !spawn.is_game_running() {
-                *sound = Some(audio.play(assets.menu_drone.clone()).looped().handle())
+                *sound = Some(audio.play(assets.ui_menu_drone.clone()).looped().handle())
             }
         }
     }

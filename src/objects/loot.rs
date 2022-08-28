@@ -1,7 +1,7 @@
 use crate::{
     common::*,
     mechanics::health::{DeathEvent, DieAfter, Health},
-    present::simple_sprite::SimpleSprite,
+    present::{simple_sprite::SimpleSprite, sound::Sound},
 };
 
 /// If present, entity will drop that on death
@@ -73,11 +73,12 @@ fn drop_loot(
 fn pick_loot(
     mut commands: Commands, phy: Res<RapierContext>,
     mut picker: Query<(&GlobalTransform, &mut Health, &mut LootPicker)>,
-    loot: Query<&PickableLoot>,
+    loot: Query<&PickableLoot>, mut sounds: EventWriter<Sound>, assets: Res<MyAssets>,
 ) {
     for (pos, mut health, picker) in picker.iter_mut() {
+        let pos = pos.pos_2d();
         phy.intersections_with_shape(
-            pos.pos_2d(),
+            pos,
             0.,
             &Collider::ball(picker.radius),
             QueryFilter::new().groups(PhysicsType::Loot.into()),
@@ -90,6 +91,10 @@ fn pick_loot(
                             if new_health > health.value {
                                 health.value = new_health;
                                 commands.entity(entity).despawn_recursive();
+                                sounds.send(Sound {
+                                    sound: assets.ui_pickup.clone(),
+                                    position: Some(pos),
+                                });
                             }
                         }
                     }

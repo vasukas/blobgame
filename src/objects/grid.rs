@@ -102,6 +102,7 @@ fn select_grid_pulse(
         match ev {
             WaveEvent::Started => state.wait_wave = false,
             WaveEvent::Ended => state.wait_wave = true,
+            WaveEvent::Restart => (), // ignored
         }
     }
 

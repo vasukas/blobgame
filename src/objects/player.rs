@@ -13,8 +13,11 @@ use crate::{
         movement::*,
     },
     present::{
-        camera::WindowInfo, effect::Flash, hud_elements::WorldText, simple_sprite::SimpleSprite,
-        sound::AudioListener,
+        camera::WindowInfo,
+        effect::Flash,
+        hud_elements::WorldText,
+        simple_sprite::SimpleSprite,
+        sound::{AudioListener, Sound},
     },
 };
 
@@ -26,8 +29,9 @@ impl Plugin for PlayerPlugin {
             .add_system(controls.before(MovementSystemLabel))
             .add_system(respawn)
             .add_system(update_player)
-            .add_system(player_damage)
-            .add_system(next_wave.exclusive_system());
+            .add_system(player_damage_reaction)
+            .add_system(next_wave.exclusive_system())
+            .add_system(hud_panel);
     }
 }
 
@@ -162,34 +166,20 @@ fn controls(
     }
 }
 
-#[derive(Default)]
-struct RespawnMenu {
-    death_start: Option<Duration>,
-}
-
 fn respawn(
-    mut ctx: ResMut<EguiContext>, mut data: Local<RespawnMenu>, player: Query<With<Player>>,
-    time: Res<Time>, mut spawn: ResMut<SpawnControl>, mut input: EventReader<InputAction>,
-    input_map: Res<InputMap>, window: Res<WindowInfo>,
+    mut ctx: ResMut<EguiContext>, player: Query<With<Player>>, time: Res<Time>,
+    mut spawn: ResMut<SpawnControl>, mut input: EventReader<InputAction>, input_map: Res<InputMap>,
+    window: Res<WindowInfo>,
 ) {
     if !spawn.is_game_running() {
         return;
     }
     if player.is_empty() {
-        let passed =
-            time.time_since_startup() - *data.death_start.get_or_insert(time.time_since_startup());
-        let t = passed.as_secs_f32() / Duration::from_secs(2).as_secs_f32();
-        ctx.fill_screen(
-            "player::respawn.bg",
-            egui::Color32::from_black_alpha((t * 255.).min(255.) as u8),
-            egui::Order::Background,
-            window.size,
-        );
         ctx.popup(
             "player::respawn",
             Vec2::ZERO,
-            false,
-            egui::Order::Middle,
+            true,
+            egui::Order::Background,
             |ui| {
                 ui.heading("~= YOU DIED =~");
 
@@ -209,8 +199,6 @@ fn respawn(
                 _ => (),
             }
         }
-    } else {
-        data.death_start = None;
     }
 }
 
@@ -233,18 +221,33 @@ fn update_player(mut player: Query<(&mut Player, &mut Health)>, time: Res<GameTi
     }
 }
 
-fn player_damage(
-    mut commands: Commands, mut player: Query<Entity, With<Player>>,
-    mut events: CmdReader<ReceivedDamage>,
+fn player_damage_reaction(
+    mut commands: Commands, mut player: Query<(Entity, &Health), With<Player>>,
+    mut events: CmdReader<ReceivedDamage>, mut was_damaged: Local<bool>,
+    mut sound: EventWriter<Sound>, assets: Res<MyAssets>,
 ) {
-    events.iter_cmd_mut(&mut player, |_, entity| {
+    events.iter_cmd_mut(&mut player, |_, (entity, _)| {
         commands.entity(entity).insert(Flash {
             radius: Player::RADIUS,
             duration: Duration::from_millis(500),
             color0: Color::RED,
             color1: Color::NONE,
         });
-    })
+    });
+
+    let damaged = player
+        .get_single()
+        .map(|v| v.1.value < v.1.max / 2.)
+        .unwrap_or(false);
+    if damaged != *was_damaged {
+        *was_damaged = damaged;
+        if damaged {
+            sound.send(Sound {
+                sound: assets.ui_alert.clone(),
+                ..default()
+            })
+        }
+    }
 }
 
 #[derive(Default)]
@@ -294,4 +297,59 @@ fn next_wave(
             data.text = None;
         }
     }
+}
+
+fn hud_panel(mut ctx: ResMut<EguiContext>, stats: Res<Stats>, player: Query<(&Health, &Player)>) {
+    ctx.popup(
+        "player::hud_panel",
+        vec2(-1., -1.),
+        false,
+        egui::Order::Background,
+        |ui| {
+            ui.label("WAVE");
+            ui.label(format!("{}", stats.wave + 1));
+            ui.label("");
+
+            if let Ok((health, player)) = player.get_single() {
+                ui.label("HEALTH");
+                let hp = (health.value / health.max * 100.).clamp(0., 100.) as u32;
+                ui.visuals_mut().override_text_color = Some(if hp < 50 {
+                    egui::Color32::RED
+                } else if hp < 80 {
+                    egui::Color32::YELLOW
+                } else {
+                    egui::Color32::GREEN
+                });
+                ui.label(format!("{:3}", hp));
+                ui.visuals_mut().override_text_color = None;
+                ui.label("");
+
+                ui.label("STAMINA");
+                let stamina = (Player::MAX_EXHAUSTION - player.exhaustion) as u32;
+                ui.visuals_mut().override_text_color = Some(match stamina {
+                    0 => egui::Color32::DARK_GRAY,
+                    1 => egui::Color32::LIGHT_YELLOW,
+                    _ => egui::Color32::GREEN,
+                });
+                ui.label(format!("{}", stamina));
+                ui.visuals_mut().override_text_color = None;
+                ui.label("");
+
+                ui.label("POINTS");
+                ui.label(format!("{}", stats.points));
+                ui.label("");
+
+                ui.label("TIME");
+                ui.label(format!(
+                    "{:02}:{:02}",
+                    stats.time.as_secs() / 60,
+                    stats.time.as_secs() % 60
+                ));
+                ui.label("");
+            } else {
+                ui.visuals_mut().override_text_color = Some(egui::Color32::RED);
+                ui.label("DEAD");
+            }
+        },
+    );
 }

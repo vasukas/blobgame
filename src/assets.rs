@@ -11,7 +11,9 @@ pub struct MyAssets {
 
     // sounds
     pub explosion_small: Handle<AudioSource>,
-    pub menu_drone: Handle<AudioSource>,
+    pub ui_menu_drone: Handle<AudioSource>,
+    pub ui_pickup: Handle<AudioSource>,
+    pub ui_alert: Handle<AudioSource>,
 }
 
 //
@@ -38,6 +40,8 @@ fn load_assets(mut assets: ResMut<MyAssets>, server: Res<AssetServer>) {
         )
     }
 
-    assets.explosion_small = server.load("sounds/explosion_bot_1.ogg");
-    assets.menu_drone = server.load("sounds/the_noise.ogg");
+    assets.explosion_small = server.load("sounds/explosion_2.ogg");
+    assets.ui_menu_drone = server.load("sounds/the_noise.ogg");
+    assets.ui_pickup = server.load("sounds/ui_pickup.ogg");
+    assets.ui_alert = server.load("sounds/ui_alert.ogg");
 }

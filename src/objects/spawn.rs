@@ -2,7 +2,7 @@ use super::{player::Player, stats::Stats};
 use crate::{
     common::*,
     mechanics::{ai::*, damage::Team, health::Health},
-    objects::{grid::GridBar, loot::Loot, weapon::Weapon},
+    objects::{grid::GridBar, loot::Loot, stats::DeathPoints, weapon::Weapon},
     present::{camera::WorldCamera, effect::SpawnEffect},
 };
 
@@ -31,6 +31,7 @@ impl SpawnControl {
 pub enum WaveEvent {
     Started,
     Ended,
+    Restart, // sent with Started
 }
 
 //
@@ -78,6 +79,9 @@ fn spawn(
             *stats = default();
         }
 
+        if control.wave_spawned == Some(stats.wave) {
+            wave_event.send(WaveEvent::Restart)
+        }
         control.wave_spawned = Some(stats.wave);
         *wave_data = default();
         wave_event.send(WaveEvent::Started);
@@ -88,7 +92,10 @@ fn spawn(
 
         let world_ratio = 16. / 9.;
         let world_size = vec2(40., 40. / world_ratio);
-        camera.single_mut().target_size = world_size;
+        camera.single_mut().target_size = world_size + 0.1;
+
+        let offset = vec2(1.8, 0.);
+        let world_size = world_size - offset.abs() * 2.;
 
         // only on first spawn or respawn
         if first_spawn || despawn {
@@ -100,7 +107,7 @@ fn spawn(
                         origin: RectangleOrigin::Center,
                     },
                     DrawMode::Stroke(StrokeMode::new(Color::WHITE * 0.3, 0.1)),
-                    default(),
+                    Transform::new_2d(offset),
                 ))
                 .insert(GameplayObject)
                 .insert(Depth::Wall)
@@ -130,7 +137,7 @@ fn spawn(
                         .spawn_bundle(GeometryBuilder::build_as(
                             &shapes::Line(vec2(x, -world_size.y / 2.), vec2(x, world_size.y / 2.)),
                             DrawMode::Stroke(StrokeMode::color(Color::NONE)),
-                            default(),
+                            Transform::new_2d(offset),
                         ))
                         .insert(GameplayObject)
                         .insert(Depth::BackgroundGrid)
@@ -153,7 +160,7 @@ fn spawn(
                         .spawn_bundle(GeometryBuilder::build_as(
                             &shapes::Line(vec2(-world_size.x / 2., y), vec2(world_size.x / 2., y)),
                             DrawMode::Stroke(StrokeMode::color(Color::NONE)),
-                            default(),
+                            Transform::new_2d(offset),
                         ))
                         .insert(GameplayObject)
                         .insert(Depth::BackgroundGrid)
@@ -169,7 +176,7 @@ fn spawn(
 
             // the player
             commands
-                .spawn_bundle(SpatialBundle::default())
+                .spawn_bundle(SpatialBundle::from_transform(Transform::new_2d(offset)))
                 .insert(Player::default())
                 .insert(GameplayObject)
                 .insert(SpawnEffect { radius: 2. });
@@ -189,30 +196,30 @@ fn spawn(
             vec2(world_size.x * 0.1, world_size.y * 0.2),
             vec2(world_size.x * 0.1, world_size.y * 0.4),
         ] {
-            create_wall(&mut commands, pos, Vec2::splat(1.5))
+            create_wall(&mut commands, offset + pos, Vec2::splat(1.5))
         }
 
         // test turret
         if stats.wave % 2 == 0 {
             wave_data
                 .entities
-                .push(create_turret(&mut commands, vec2(-15., 0.)));
+                .push(create_turret(&mut commands, offset + vec2(-15., 0.)));
             wave_data
                 .entities
-                .push(create_turret(&mut commands, vec2(15., 0.)));
+                .push(create_turret(&mut commands, offset + vec2(15., 0.)));
         } else {
             wave_data
                 .entities
-                .push(create_turret(&mut commands, vec2(-10., 10.)));
+                .push(create_turret(&mut commands, offset + vec2(-10., 10.)));
             wave_data
                 .entities
-                .push(create_turret(&mut commands, vec2(10., 10.)));
+                .push(create_turret(&mut commands, offset + vec2(10., 10.)));
             wave_data
                 .entities
-                .push(create_turret(&mut commands, vec2(-10., -10.)));
+                .push(create_turret(&mut commands, offset + vec2(-10., -10.)));
             wave_data
                 .entities
-                .push(create_turret(&mut commands, vec2(10., -10.)));
+                .push(create_turret(&mut commands, offset + vec2(10., -10.)));
         }
     }
 }
@@ -296,13 +303,14 @@ fn create_turret(commands: &mut Commands, origin: Vec2) -> Entity {
                 .stage(1, Duration::from_secs(1), AttackStage::Wait),
         )
         .insert(Health::new(3.))
+        .insert(DeathPoints(20))
         //
         .insert(RigidBody::Fixed)
         .insert(PhysicsType::Solid.rapier())
         .insert(Collider::ball(radius));
 
     use rand::*;
-    if thread_rng().gen_bool(0.33) {
+    if thread_rng().gen_bool(0.4) {
         commands.insert(Loot::Health { value: 2. });
     }
 

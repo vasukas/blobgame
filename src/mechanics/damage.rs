@@ -1,6 +1,7 @@
 use super::{health::*, physics::CollectContacts};
 use crate::{
     common::*,
+    objects::stats::Stats,
     present::effect::{Explosion, RayEffect},
 };
 
@@ -85,9 +86,9 @@ fn die_on_contact(
 }
 
 fn damage_ray(
-    rays: Query<(&GlobalTransform, &DamageRay, &Damage, &Team)>,
-    targets: Query<&Team, With<Health>>, mut damage_cmd: CmdWriter<DamageEvent>,
-    phy: Res<RapierContext>, mut commands: Commands, mut explode: EventWriter<Explosion>,
+    rays: Query<(&GlobalTransform, &DamageRay, &Damage, &Team)>, targets: Query<(&Team, &Health)>,
+    mut damage_cmd: CmdWriter<DamageEvent>, phy: Res<RapierContext>, mut commands: Commands,
+    mut explode: EventWriter<Explosion>, mut stats: ResMut<Stats>,
 ) {
     let huge_distance = 1000.;
 
@@ -106,7 +107,7 @@ fn damage_ray(
             |entity, intersect| {
                 let same_team = targets
                     .get(entity)
-                    .map(|other_team| *team == *other_team)
+                    .map(|other_team| *team == *other_team.0)
                     .unwrap_or(false);
                 if intersect.toi < best_distance && !same_team {
                     best_distance = intersect.toi;
@@ -116,6 +117,15 @@ fn damage_ray(
             },
         );
         if let Some((entity, point)) = best_target {
+            // hack to get points for shooting projectiles
+            if *team == Team::Player {
+                if let Ok((_, health)) = targets.get(entity) {
+                    if health.max < 1. {
+                        stats.points += 1
+                    }
+                }
+            }
+
             damage_cmd.send((
                 entity,
                 DamageEvent {

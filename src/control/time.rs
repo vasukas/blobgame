@@ -14,6 +14,10 @@ impl GameTime {
         self.now
     }
 
+    pub fn delta(&self) -> Duration {
+        self.delta
+    }
+
     /// Note that this might be zero!
     pub fn delta_seconds(&self) -> f32 {
         self.delta.as_secs_f32()
