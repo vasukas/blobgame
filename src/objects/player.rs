@@ -53,7 +53,7 @@ pub struct Player {
 impl Player {
     pub const RADIUS: f32 = 0.5;
     const MAX_EXHAUSTION: f32 = 3.;
-    pub const DASH_DISTANCE: f32 = 4.5;
+    pub const DASH_DISTANCE: f32 = 5.;
     const DASH_DURATION: Duration = Duration::from_millis(250);
     const SPEED: f32 = 7.;
 
@@ -161,6 +161,7 @@ fn controls(
     let pos = pos.pos_2d();
 
     let mut mov = Vec2::ZERO;
+    let mut dash = false;
     for action in input.iter() {
         match action {
             InputAction::MoveLeft => mov.x -= 1.,
@@ -168,28 +169,7 @@ fn controls(
             InputAction::MoveUp => mov.y += 1.,
             InputAction::MoveDown => mov.y -= 1.,
 
-            InputAction::Dash | InputAction::TargetDash => {
-                if player.dash_until.is_none() && player.exhaust(1.) {
-                    player.dash_until = Some(time.now() + Player::DASH_DURATION);
-                    commands.entity(entity).insert(Flash {
-                        radius: Player::RADIUS,
-                        duration: Player::DASH_DURATION,
-                        color0: Color::WHITE,
-                        color1: Color::rgb(0.8, 1., 1.),
-                    });
-                    kinematic.send((
-                        entity,
-                        KinematicCommand::Dash {
-                            dir: if *action == InputAction::Dash {
-                                player.prev_move
-                            } else {
-                                window.cursor - pos
-                            },
-                            exact: *action == InputAction::TargetDash,
-                        },
-                    ));
-                }
-            }
+            InputAction::Dash => dash = true,
 
             InputAction::Fire => {
                 if player.try_shoot(&real_time, false) {
@@ -238,6 +218,21 @@ fn controls(
     if let Some(dir) = mov.try_normalize() {
         player.prev_move = dir;
         kinematic.send((entity, KinematicCommand::Move { dir }))
+    }
+    if dash && player.dash_until.is_none() && player.exhaust(1.) {
+        player.dash_until = Some(time.now() + Player::DASH_DURATION);
+        commands.entity(entity).insert(Flash {
+            radius: Player::RADIUS,
+            duration: Player::DASH_DURATION,
+            color0: Color::WHITE,
+            color1: Color::rgb(0.8, 1., 1.),
+        });
+        kinematic.send((
+            entity,
+            KinematicCommand::Dash {
+                dir: player.prev_move,
+            },
+        ));
     }
 }
 

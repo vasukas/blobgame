@@ -455,7 +455,7 @@ fn charging_attack(
         &mut ChargingState,
         &ChargingAttack,
     )>,
-    mut hints: Query<(&mut Transform, &mut DrawMode)>, time: Res<GameTime>,
+    mut hints: Query<(&mut Transform, &mut DrawMode), Without<ChargingSpark>>, time: Res<GameTime>,
     mut explode: EventWriter<Explosion>,
 ) {
     use bevy_lyon::*;

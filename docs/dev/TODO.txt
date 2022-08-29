@@ -28,13 +28,11 @@ Needs to be done ASAP
     - advanced enemies
         - turret patterns
         - mini-bosses (like shield robot)
-        - expand healing mechanics
         - bosses (just stuff moving in patterns)
         - some simple movement, maybe
         - asteroids, maybe, lol
         - various wave patterns
     - craft
-        - ui_weapon_broken
         - 2nd group of weapons
             - shield (sphere & magnet)
                 - when equipped, appears in front of the player
@@ -51,6 +49,7 @@ Needs to be done ASAP
 
 - add description on itch
 - add player and item models (grep "blob")
+- more compact tutorial text
 
 ...
 
@@ -61,6 +60,8 @@ Additional features
 - weapon and part icons (for menu)
 - timing on beats (sound) might be wrong?
 - fix plasma balls being self-destroyed on contact with small projectiles
+- movement trail (esp. in dash)
+- expand healing mechanics
 
 ? more mechanics
 

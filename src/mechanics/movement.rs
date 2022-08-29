@@ -9,13 +9,13 @@ pub struct KinematicController {
     pub dash_duration: Duration,
 
     // internal state
-    pub dash: Option<(Vec2, Duration)>, // (velocity, until)
+    pub dash: Option<(Vec2, Duration)>, // (dir, until)
 }
 
 /// Entity command
 pub enum KinematicCommand {
     Move { dir: Vec2 },
-    Dash { dir: Vec2, exact: bool },
+    Dash { dir: Vec2 },
 }
 
 #[derive(Component, Default)]
@@ -50,7 +50,8 @@ fn kinematic_controller(
         &mut entities,
         |cmd, (entity, global_pos, mut transform, mut kinematic)| match *cmd {
             KinematicCommand::Move { dir } => {
-                if kinematic.dash.is_some() {
+                if let Some((dash, _)) = kinematic.dash.as_mut() {
+                    *dash = dir;
                     return;
                 }
 
@@ -76,23 +77,15 @@ fn kinematic_controller(
                     transform.add_2d(dir * speed);
                 }
             }
-            KinematicCommand::Dash { dir, exact } => {
-                let speed = if exact && dir.length() < kinematic.dash_distance {
-                    dir.length() / kinematic.dash_duration.as_secs_f32()
-                } else {
-                    kinematic.dash_distance / kinematic.dash_duration.as_secs_f32()
-                };
-                kinematic.dash = Some((
-                    dir.normalize_or_zero() * speed,
-                    time.now() + kinematic.dash_duration,
-                ))
+            KinematicCommand::Dash { dir } => {
+                kinematic.dash = Some((dir, time.now() + kinematic.dash_duration))
             }
         },
     );
 
     // process dash
     for (entity, global_pos, mut transform, mut kinematic) in entities.iter_mut() {
-        if let Some((velocity, until)) = kinematic.dash {
+        if let Some((dir, until)) = kinematic.dash {
             if time.reached(until) {
                 kinematic.dash = None
             } else {
@@ -101,7 +94,8 @@ fn kinematic_controller(
                     .exclude_rigid_body(entity)
                     .groups(PhysicsType::MovementController.into());
 
-                let offset = velocity * time.delta_seconds();
+                let speed = kinematic.dash_distance / kinematic.dash_duration.as_secs_f32();
+                let offset = dir * speed * time.delta_seconds();
                 if phy
                     .cast_ray(global_pos, offset, 1.1, true, filter)
                     .is_none()

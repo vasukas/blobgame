@@ -220,8 +220,8 @@ fn spawn(
             Some(1) => {
                 tutorial_text.0 = concat!(
                     "Move around with W/A/S/D keys.\n",
-                    "Press SHIFT key to dash in movement direction.\n",
-                    "Press SPACE key to dash in the direction to mouse cursor.\n",
+                    "Press SPACE key to dash in movement direction.\n",
+                    "You can change direction mid-dash, but can't stop.\n",
                     "Dash gives temporary invincibilty, but consumes stamina.",
                     "\n\nPress R key to show next message",
                 );
@@ -264,7 +264,7 @@ fn spawn(
                 tutorial_text.0 = concat!(
                     "Over time you acquire focus charge.\n",
                     "Destroying enemies increases it faster, receiving damage decreases it.\n",
-                    "When you have 100% charge, press V to enter focus mode.\n",
+                    "When you have 100% charge, press SHIFT to enter focus mode.\n",
                     "If you shoot in sync with beat, damage is greatly increased.\n",
                     "  BUG: sound might get out of sync, but grid pulsation should be fine!\n",
                     "Time is limited, and receiving damage depletes it faster.",
