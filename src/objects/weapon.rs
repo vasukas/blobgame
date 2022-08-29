@@ -1,5 +1,4 @@
-use std::f32::consts::PI;
-
+use super::stats::Stats;
 use crate::{
     common::*,
     mechanics::{
@@ -15,6 +14,7 @@ use crate::{
         sound::{Beats, Sound},
     },
 };
+use std::f32::consts::PI;
 
 /// Command event
 #[derive(Clone, Copy, Default)]
@@ -43,14 +43,14 @@ impl CraftedWeapon {
     // (name, description, max uses)
     pub fn description(&self) -> (&'static str, &'static str, f32) {
         match self {
-            CraftedWeapon::Plasma => ("Plasma", "Shoots explosive energy balls", 15.),
+            CraftedWeapon::Plasma => ("Plasma", "Shoots explosive energy balls", 10.),
             CraftedWeapon::Shield => (
                 "Shield",
                 "Generates force-field which absorbs incoming projectiles",
                 10.,
             ),
-            CraftedWeapon::Railgun => ("Railgun", "Shoots powerful piercing death ray", 15.),
-            CraftedWeapon::Repeller => ("Repeller", "Pushes projectiles away from you", 20.),
+            CraftedWeapon::Railgun => ("Railgun", "Shoots powerful piercing death ray", 10.),
+            CraftedWeapon::Repeller => ("Repeller", "Pushes projectiles away from you", 15.),
         }
     }
 }
@@ -74,7 +74,8 @@ fn weapon(
         &Team,
         Option<&KinematicController>,
     )>,
-    mut sound: EventWriter<Sound>, assets: Res<MyAssets>, beats: Res<Beats>, real_time: Res<Time>,
+    mut sound_cmd: EventWriter<Sound>, assets: Res<MyAssets>, beats: Res<Beats>,
+    real_time: Res<Time>, mut stats: ResMut<Stats>,
 ) {
     use bevy_lyon::*;
     weapon.iter_cmd_mut(
@@ -129,13 +130,13 @@ fn weapon(
                     .insert(PhysicsType::Projectile.rapier())
                     .insert(Velocity::linear(velocity));
 
-                sound.send(Sound {
+                sound_cmd.send(Sound {
                     sound: assets.wpn_smg.clone(),
                     position: Some(transform.pos_2d()),
                 });
             }
 
-            Weapon::PlayerGun { dir } => {
+            Weapon::PlayerGun { dir } | Weapon::PlayerCrafted { dir } => {
                 let mut transform = Transform::new_2d(
                     transform.pos_2d() + dir.normalize_or_zero() * Player::RADIUS,
                 );
@@ -153,49 +154,110 @@ fn weapon(
                     .abs()
                         < 60f32.to_radians();
 
-                commands
-                    .spawn_bundle(SpatialBundle::from_transform(transform))
-                    .insert(GameplayObject)
-                    .insert(Damage::new(if ultra_powered && powered {
-                        6.
-                    } else if powered || ultra_powered {
-                        3.
-                    } else {
-                        1.
-                    }))
-                    .insert(*team)
-                    .insert(DieAfter::one_frame())
-                    .insert(DamageRay {
-                        spawn_effect: Some(RayEffect {
-                            color: if powered { Color::ORANGE_RED } else { Color::CYAN }
-                                .with_a(0.4),
-                            width: 0.4,
-                            fade_time: Duration::from_millis(if powered { 400 } else { 300 }),
-                            ..default()
-                        }),
-                        explosion_effect: Some(Explosion {
-                            color0: Color::WHITE,
-                            color1: Color::WHITE,
-                            time: Duration::from_millis(300),
-                            radius: 1.,
-                            ..default()
-                        }),
-                        ..default()
-                    })
-                    .insert(DontSparkMe);
+                let mut commands = commands.spawn_bundle(SpatialBundle::from_transform(transform));
+                commands.insert(GameplayObject).insert(*team);
 
-                sound.send(Sound {
-                    sound: if powered {
-                        assets.player_gun_powered.clone()
+                let (damage, ray, sound) = match weapon {
+                    Weapon::PlayerGun { .. } => (
+                        [1., 3., 6.],
+                        Some(DamageRay {
+                            spawn_effect: Some(RayEffect {
+                                color: if powered || ultra_powered {
+                                    Color::ORANGE_RED
+                                } else {
+                                    Color::CYAN
+                                }
+                                .with_a(0.3),
+                                width: 0.4,
+                                fade_time: Duration::from_millis(if powered { 400 } else { 300 }),
+                                ..default()
+                            }),
+                            explosion_effect: Some(Explosion {
+                                color0: Color::WHITE,
+                                color1: Color::WHITE,
+                                time: Duration::from_millis(300),
+                                radius: 1.,
+                                ..default()
+                            }),
+                            ..default()
+                        }),
+                        if powered {
+                            assets.player_gun_powered.clone()
+                        } else {
+                            assets.player_gun.clone()
+                        },
+                    ),
+                    _ => {
+                        let mega_weapon = match stats.player.weapon0.as_mut() {
+                            Some(w) => w,
+                            None => {
+                                commands.insert(DieAfter::one_frame());
+                                return;
+                            }
+                        };
+                        match mega_weapon {
+                            (CraftedWeapon::Railgun, uses) => {
+                                *uses -= 1.;
+                                if *uses <= 0. {
+                                    stats.player.weapon0 = None
+                                }
+
+                                (
+                                    [4., 6., 12.],
+                                    Some(DamageRay {
+                                        spawn_effect: Some(RayEffect {
+                                            color: if powered || ultra_powered {
+                                                Color::WHITE
+                                            } else {
+                                                Color::ALICE_BLUE
+                                            }
+                                            .with_a(0.5),
+                                            width: 0.4,
+                                            fade_time: Duration::from_millis(if powered {
+                                                400
+                                            } else {
+                                                300
+                                            }),
+                                            ..default()
+                                        }),
+                                        explosion_effect: Some(Explosion {
+                                            color0: Color::WHITE,
+                                            color1: Color::WHITE,
+                                            time: Duration::from_millis(400),
+                                            radius: 1.5,
+                                            ..default()
+                                        }),
+                                        ..default()
+                                    }),
+                                    assets.player_railgun.clone(),
+                                )
+                            }
+                            _ => todo!(),
+                        }
+                    }
+                };
+
+                commands.insert(Damage::new(
+                    damage[if ultra_powered && powered {
+                        2
+                    } else if powered || ultra_powered {
+                        1
                     } else {
-                        assets.player_gun.clone()
-                    },
+                        0
+                    }],
+                ));
+
+                if let Some(ray) = ray {
+                    commands
+                        .insert(ray)
+                        .insert(DieAfter::one_frame())
+                        .insert(DontSparkMe);
+                }
+
+                sound_cmd.send(Sound {
+                    sound,
                     position: Some(transform.pos_2d()),
                 });
-            }
-
-            Weapon::PlayerCrafted { dir } => {
-                // TODO: implement
             }
         },
     );

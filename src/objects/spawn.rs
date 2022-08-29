@@ -12,7 +12,10 @@ use crate::{
         stats::DeathPoints,
         weapon::Weapon,
     },
-    present::{camera::WorldCamera, effect::SpawnEffect},
+    present::{
+        camera::WorldCamera,
+        effect::{FlashOnDamage, SpawnEffect},
+    },
     settings::Difficulty,
 };
 use std::f32::consts::SQRT_2;
@@ -220,6 +223,7 @@ fn spawn(
                     "Press SHIFT key to dash in movement direction.\n",
                     "Press SPACE key to dash in the direction to mouse cursor.\n",
                     "Dash gives temporary invincibilty, but consumes stamina.",
+                    "\n\nPress R key to show next message",
                 );
             }
             Some(2) => {
@@ -228,6 +232,7 @@ fn spawn(
                     "Shoot in the movement direction just after starting dash\n",
                     "  to deal increased damage (ray will turn red).\n",
                     "Level is completed when all enemies are destroyed.",
+                    "\n\nPress R key to show next message",
                 );
             }
             Some(3) => {
@@ -252,6 +257,7 @@ fn spawn(
                     "Press C to access crafting menu.\n",
                     "Shoot with right mouse button; some attacks can be combined,\n",
                     "for example shooting plasma ball will make it explode.",
+                    "\n\nPress R key to show next message",
                 );
             }
             Some(5) => {
@@ -261,7 +267,8 @@ fn spawn(
                     "When you have 100% charge, press V to enter focus mode.\n",
                     "If you shoot in sync with beat, damage is greatly increased.\n",
                     "  BUG: sound might get out of sync, but grid pulsation should be fine!\n",
-                    "Time is limited, and receiving damage depletes it faster."
+                    "Time is limited, and receiving damage depletes it faster.",
+                    "\n\nPress R key to show next message",
                 );
             }
             Some(6) => {
@@ -277,6 +284,7 @@ fn spawn(
                     "That's it, end of tutorial!\n",
                     "Game currently has no ending,\n",
                     "Waves will be repeated after some time",
+                    "\n\nPress R key to PLAY",
                 );
                 control.tutorial = None;
             }
@@ -408,6 +416,7 @@ fn create_turret(commands: &mut Commands, origin: Vec2, difficulty: Difficulty) 
     commands
         .insert(Depth::Player)
         .insert(SpawnEffect { radius: 1. })
+        .insert(FlashOnDamage::Radius(radius))
         //
         .insert(GameplayObject)
         .insert(Target::Player)
@@ -444,7 +453,12 @@ fn create_turret(commands: &mut Commands, origin: Vec2, difficulty: Difficulty) 
                 Difficulty::Hard => thread_rng().gen_bool(0.8),
             } {
                 if thread_rng().gen_bool(0.66) {
-                    loot.push(Loot::Health { value: 1.5 });
+                    loot.push(Loot::Health {
+                        value: match difficulty {
+                            Difficulty::Easy => 4.,
+                            Difficulty::Hard => 1.5,
+                        },
+                    });
                 }
                 if thread_rng().gen_bool(0.33) {
                     loot.push(Loot::CraftPart(CraftPart::random()));

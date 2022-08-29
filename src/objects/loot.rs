@@ -85,7 +85,7 @@ fn drop_loot(
                 .insert(PhysicsType::Loot.rapier())
                 .insert(Depth::Player)
                 .insert(SimpleSprite {
-                    images: assets.player.clone(),
+                    images: assets.blob.clone(),
                     frame_duration: Duration::from_millis(200),
                     size: Vec2::splat(radius * 2.),
                     ..default()

@@ -36,10 +36,11 @@ Needs to be done ASAP
                 - absorbs projectiles
                 - deflects rays (still gets damaged, but less)
             - railgun (ray & laser)
-                - just powerful ray which goes through all targets
+                + just powerful ray which goes through all targets
                 - explodes projectiles
             - deflector (ray & magnet)
                 - pushes all projectiles away (and turns them into player's)
+        - notify player when weapon breaks
     - advanced enemies
         - turret patterns
         - mini-bosses (like shield robot)
@@ -57,7 +58,7 @@ Needs to be done ASAP
 - more wave patterns
     - add warning to last wave that it just loops endlessly
 - add description on itch
-- add player and item models (instead of blobs)
+- add player and item models (grep "blob")
 
 ...
 
@@ -65,8 +66,8 @@ Needs to be done ASAP
 Additional features
 ===================
 - coherent code
-- weapon and part icons
-- timing on beats might be wrong
+- weapon and part icons (for menu)
+- timing on beats might be wrong?
 
 ? more mechanics
 

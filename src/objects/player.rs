@@ -18,11 +18,12 @@ use crate::{
     },
     present::{
         camera::WindowInfo,
-        effect::Flash,
+        effect::{Flash, FlashOnDamage},
         hud_elements::WorldText,
         simple_sprite::SimpleSprite,
         sound::{AudioListener, Beats, Sound},
     },
+    settings::Difficulty,
 };
 
 pub struct PlayerPlugin;
@@ -107,11 +108,12 @@ fn spawn_player(
             //
             .insert(Depth::Player)
             .insert(SimpleSprite {
-                images: assets.player.clone(),
+                images: assets.blob.clone(),
                 frame_duration: Duration::from_millis(250),
                 size: Vec2::splat(radius * 2.),
                 ..default()
             })
+            .insert(FlashOnDamage::Radius(Player::RADIUS))
             .with_children(|parent| {
                 use bevy_lyon::*;
                 parent.spawn_bundle(GeometryBuilder::build_as(
@@ -126,11 +128,10 @@ fn spawn_player(
             .insert(AudioListener)
             //
             .insert(Team::Player)
-            // TODO: increase health back
             .insert(
                 Health::new(match settings.difficulty {
-                    crate::settings::Difficulty::Easy => 8.,
-                    crate::settings::Difficulty::Hard => 3.,
+                    Difficulty::Easy => 8.,
+                    Difficulty::Hard => 3.,
                 })
                 .armor(),
             )
@@ -298,7 +299,7 @@ fn update_player(
             (player.exhaustion - time.delta_seconds() * exhaust_restore_speed).max(0.);
 
         // increase charge
-        if !spawn.waiting_for_next_wave || spawn.tutorial.is_some() {
+        if !spawn.waiting_for_next_wave {
             stats.ubercharge += time.delta_seconds() / charge_time_seconds;
         }
     }
@@ -330,24 +331,17 @@ fn update_player(
 }
 
 fn player_damage_reaction(
-    mut commands: Commands, mut player: Query<(Entity, &Health, &mut Player)>,
-    mut events: CmdReader<ReceivedDamage>, mut was_damaged: Local<bool>,
-    mut sound: EventWriter<Sound>, assets: Res<MyAssets>, mut stats: ResMut<Stats>,
+    mut player: Query<(Entity, &Health, &mut Player)>, mut events: CmdReader<ReceivedDamage>,
+    mut was_damaged: Local<bool>, mut sound: EventWriter<Sound>, assets: Res<MyAssets>,
+    mut stats: ResMut<Stats>,
 ) {
     let charge_loss_on_hit = 0.1;
 
-    events.iter_cmd_mut(&mut player, |_, (entity, _, mut player)| {
+    events.iter_cmd_mut(&mut player, |_, (_, _, mut player)| {
         if let Some(beats) = player.beats_count.as_mut() {
             *beats -= 1
         }
         stats.ubercharge = (stats.ubercharge.min(1.) - charge_loss_on_hit).max(0.);
-
-        commands.entity(entity).insert(Flash {
-            radius: Player::RADIUS,
-            duration: Duration::from_millis(500),
-            color0: Color::RED,
-            color1: Color::NONE,
-        });
     });
 
     let damaged = player

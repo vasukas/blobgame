@@ -32,7 +32,7 @@ impl Default for PersistentPlayer {
                 CraftPart::Laser => 2,
                 CraftPart::Magnet => 2,
             },
-            weapon0: Default::default(),
+            weapon0: Some((CraftedWeapon::Railgun, 5.)),
             weapon1: Default::default(),
         }
     }

@@ -5,9 +5,8 @@ use std::sync::Arc;
 #[derive(Default)]
 pub struct MyAssets {
     // graphics
-    pub crystal: Handle<Image>,
     pub glow: Handle<Image>,
-    pub player: ImageVec,
+    pub blob: ImageVec,
 
     // UI sounds (MUST NOT BE USED AS POSITIONAL)
     pub ui_menu_drone: Handle<AudioSource>,
@@ -17,6 +16,7 @@ pub struct MyAssets {
     //
     pub player_gun: Handle<AudioSource>,
     pub player_gun_powered: Handle<AudioSource>,
+    pub player_railgun: Handle<AudioSource>,
 
     // world sounds
     pub explosion_small: Handle<AudioSource>,
@@ -35,10 +35,9 @@ impl Plugin for MyAssetsPlugin {
 }
 
 fn load_assets(mut assets: ResMut<MyAssets>, server: Res<AssetServer>) {
-    assets.crystal = server.load("sprites/crystal.png");
     assets.glow = server.load("sprites/glow.png");
 
-    for (data, prefix, count) in [(&mut assets.player, "sprites/player/circ", 3)] {
+    for (data, prefix, count) in [(&mut assets.blob, "sprites/player/circ", 3)] {
         *data = Arc::new(
             (0..count)
                 .into_iter()
@@ -55,6 +54,7 @@ fn load_assets(mut assets: ResMut<MyAssets>, server: Res<AssetServer>) {
     //
     assets.player_gun = server.load("sounds/ui/player_gun.ogg");
     assets.player_gun_powered = server.load("sounds/ui/player_gun_powered.ogg");
+    assets.player_railgun = server.load("sounds/ui/player_railgun.ogg");
 
     // world sounds
     assets.explosion_small = server.load("sounds/world/explosion.ogg");

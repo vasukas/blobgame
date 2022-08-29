@@ -68,6 +68,11 @@ pub struct RayEffect {
     pub destroy_parent: bool,
 }
 
+#[derive(Component)]
+pub enum FlashOnDamage {
+    Radius(f32),
+}
+
 //
 
 pub struct EffectPlugin;
@@ -83,7 +88,8 @@ impl Plugin for EffectPlugin {
             .add_system(update_flash.exclusive_system())
             .add_system(hit_sparks)
             .add_system_to_stage(CoreStage::PostUpdate, hit_sparks_on_damage)
-            .add_system(ray.exclusive_system());
+            .add_system(ray.exclusive_system())
+            .add_system(flash_on_damage);
     }
 }
 
@@ -393,4 +399,21 @@ fn ray(
             }
         }
     }
+}
+
+fn flash_on_damage(
+    mut commands: Commands, mut player: Query<(Entity, &FlashOnDamage)>,
+    mut events: CmdReader<ReceivedDamage>,
+) {
+    let duration = Duration::from_millis(500);
+    events.iter_cmd_mut(&mut player, |_, (entity, flash)| match *flash {
+        FlashOnDamage::Radius(radius) => {
+            commands.entity(entity).insert(Flash {
+                radius,
+                duration,
+                color0: Color::RED,
+                color1: Color::NONE,
+            });
+        }
+    });
 }
