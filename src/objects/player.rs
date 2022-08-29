@@ -20,7 +20,6 @@ use crate::{
         camera::WindowInfo,
         effect::{Flash, FlashOnDamage},
         hud_elements::WorldText,
-        simple_sprite::SimpleSprite,
         sound::{AudioListener, Beats, Sound},
     },
     settings::Difficulty,
@@ -51,7 +50,7 @@ pub struct Player {
 }
 
 impl Player {
-    pub const RADIUS: f32 = 0.5;
+    pub const RADIUS: f32 = 0.6;
     const MAX_EXHAUSTION: f32 = 3.;
     pub const DASH_DISTANCE: f32 = 5.;
     const DASH_DURATION: Duration = Duration::from_millis(250);
@@ -87,8 +86,7 @@ impl Player {
 }
 
 fn spawn_player(
-    mut commands: Commands, player: Query<Entity, Added<Player>>, assets: Res<MyAssets>,
-    settings: Res<Settings>,
+    mut commands: Commands, player: Query<Entity, Added<Player>>, settings: Res<Settings>,
 ) {
     for entity in player.iter() {
         let radius = Player::RADIUS;
@@ -103,25 +101,36 @@ fn spawn_player(
                 ..default()
             })
             .insert(RigidBody::KinematicPositionBased)
-            .insert(Collider::ball(radius * 0.66))
+            .insert(Collider::ball(radius * 0.6))
             .insert(PhysicsType::Solid.rapier())
             //
             .insert(Depth::Player)
-            .insert(SimpleSprite {
-                images: assets.blob.clone(),
-                frame_duration: Duration::from_millis(250),
-                size: Vec2::splat(radius * 2.),
-                ..default()
-            })
             .insert(FlashOnDamage::Radius(Player::RADIUS))
             .with_children(|parent| {
                 use bevy_lyon::*;
                 parent.spawn_bundle(GeometryBuilder::build_as(
-                    &shapes::Circle {
-                        radius: radius * 0.9,
-                        center: Vec2::ZERO,
+                    &shapes::Polygon {
+                        points: vec![
+                            vec2(-radius * 0.4, radius * 0.2),
+                            vec2(0., radius),
+                            vec2(radius * 0.4, radius * 0.2),
+                            //
+                            vec2(radius * 0.7, radius * 0.5),
+                            vec2(radius, 0.),
+                            vec2(radius * 0.7, -radius),
+                            vec2(radius * 0.3, -radius * 0.4),
+                            //
+                            vec2(-radius * 0.3, -radius * 0.4),
+                            vec2(-radius * 0.7, -radius),
+                            vec2(-radius, 0.),
+                            vec2(-radius * 0.7, radius * 0.5),
+                        ],
+                        closed: true,
                     },
-                    DrawMode::Fill(FillMode::color(Color::CYAN * 0.5)),
+                    DrawMode::Outlined {
+                        fill_mode: FillMode::color(Color::CYAN * 0.5),
+                        outline_mode: StrokeMode::new(Color::WHITE, 0.04),
+                    },
                     default(),
                 ));
             })
@@ -273,14 +282,19 @@ fn respawn(
 }
 
 fn update_player(
-    mut player: Query<(&mut Player, &mut Health, &mut KinematicController)>, time: Res<GameTime>,
-    mut beats: ResMut<Beats>, mut time_mode: ResMut<TimeMode>, mut stats: ResMut<Stats>,
-    spawn: Res<SpawnControl>,
+    mut player: Query<(
+        &mut Player,
+        &mut Health,
+        &mut KinematicController,
+        &mut Transform,
+    )>,
+    time: Res<GameTime>, mut beats: ResMut<Beats>, mut time_mode: ResMut<TimeMode>,
+    mut stats: ResMut<Stats>, spawn: Res<SpawnControl>, window: Res<WindowInfo>,
 ) {
     let exhaust_restore_speed = 1.;
     let charge_time_seconds = 6.;
 
-    for (mut player, mut health, _) in player.iter_mut() {
+    for (mut player, mut health, _, mut transform) in player.iter_mut() {
         // dash
         if let Some(until) = player.dash_until {
             let still_dashing = !time.reached(until);
@@ -298,6 +312,10 @@ fn update_player(
         if !spawn.waiting_for_next_wave && beats.level == 0 {
             stats.ubercharge += time.delta_seconds() / charge_time_seconds;
         }
+
+        // rotate
+        let angle = (window.cursor - transform.pos_2d()).angle();
+        transform.set_angle_2d(angle);
     }
 
     // beats
@@ -318,7 +336,7 @@ fn update_player(
             beats.level = 0;
             time_mode.overriden = None;
 
-            if let Ok((mut player, _, mut kctr)) = player.get_single_mut() {
+            if let Ok((mut player, _, mut kctr, _)) = player.get_single_mut() {
                 kctr.speed = Player::SPEED;
                 player.beats_count = None
             }
@@ -349,6 +367,7 @@ fn player_damage_reaction(
         if damaged {
             sound.send(Sound {
                 sound: assets.ui_alert.clone(),
+                non_randomized: true,
                 ..default()
             })
         }

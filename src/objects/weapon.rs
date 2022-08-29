@@ -138,6 +138,7 @@ fn weapon(
                 sound_cmd.send(Sound {
                     sound: assets.wpn_smg.clone(),
                     position: Some(transform.pos_2d()),
+                    ..default()
                 });
             }
 
@@ -192,6 +193,7 @@ fn weapon(
                 sound_cmd.send(Sound {
                     sound: assets.wpn_smg.clone(),
                     position: Some(transform.pos_2d()),
+                    ..default()
                 });
             }
 
@@ -243,6 +245,7 @@ fn weapon(
                 sound_cmd.send(Sound {
                     sound: assets.wpn_plasma.clone(),
                     position: Some(transform.pos_2d()),
+                    ..default()
                 });
             }
 
@@ -313,6 +316,7 @@ fn weapon(
                                     stats.player.weapon0 = None;
                                     sound_cmd.send(Sound {
                                         sound: assets.ui_weapon_broken.clone(),
+                                        non_randomized: true,
                                         ..default()
                                     });
                                 }
@@ -353,6 +357,7 @@ fn weapon(
                                     stats.player.weapon0 = None;
                                     sound_cmd.send(Sound {
                                         sound: assets.ui_weapon_broken.clone(),
+                                        non_randomized: true,
                                         ..default()
                                     });
                                 }
@@ -440,6 +445,7 @@ fn weapon(
                 sound_cmd.send(Sound {
                     sound,
                     position: Some(transform.pos_2d()),
+                    ..default()
                 });
             }
         },

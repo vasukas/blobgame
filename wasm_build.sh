@@ -175,6 +175,11 @@ cat > $html_file <<EOF
         <meta content="text/html;charset=utf-8" http-equiv="Content-Type"/>
     </head>
     <body>
+        <script>
+            document.addEventListener("contextmenu", function (e){
+                e.preventDefault();
+            }, false);
+        </script>
         <script type="module">
             import init from './$project_name.js'
             init();

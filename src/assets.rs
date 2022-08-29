@@ -1,12 +1,10 @@
-use crate::{common::*, present::simple_sprite::ImageVec};
+use crate::common::*;
 use bevy_kira_audio::AudioSource;
-use std::sync::Arc;
 
 #[derive(Default)]
 pub struct MyAssets {
     // graphics
     pub glow: Handle<Image>,
-    pub blob: ImageVec,
 
     // UI sounds (MUST NOT BE USED AS POSITIONAL)
     pub ui_menu_drone: Handle<AudioSource>,
@@ -42,21 +40,12 @@ impl Plugin for MyAssetsPlugin {
 fn load_assets(mut assets: ResMut<MyAssets>, server: Res<AssetServer>) {
     assets.glow = server.load("sprites/glow.png");
 
-    for (data, prefix, count) in [(&mut assets.blob, "sprites/player/circ", 3)] {
-        *data = Arc::new(
-            (0..count)
-                .into_iter()
-                .map(|index| server.load(&format!("{}{}.png", prefix, index)))
-                .collect(),
-        )
-    }
-
     // UI sounds
     assets.ui_menu_drone = server.load("sounds/ui/the_noise.ogg");
     assets.ui_pickup = server.load("sounds/ui/ui_pickup.ogg");
     assets.ui_alert = server.load("sounds/ui/ui_alert.ogg");
     assets.beat = server.load("sounds/ui/beat.ogg");
-    assets.ui_weapon_broken = server.load("sounds/ui/ui_weapon_broken.ogg");
+    assets.ui_weapon_broken = server.load("sounds/ui/ui_wpn_alarm.ogg");
     //
     assets.player_gun = server.load("sounds/ui/player_gun.ogg");
     assets.player_gun_powered = server.load("sounds/ui/player_gun_powered.ogg");

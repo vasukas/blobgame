@@ -53,8 +53,6 @@ fn main() {
 
             #[cfg(target_os = "linux")] // avoid hanging on exit
             present_mode: PresentMode::Mailbox,
-
-            fit_canvas_to_parent: true, // TODO: does it work? does it do that I think it does?
             ..default()
         })
     .insert_resource(ClearColor(Color::rgb(0.1, 0.1, 0.1)))

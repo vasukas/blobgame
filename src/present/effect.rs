@@ -146,6 +146,7 @@ fn explosion(
             sounds.send(Sound {
                 sound: sound.clone(),
                 position: Some(event.origin),
+                ..default()
             });
         }
     }

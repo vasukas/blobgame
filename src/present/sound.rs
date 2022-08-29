@@ -7,6 +7,7 @@ use bevy_kira_audio::prelude::*;
 pub struct Sound {
     pub sound: Handle<AudioSource>,
     pub position: Option<Vec2>,
+    pub non_randomized: bool,
 }
 
 #[derive(Component)]
@@ -142,12 +143,14 @@ fn play_sounds(
             .unwrap_or(((1., 0.5), 0.));
 
         let mut cmd = audio.play(event.sound.clone());
-        cmd.with_playback_rate(
-            thread_rng().gen_range(0.9..1.2) * time_mode.overriden.unwrap_or(1.) as f64,
-        )
-        .with_volume(volume * K_VOLUME)
-        .with_panning(panning)
-        .start_from(start_pos);
+        if !event.non_randomized {
+            cmd.with_playback_rate(
+                thread_rng().gen_range(0.9..1.2) * time_mode.overriden.unwrap_or(1.) as f64,
+            );
+        }
+        cmd.with_volume(volume * K_VOLUME)
+            .with_panning(panning)
+            .start_from(start_pos);
         if let Some(pos) = event.position {
             commands
                 .spawn_bundle(SpatialBundle::from_transform(Transform::new_2d(pos)))

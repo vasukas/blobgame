@@ -26,11 +26,10 @@ Needs to be done ASAP
 =====================
 
 - immediate
-    - add player and item models (grep "blob")
-    - movement trail
+    + add player and item models (grep "blob")
     - boss with rays and rockets
     - guided rockets
-    - sounds: ui_weapon_broken
+    + sounds: ui_weapon_broken
 
 - add description on itch
 - more compact tutorial text
@@ -64,6 +63,8 @@ Additional features
 - fix plasma balls being self-destroyed on contact with small projectiles
 - expand healing mechanics
 - asteroids, maybe, lol
+- movement trail
+- ui_weapon_broken has invalid pitch
 
 ? more mechanics
 

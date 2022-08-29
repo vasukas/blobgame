@@ -6,7 +6,7 @@ use crate::{
         health::{DeathEvent, DieAfter, Health},
         movement::DropSpread,
     },
-    present::{simple_sprite::SimpleSprite, sound::Sound},
+    present::sound::Sound,
 };
 use enum_map::Enum;
 
@@ -65,7 +65,7 @@ impl Plugin for LootPlugin {
 
 fn drop_loot(
     mut death: CmdReader<DeathEvent>, mut commands: Commands,
-    mut entities: Query<(&GlobalTransform, &DropsLoot)>, assets: Res<MyAssets>,
+    mut entities: Query<(&GlobalTransform, &DropsLoot)>,
 ) {
     death.iter_cmd_mut(&mut entities, |_, (pos, loot)| {
         for loot in &loot.0 {
@@ -84,22 +84,35 @@ fn drop_loot(
                 .insert(Collider::ball(radius))
                 .insert(PhysicsType::Loot.rapier())
                 .insert(Depth::Player)
-                .insert(SimpleSprite {
-                    images: assets.blob.clone(),
-                    frame_duration: Duration::from_millis(200),
-                    size: Vec2::splat(radius * 2.),
-                    ..default()
-                })
                 .with_children(|parent| {
                     use bevy_lyon::*;
-                    parent.spawn_bundle(GeometryBuilder::build_as(
-                        &shapes::Circle {
-                            radius: radius * 0.9,
-                            center: Vec2::ZERO,
-                        },
-                        DrawMode::Fill(FillMode::color(color)),
-                        default(),
-                    ));
+                    match loot {
+                        Loot::Health { .. } => {
+                            parent.spawn_bundle(GeometryBuilder::build_as(
+                                &shapes::Circle {
+                                    radius: radius * 0.9,
+                                    center: Vec2::ZERO,
+                                },
+                                DrawMode::Fill(FillMode::color(color)),
+                                default(),
+                            ));
+                        }
+                        Loot::CraftPart(_) => {
+                            parent.spawn_bundle(GeometryBuilder::build_as(
+                                &shapes::Polygon {
+                                    points: vec![
+                                        vec2(radius, radius),
+                                        vec2(-radius, radius),
+                                        vec2(-radius, -radius),
+                                        vec2(radius, -radius),
+                                    ],
+                                    closed: true,
+                                },
+                                DrawMode::Fill(FillMode::color(color)),
+                                default(),
+                            ));
+                        }
+                    };
                 })
                 .insert(PickableLoot(*loot))
                 .insert(DieAfter::new(lifetime))
@@ -134,6 +147,8 @@ fn pick_loot(
                                 sounds.send(Sound {
                                     sound: assets.ui_pickup.clone(),
                                     position: Some(pos),
+                                    non_randomized: true,
+                                    ..default()
                                 });
                             }
                         }
@@ -145,6 +160,8 @@ fn pick_loot(
                             sounds.send(Sound {
                                 sound: assets.ui_pickup.clone(),
                                 position: Some(pos),
+                                non_randomized: true,
+                                ..default()
                             });
                         }
                     }
