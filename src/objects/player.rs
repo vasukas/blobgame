@@ -87,6 +87,7 @@ impl Player {
 
 fn spawn_player(
     mut commands: Commands, player: Query<Entity, Added<Player>>, assets: Res<MyAssets>,
+    settings: Res<Settings>,
 ) {
     for entity in player.iter() {
         let radius = Player::RADIUS;
@@ -126,7 +127,13 @@ fn spawn_player(
             //
             .insert(Team::Player)
             // TODO: increase health back
-            .insert(Health::new(3.).armor())
+            .insert(
+                Health::new(match settings.difficulty {
+                    crate::settings::Difficulty::Easy => 8.,
+                    crate::settings::Difficulty::Hard => 3.,
+                })
+                .armor(),
+            )
             .insert(LootPicker {
                 radius: Player::RADIUS,
                 ..default()
@@ -255,7 +262,7 @@ fn respawn(
                     ui.visuals_mut().override_text_color = Some(egui::Color32::RED);
                     ui.label(input_map.map[InputAction::Respawn].0.to_string());
                     ui.visuals_mut().override_text_color = None;
-                    ui.label("] to restart from checkpoint");
+                    ui.label("] to restart level");
                 });
             },
         );
@@ -291,7 +298,7 @@ fn update_player(
             (player.exhaustion - time.delta_seconds() * exhaust_restore_speed).max(0.);
 
         // increase charge
-        if !spawn.waiting_for_next_wave {
+        if !spawn.waiting_for_next_wave || spawn.tutorial.is_some() {
             stats.ubercharge += time.delta_seconds() / charge_time_seconds;
         }
     }
@@ -372,17 +379,23 @@ fn next_wave(
 
     // begin user input
     if wave.iter().any(|ev| *ev == WaveEvent::Ended) {
+        let text = match spawn.tutorial {
+            Some(1) => vec![(
+                "This is tutorial\nRead text at the bottom of screen".to_string(),
+                Color::WHITE,
+            )],
+            // THE UGLY HACK. this is # of tutorial wave + 1
+            Some(4) | Some(7) | None => vec![
+                ("Press [".to_string(), Color::WHITE),
+                (input_map.map[input_action].0.to_string(), Color::RED),
+                ("] to go to next level".to_string(), Color::WHITE),
+            ],
+            Some(_) => vec![],
+        };
         data.text = Some(
             commands
                 .spawn_bundle(SpatialBundle::default())
-                .insert(WorldText {
-                    text: vec![
-                        ("Press [".to_string(), Color::WHITE),
-                        (input_map.map[input_action].0.to_string(), Color::RED),
-                        ("] for next wave".to_string(), Color::WHITE),
-                    ],
-                    size: 2.,
-                })
+                .insert(WorldText { text, size: 2. })
                 .id(),
         );
     }
@@ -391,7 +404,9 @@ fn next_wave(
         if spawn.is_game_running() {
             for input in input.iter() {
                 if *input == input_action {
-                    stats.wave += 1;
+                    if spawn.tutorial.is_none() {
+                        stats.wave += 1;
+                    }
                     spawn.despawn = Some(true);
 
                     commands.entity(text).despawn_recursive();
@@ -417,7 +432,7 @@ fn hud_panel(
         false,
         egui::Order::Background,
         |ui| {
-            ui.label("WAVE");
+            ui.label("LEVEL");
             ui.label(format!("{}", stats.wave + 1));
             ui.label("");
 
@@ -550,6 +565,11 @@ fn craft_menu(
                 ui.label("Press [ESC] or [M] to close this menu"); // TODO: unhardcode
                 ui.group(|ui| {
                     ui.label("Available parts");
+                    ui.group(|ui| {
+                        ui.label("Press 1/2/3/4 to put part in the slot.");
+                        ui.label("Currently there are only 4 combinations,");
+                        ui.label("so slot is chosen automatically.");
+                    });
                     for (key, value) in stats.player.craft_parts.iter() {
                         let (action, name, slot) = key.description();
                         ui.visuals_mut().override_text_color = Some(if *value == 0 {
@@ -611,7 +631,6 @@ fn craft_menu(
                         {
                             stats.player.craft_parts[menu.slot0] -= 1;
                             stats.player.craft_parts[menu.slot1] -= 1;
-                            menu.show = false;
 
                             stats.player.weapon0 = Some((weapon, weapon.description().2))
                         }

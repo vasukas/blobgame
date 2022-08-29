@@ -115,22 +115,12 @@ fn damage_ray(
         );
         best_targets.sort_by(|a, b| a.1.partial_cmp(&b.1).unwrap()); // by distance
 
+        let mut max_distance = 0.;
         for (entity, distance, point) in best_targets {
-            let mut new_damage = None;
-
-            if let Ok((_, health)) = targets.get(entity) {
-                // hack to get points for shooting projectiles
-                if *team == Team::Player {
-                    if health.max < 1. {
-                        stats.player.points += 1
-                    }
-                }
-                if health.value < damage.value {
-                    new_damage =
-                        Some(damage.value - health.value - if health.max > 5. { 2. } else { 1. })
-                }
-            } else if !ray.ignore_obstacles {
-                break;
+            max_distance = distance;
+            if let Some(mut explosion) = ray.explosion_effect {
+                explosion.origin = point;
+                explode.send(explosion)
             }
 
             damage_cmd.send((
@@ -141,25 +131,33 @@ fn damage_ray(
                     point,
                 },
             ));
-            if let Some(mut effect) = ray.spawn_effect {
-                effect.length = distance;
-                effect.destroy_parent = true;
-                commands
-                    .spawn_bundle(SpatialBundle::from_transform((*pos).into()))
-                    .insert(GameplayObject)
-                    .insert(effect);
-            }
-            if let Some(mut explosion) = ray.explosion_effect {
-                explosion.origin = point;
-                explode.send(explosion)
-            }
 
-            if let Some(new_damage) = new_damage {
-                if new_damage < 0. {
-                    break;
+            if let Ok((_, health)) = targets.get(entity) {
+                // hack to get points for shooting projectiles
+                if *team == Team::Player {
+                    if health.max < 1. {
+                        stats.player.points += 1
+                    }
                 }
-                damage.value = new_damage
+                if health.value < damage.value {
+                    let new_damage =
+                        damage.value - health.value - if health.max > 5. { 2. } else { 1. };
+                    if new_damage < 0. {
+                        break;
+                    }
+                    damage.value = new_damage
+                }
+            } else if !ray.ignore_obstacles {
+                break;
             }
+        }
+        if let Some(mut effect) = ray.spawn_effect {
+            effect.length = max_distance;
+            effect.destroy_parent = true;
+            commands
+                .spawn_bundle(SpatialBundle::from_transform((*pos).into()))
+                .insert(GameplayObject)
+                .insert(effect);
         }
     }
 }

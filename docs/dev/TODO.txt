@@ -43,24 +43,21 @@ Needs to be done ASAP
     - advanced enemies
         - turret patterns
         - mini-bosses (like shield robot)
-        - movement
-            - patterns
-            - player-based
         - expand healing mechanics
-        - bosses
+        - bosses (just stuff moving in patterns)
+        - some simple movement, maybe
 
 - audio
-    - sounds for everything
+    - sounds
+        - crafted weapons: rocket, shield, railgun, deflector
+        - big explosion
+        - ...
 
-- UX
-    - add lore
-        - rename the project
-        - add description on itch
-        - maybe add player model (instead of blob)
-    - tutorial messages (and tutorial wave)
-    - add difficulty selection (scale HP and loot drop chance)
 - more enemy variety
 - more wave patterns
+    - add warning to last wave that it just loops endlessly
+- add description on itch
+- add player and item models (instead of blobs)
 
 ...
 
@@ -94,7 +91,7 @@ Additional features
     + spawn waves
     + healing loot
 
-+ mechanics (intermediate)
+- mechanics (intermediate)
     + interface etc
         + HUD
         + player reaction to being hit - [x]particles, [x]pulsating color, shaking, changing color, HUD, [x]sound, etc
@@ -104,6 +101,10 @@ Additional features
     + ubercharge beats
     + combo-attacks & show them in world
         + gun/dash combo
+    - advanced enemies
+        - movement
+            - patterns
+            - player-based
 
 - delayed features
     - player
@@ -160,6 +161,13 @@ Additional features
             - sound pitch should be controlled, probably via same component
 
     ? would be nice to have volume limiter to avoid peaking, but that may be non-doable
+
++ UX
+    + add lore
+        + rename the projectile
+        + change various texts
+    + tutorial messages (and tutorial wave)
+    + add difficulty selection (scale HP and loot drop chance)
 
 ...
 

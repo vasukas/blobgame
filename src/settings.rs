@@ -5,18 +5,35 @@ pub use serde::{Deserialize, Serialize};
 pub struct Settings {
     pub master_volume: f32,
     pub fullscreen: bool,
+    pub difficulty: Difficulty,
 }
 
 impl Settings {
     pub fn menu(&mut self, ui: &mut egui::Ui) {
         let mut changed = false;
+
         ui.horizontal(|ui| {
             ui.label("Master volume");
             changed |= ui
                 .add(egui::Slider::new(&mut self.master_volume, 0. ..=1.))
                 .changed();
         });
+
         changed |= ui.checkbox(&mut self.fullscreen, "Fullscreen").changed();
+
+        let (alt, text) = match self.difficulty {
+            Difficulty::Easy => (Difficulty::Hard, "Difficulty: Easy"),
+            Difficulty::Hard => (Difficulty::Easy, "Difficulty: Hard"),
+        };
+        changed |= {
+            let clicked = ui.button(text).clicked();
+            if clicked {
+                self.difficulty = alt
+            }
+            clicked
+        };
+        ui.label("Changes to difficulty will be applied after respawn");
+
         if changed {
             self.save()
         }
@@ -28,8 +45,15 @@ impl Default for Settings {
         Self {
             master_volume: 0.6,
             fullscreen: false,
+            difficulty: Difficulty::Hard,
         }
     }
+}
+
+#[derive(Clone, Copy, Serialize, Deserialize, PartialEq, Eq)]
+pub enum Difficulty {
+    Easy,
+    Hard,
 }
 
 // desktop

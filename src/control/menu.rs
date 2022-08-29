@@ -70,7 +70,7 @@ fn show_menu(
                             // root left pane
                             ui.vertical(|ui| {
                                 ui.group(|ui| {
-                                    ui.heading("BLOBFIGHT");
+                                    ui.heading("SCRAPBOT");
                                     ui.label(""); // separator
 
                                     if ingame {
@@ -81,7 +81,12 @@ fn show_menu(
                                             spawn.despawn = Some(false)
                                         }
                                     } else {
-                                        if ui.button("Play").clicked() {
+                                        if ui.button("Play (with tutorial)").clicked() {
+                                            *state = MenuState::None;
+                                            spawn.despawn = Some(true);
+                                            spawn.tutorial = Some(0);
+                                        }
+                                        if ui.button("Play (skip tutorial)").clicked() {
                                             *state = MenuState::None;
                                             spawn.despawn = Some(true)
                                         }

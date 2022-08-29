@@ -1,7 +1,11 @@
 use super::{player::Player, stats::Stats};
 use crate::{
     common::*,
-    mechanics::{ai::*, damage::Team, health::Health},
+    mechanics::{
+        ai::*,
+        damage::Team,
+        health::{DieAfter, Health},
+    },
     objects::{
         grid::GridBar,
         loot::{CraftPart, DropsLoot, Loot},
@@ -9,7 +13,9 @@ use crate::{
         weapon::Weapon,
     },
     present::{camera::WorldCamera, effect::SpawnEffect},
+    settings::Difficulty,
 };
+use std::f32::consts::SQRT_2;
 
 /// Object which must be despawned
 #[derive(Component)]
@@ -24,6 +30,7 @@ pub struct SpawnControl {
 
     /// Set this to Some(true) to respawn, to Some(false) to despawn
     pub despawn: Option<bool>,
+    pub tutorial: Option<usize>,
 }
 
 impl SpawnControl {
@@ -48,9 +55,11 @@ impl Plugin for SpawnPlugin {
     fn build(&self, app: &mut App) {
         app.init_resource::<SpawnControl>()
             .init_resource::<WaveData>()
+            .init_resource::<TutorialText>()
             .add_event::<WaveEvent>()
             .add_system_to_stage(CoreStage::First, spawn.exclusive_system())
-            .add_system(wave_end_detect);
+            .add_system(wave_end_detect)
+            .add_system(draw_tutorial_text);
     }
 }
 
@@ -63,7 +72,8 @@ fn spawn(
     mut commands: Commands, mut control: ResMut<SpawnControl>,
     entities: Query<Entity, With<GameplayObject>>, mut camera: Query<&mut WorldCamera>,
     mut stats: ResMut<Stats>, mut wave_data: ResMut<WaveData>,
-    mut wave_event: EventWriter<WaveEvent>,
+    mut wave_event: EventWriter<WaveEvent>, settings: Res<Settings>,
+    mut tutorial_text: ResMut<TutorialText>,
 ) {
     if let Some(respawn) = control.despawn.take() {
         // despawn all objects only if it's despawn or respawn, but not next if it's next wave
@@ -189,44 +199,144 @@ fn spawn(
                 .insert(SpawnEffect { radius: 2. });
         }
 
+        // empty entity for empty waves - so wave end detection will work
+        wave_data
+            .entities
+            .push(commands.spawn().insert(DieAfter::one_frame()).id());
+
         // wave-specific spawns
 
-        // static walls
-        for pos in [
-            vec2(world_size.x * -0.1, world_size.y * -0.4),
-            vec2(world_size.x * -0.1, world_size.y * -0.2),
-            vec2(world_size.x * -0.1, world_size.y * 0.2),
-            vec2(world_size.x * -0.1, world_size.y * 0.4),
-            //
-            vec2(world_size.x * 0.1, world_size.y * -0.4),
-            vec2(world_size.x * 0.1, world_size.y * -0.2),
-            vec2(world_size.x * 0.1, world_size.y * 0.2),
-            vec2(world_size.x * 0.1, world_size.y * 0.4),
-        ] {
-            create_wall(&mut commands, offset + pos, Vec2::splat(1.5))
-        }
+        match control.tutorial {
+            // IF YOU CHANGE ANYTHING HERE DON'T FORGET TO UPDATE HACK IN PLAYER NEXT WAVE MESSAGE!!!!
+            Some(0) => {
+                tutorial_text.0 = concat!(
+                    "This is a tutorial message!\n",
+                    "Press R key to show next message",
+                );
+            }
+            Some(1) => {
+                tutorial_text.0 = concat!(
+                    "Move around with W/A/S/D keys.\n",
+                    "Press SHIFT key to dash in movement direction.\n",
+                    "Press SPACE key to dash in the direction to mouse cursor.\n",
+                    "Dash gives temporary invincibilty, but consumes stamina.",
+                );
+            }
+            Some(2) => {
+                tutorial_text.0 = concat!(
+                    "Shoot with left mouse button.\n",
+                    "Shoot in the movement direction just after starting dash\n",
+                    "  to deal increased damage (ray will turn red).\n",
+                    "Level is completed when all enemies are destroyed.",
+                );
+            }
+            Some(3) => {
+                tutorial_text.0 = concat!("Destroy both turrets to finish the level!",);
+                wave_data.entities.push(create_turret(
+                    &mut commands,
+                    offset + vec2(world_size.x * -0.4, world_size.y * 0.1),
+                    settings.difficulty,
+                ));
+                wave_data.entities.push(create_turret(
+                    &mut commands,
+                    offset + vec2(world_size.x * 0.4, world_size.y * -0.1),
+                    settings.difficulty,
+                ));
+            }
+            Some(4) => {
+                tutorial_text.0 = concat!(
+                    "Sometimes enemies drop usable pieces.\n",
+                    "Green ones restore your health.\n",
+                    "Red ones can be used to craft additional weapons.\n",
+                    "Only two such weapons can be equipped at one time, and they have limited uses.\n",
+                    "Press C to access crafting menu.\n",
+                    "Shoot with right mouse button; some attacks can be combined,\n",
+                    "for example shooting plasma ball will make it explode.",
+                );
+            }
+            Some(5) => {
+                tutorial_text.0 = concat!(
+                    "Over time you acquire focus charge.\n",
+                    "Destroying enemies increases it faster, receiving damage decreases it.\n",
+                    "When you have 100% charge, press V to enter focus mode.\n",
+                    "If you shoot in sync with beat, damage is greatly increased.\n",
+                    "  BUG: sound might get out of sync, but grid pulsation should be fine!\n",
+                    "Time is limited, and receiving damage depletes it faster."
+                );
+            }
+            Some(6) => {
+                tutorial_text.0 = concat!("Try destroying the turret using focus mode!");
+                wave_data.entities.push(create_turret(
+                    &mut commands,
+                    offset + vec2(0., world_size.y * 0.35),
+                    settings.difficulty,
+                ));
+            }
+            Some(_) => {
+                tutorial_text.0 = concat!(
+                    "That's it, end of tutorial!\n",
+                    "Game currently has no ending,\n",
+                    "Waves will be repeated after some time",
+                );
+                control.tutorial = None;
+            }
 
-        // test turret
-        if stats.wave % 2 == 0 {
-            wave_data
-                .entities
-                .push(create_turret(&mut commands, offset + vec2(-15., 0.)));
-            wave_data
-                .entities
-                .push(create_turret(&mut commands, offset + vec2(15., 0.)));
-        } else {
-            wave_data
-                .entities
-                .push(create_turret(&mut commands, offset + vec2(-10., 10.)));
-            wave_data
-                .entities
-                .push(create_turret(&mut commands, offset + vec2(10., 10.)));
-            wave_data
-                .entities
-                .push(create_turret(&mut commands, offset + vec2(-10., -10.)));
-            wave_data
-                .entities
-                .push(create_turret(&mut commands, offset + vec2(10., -10.)));
+            // not tutorial, actual game
+            None => {
+                // TODO: warn about last wave
+                tutorial_text.0 = default();
+                control.tutorial = None;
+
+                // static walls
+                for pos in [
+                    vec2(world_size.x * -0.1, world_size.y * -0.4),
+                    vec2(world_size.x * -0.1, world_size.y * -0.2),
+                    vec2(world_size.x * -0.1, world_size.y * 0.2),
+                    vec2(world_size.x * -0.1, world_size.y * 0.4),
+                    //
+                    vec2(world_size.x * 0.1, world_size.y * -0.4),
+                    vec2(world_size.x * 0.1, world_size.y * -0.2),
+                    vec2(world_size.x * 0.1, world_size.y * 0.2),
+                    vec2(world_size.x * 0.1, world_size.y * 0.4),
+                ] {
+                    create_wall(&mut commands, offset + pos, Vec2::splat(1.5))
+                }
+
+                // test turret
+                if stats.wave % 2 == 0 {
+                    wave_data.entities.push(create_turret(
+                        &mut commands,
+                        offset + vec2(-15., 0.),
+                        settings.difficulty,
+                    ));
+                    wave_data.entities.push(create_turret(
+                        &mut commands,
+                        offset + vec2(15., 0.),
+                        settings.difficulty,
+                    ));
+                } else {
+                    wave_data.entities.push(create_turret(
+                        &mut commands,
+                        offset + vec2(-10., 10.),
+                        settings.difficulty,
+                    ));
+                    wave_data.entities.push(create_turret(
+                        &mut commands,
+                        offset + vec2(10., 10.),
+                        settings.difficulty,
+                    ));
+                    wave_data.entities.push(create_turret(
+                        &mut commands,
+                        offset + vec2(-10., -10.),
+                        settings.difficulty,
+                    ));
+                    wave_data.entities.push(create_turret(
+                        &mut commands,
+                        offset + vec2(10., -10.),
+                        settings.difficulty,
+                    ));
+                }
+            }
         }
     }
 }
@@ -240,7 +350,11 @@ fn wave_end_detect(
         wave_data.entities.retain(|e| entities.contains(*e));
         if wave_data.entities.is_empty() && !was_empty {
             control.waiting_for_next_wave = true;
-            event.send(WaveEvent::Ended)
+            event.send(WaveEvent::Ended);
+
+            if let Some(wave) = control.tutorial.as_mut() {
+                *wave += 1
+            }
         }
     }
 }
@@ -263,13 +377,16 @@ fn create_wall(commands: &mut Commands, origin: Vec2, extents: Vec2) {
         ))
         .insert(GameplayObject)
         .insert(Depth::Wall)
+        .insert(SpawnEffect {
+            radius: extents.max_element() * SQRT_2,
+        })
         //
         .insert(RigidBody::Fixed)
         .insert(PhysicsType::Solid.rapier())
         .insert(Collider::cuboid(extents.x / 2., extents.y / 2.));
 }
 
-fn create_turret(commands: &mut Commands, origin: Vec2) -> Entity {
+fn create_turret(commands: &mut Commands, origin: Vec2, difficulty: Difficulty) -> Entity {
     use bevy_lyon::*;
 
     let radius = 0.6;
@@ -322,14 +439,40 @@ fn create_turret(commands: &mut Commands, origin: Vec2) -> Entity {
         .insert(DropsLoot({
             use rand::*;
             let mut loot = vec![];
-            if thread_rng().gen_bool(0.66) {
-                loot.push(Loot::Health { value: 1.5 });
-            }
-            if thread_rng().gen_bool(0.33) {
-                loot.push(Loot::CraftPart(CraftPart::random()));
+            if match difficulty {
+                Difficulty::Easy => true,
+                Difficulty::Hard => thread_rng().gen_bool(0.8),
+            } {
+                if thread_rng().gen_bool(0.66) {
+                    loot.push(Loot::Health { value: 1.5 });
+                }
+                if thread_rng().gen_bool(0.33) {
+                    loot.push(Loot::CraftPart(CraftPart::random()));
+                }
             }
             loot
         }));
 
     commands.id()
+}
+
+#[derive(Default)]
+struct TutorialText(&'static str);
+
+fn draw_tutorial_text(mut ctx: ResMut<EguiContext>, text: Res<TutorialText>) {
+    ctx.popup(
+        "draw_tutorial_text",
+        vec2(0., 1.),
+        false,
+        egui::Order::Background,
+        |ui| {
+            let t = 1.;
+            ui.visuals_mut().override_text_color = Some(egui::Color32::from_rgb(
+                lerp(128., 255., t) as u8,
+                lerp(128., 255., t) as u8,
+                lerp(128., 255., t) as u8,
+            ));
+            ui.heading(text.0);
+        },
+    );
 }

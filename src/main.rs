@@ -47,7 +47,7 @@ fn main() {
     }
 
     app.insert_resource(WindowDescriptor {
-            title: "BlobFight".to_string(),
+            title: "ScrapBot".to_string(),
             width: 1280.,
             height: 720.,
 
