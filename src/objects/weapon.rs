@@ -227,7 +227,6 @@ fn weapon(
                     )
                     //
                     .insert(GameplayObject)
-                    .insert(SmallProjectile)
                     .insert(Damage::new(1.))
                     .insert(*team)
                     .insert(DamageOnContact)

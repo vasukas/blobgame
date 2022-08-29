@@ -1,5 +1,6 @@
 use crate::common::*;
 
+pub mod boss;
 pub mod grid;
 pub mod loot;
 pub mod player;
@@ -16,6 +17,7 @@ impl Plugin for ObjectsPlugin {
             .add_plugin(weapon::WeaponPlugin)
             .add_plugin(stats::StatsPlugin)
             .add_plugin(loot::LootPlugin)
-            .add_plugin(grid::GridPlugin);
+            .add_plugin(grid::GridPlugin)
+            .add_plugin(boss::BossPlugin);
     }
 }

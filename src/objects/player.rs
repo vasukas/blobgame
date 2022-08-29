@@ -559,7 +559,7 @@ fn craft_menu(
 
         let craft_result = match (menu.slot0, menu.slot1) {
             (CraftPart::Generator, CraftPart::Laser) => Some(CraftedWeapon::Plasma),
-            (CraftPart::Generator, CraftPart::Magnet) => Some(CraftedWeapon::Shield),
+            // (CraftPart::Generator, CraftPart::Magnet) => Some(CraftedWeapon::Shield),
             (CraftPart::Emitter, CraftPart::Laser) => Some(CraftedWeapon::Railgun),
             // (CraftPart::Emitter, CraftPart::Magnet) => Some(CraftedWeapon::Repeller),
             _ => {
@@ -642,6 +642,7 @@ fn craft_menu(
                         {
                             stats.player.craft_parts[menu.slot0] -= 1;
                             stats.player.craft_parts[menu.slot1] -= 1;
+                            menu.show = false;
 
                             stats.player.weapon0 = Some((weapon, weapon.description().2))
                         }

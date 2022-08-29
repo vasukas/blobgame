@@ -24,6 +24,7 @@ pub struct MyAssets {
     pub explosion_big: Handle<AudioSource>,
     pub wpn_smg: Handle<AudioSource>,
     pub wpn_plasma: Handle<AudioSource>,
+    pub ray_charge: Handle<AudioSource>,
 }
 
 //
@@ -58,4 +59,5 @@ fn load_assets(mut assets: ResMut<MyAssets>, server: Res<AssetServer>) {
     assets.explosion_big = server.load("sounds/world/explosion_large.ogg");
     assets.wpn_smg = server.load("sounds/world/smg.ogg");
     assets.wpn_plasma = server.load("sounds/world/plasma.ogg");
+    assets.ray_charge = server.load("sounds/world/ray_charge.ogg");
 }

@@ -7,6 +7,7 @@ use crate::{
         health::{DieAfter, Health},
     },
     objects::{
+        boss::TheBoss,
         grid::GridBar,
         loot::{CraftPart, DropsLoot, Loot},
         stats::DeathPoints,
@@ -325,30 +326,40 @@ fn spawn(
                         TurretType::Simple,
                     ));
                 } else {
-                    wave_data.entities.push(create_turret(
-                        &mut commands,
-                        offset + vec2(-10., 10.),
-                        settings.difficulty,
-                        TurretType::Simple,
-                    ));
-                    wave_data.entities.push(create_turret(
-                        &mut commands,
-                        offset + vec2(-10., -10.),
-                        settings.difficulty,
-                        TurretType::Simple,
-                    ));
-                    wave_data.entities.push(create_turret(
-                        &mut commands,
-                        offset + vec2(12., 8.),
-                        settings.difficulty,
-                        TurretType::Advanced,
-                    ));
+                    // wave_data.entities.push(create_turret(
+                    //     &mut commands,
+                    //     offset + vec2(-10., 10.),
+                    //     settings.difficulty,
+                    //     TurretType::Simple,
+                    // ));
+                    // wave_data.entities.push(create_turret(
+                    //     &mut commands,
+                    //     offset + vec2(-10., -10.),
+                    //     settings.difficulty,
+                    //     TurretType::Simple,
+                    // ));
+                    // wave_data.entities.push(create_turret(
+                    //     &mut commands,
+                    //     offset + vec2(12., 8.),
+                    //     settings.difficulty,
+                    //     TurretType::Advanced,
+                    // ));
                     wave_data.entities.push(create_turret(
                         &mut commands,
                         offset + vec2(10., -3.),
                         settings.difficulty,
                         TurretType::Rotating,
                     ));
+                    wave_data.entities.push(
+                        commands
+                            .spawn_bundle(SpatialBundle::from_transform(Transform::new_2d(vec2(
+                                0.,
+                                world_size.y / 2.,
+                            ))))
+                            .insert(TheBoss { world_size, offset })
+                            .insert(GameplayObject)
+                            .id(),
+                    );
                 }
             }
         }
