@@ -311,7 +311,10 @@ fn create_turret(commands: &mut Commands, origin: Vec2) -> Entity {
                 .stage(1, Duration::from_secs(1), AttackStage::Wait),
         )
         .insert(Health::new(3.))
-        .insert(DeathPoints(20))
+        .insert(DeathPoints {
+            value: 20,
+            charge: 0.2,
+        })
         //
         .insert(RigidBody::Fixed)
         .insert(PhysicsType::Solid.rapier())

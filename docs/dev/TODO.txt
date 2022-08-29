@@ -48,7 +48,6 @@ Needs to be done ASAP
             - player-based
         - expand healing mechanics
         - bosses
-    - increase ubercharge from dealing damage / maybe allow overcharge
 
 - audio
     - sounds for everything

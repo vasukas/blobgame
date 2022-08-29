@@ -78,6 +78,11 @@ impl Player {
         }
         can_shoot
     }
+
+    fn add_beats(&mut self, current_level: usize) {
+        let add_beats = if current_level == 0 { 4 } else { 8 };
+        *self.beats_count.get_or_insert(0) += add_beats;
+    }
 }
 
 fn spawn_player(
@@ -207,15 +212,13 @@ fn controls(
                 if stats.ubercharge >= 1. {
                     stats.ubercharge = 0.;
 
-                    let add_beats = if beats.level == 0 {
+                    if beats.level == 0 {
                         beats.level = 1;
-                        4
                     } else {
                         beats.level = 2;
-                        8
                     };
 
-                    *player.beats_count.get_or_insert(0) += add_beats;
+                    player.add_beats(beats.level);
                     kctr.speed = Player::SPEED * 2.;
                     time_mode.overriden = Some(0.5);
                 }
@@ -300,12 +303,21 @@ fn update_player(
         .and_then(|v| v.0.beats_count.map(|count| beats.count >= count))
         .unwrap_or(true)
     {
-        beats.level = 0;
-        time_mode.overriden = None;
+        if let Some((mut player, ..)) = player
+            .get_single_mut()
+            .ok()
+            .filter(|v| stats.ubercharge >= 1. && v.0.beats_count.is_some())
+        {
+            stats.ubercharge = 0.;
+            player.add_beats(beats.level);
+        } else {
+            beats.level = 0;
+            time_mode.overriden = None;
 
-        if let Ok((mut player, _, mut kctr)) = player.get_single_mut() {
-            kctr.speed = Player::SPEED;
-            player.beats_count = None
+            if let Ok((mut player, _, mut kctr)) = player.get_single_mut() {
+                kctr.speed = Player::SPEED;
+                player.beats_count = None
+            }
         }
     }
 }
@@ -459,12 +471,13 @@ fn hud_panel(
 
                 match player.beats_count {
                     Some(count) => {
+                        let left = count - beats.count;
                         ui.label("BEATS");
                         ui.visuals_mut().override_text_color = match stats.ubercharge >= 1. {
                             true => Some(egui::Color32::WHITE),
-                            false => None,
+                            false => (left <= 2).then_some(egui::Color32::RED),
                         };
-                        ui.label(format!("{:2} left", count - beats.count));
+                        ui.label(format!("{:2} left", left));
                     }
                     None => {
                         ui.label("CHARGE");

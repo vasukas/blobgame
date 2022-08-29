@@ -38,8 +38,11 @@ impl Default for PersistentPlayer {
     }
 }
 
-#[derive(Component)]
-pub struct DeathPoints(pub usize);
+#[derive(Component, Default)]
+pub struct DeathPoints {
+    pub value: usize,
+    pub charge: f32,
+}
 
 //
 
@@ -74,5 +77,8 @@ fn update_stats(
         stats.time += time.delta()
     }
 
-    deaths.iter_cmd_mut(&mut diers, |_, points| stats.player.points += points.0);
+    deaths.iter_cmd_mut(&mut diers, |_, points| {
+        stats.player.points += points.value;
+        stats.ubercharge += points.charge;
+    });
 }
