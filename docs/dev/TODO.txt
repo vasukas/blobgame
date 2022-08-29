@@ -32,6 +32,7 @@ Needs to be done ASAP
     - sound
     - health is recharged
 - mini-bosses (like shield robot)
+- fix rare focus mode - related crash
 
 ...
 

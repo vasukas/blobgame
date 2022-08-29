@@ -304,7 +304,7 @@ fn spawn(
             None => {
                 tutorial_text.0 = default();
 
-                match stats.wave % 5 {
+                match stats.wave % 6 {
                     0 => {
                         for pos in [
                             vec2(world_size.x * -0.2, world_size.y * -0.3),
