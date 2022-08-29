@@ -230,9 +230,8 @@ fn spawn(
                 tutorial_text.0 = concat!(
                     "Shoot with left mouse button.\n",
                     "Shoot in the movement direction just after starting dash\n",
-                    "  to deal increased damage (ray will turn red).\n",
-                    "Level is completed when all enemies are destroyed.",
-                    "\n\nPress R key to show next message",
+                    "  to deal increased damage (ray will turn red).",
+                    "\n\nPress R key to start tutorial combat",
                 );
             }
             Some(3) => {
@@ -252,25 +251,24 @@ fn spawn(
             }
             Some(4) => {
                 tutorial_text.0 = concat!(
-                    "Sometimes enemies drop usable pieces.\n",
-                    "Green ones restore your health.\n",
-                    "Red ones can be used to craft additional weapons.\n",
-                    "Only two such weapons can be equipped at one time, and they have limited uses.\n",
+                    "Sometimes enemies drop pieces which can be picked up:\n",
+                    "- green ones restore health;\n",
+                    "- red ones used to craft additional weapons.\n",
+                    "You can only have two such weapons (in addition to main one) and they have limited uses.\n",
                     "Press C to access crafting menu.\n",
-                    "Shoot with right mouse button; some attacks can be combined,\n",
-                    "for example shooting plasma ball with railgun.",
+                    "Shoot crafted weapon with right mouse button.\n",
+                    "Switch current weapon with F or mouse wheel.\n",
+                    "Try combining different attacks, like shooting plasma ball with railgun.",
                     "\n\nPress R key to show next message",
                 );
             }
             Some(5) => {
                 tutorial_text.0 = concat!(
                     "Over time you acquire focus charge.\n",
-                    "Destroying enemies increases it faster, receiving damage decreases it.\n",
-                    "When you have 100% charge, press SHIFT to enter focus mode.\n",
-                    "If you shoot in sync with beat, damage is greatly increased.\n",
-                    "  BUG: sound might get out of sync, but grid pulsation should be fine!\n",
-                    "Time is limited, and receiving damage depletes it faster.",
-                    "\n\nPress R key to show next message",
+                    "Destroy enemies and avoid damage to charge faster and stay focused longer.\n",
+                    "Press SHIFT at 100% charge to enter focus mode.\n",
+                    "Shoot in sync with the beat to GREATLY increase damage.",
+                    "\n\nPress R key to start tutorial combat (again)",
                 );
             }
             Some(6) => {
@@ -286,7 +284,7 @@ fn spawn(
                 tutorial_text.0 = concat!(
                     "That's it, end of tutorial!\n",
                     "Game currently has no ending,\n",
-                    "Waves will be repeated after some time",
+                    "Levels will be repeated after some time",
                     "\n\nPress R key to PLAY\n",
                     "And remember that you are damaged by your own explosions!",
                 );

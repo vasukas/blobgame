@@ -309,7 +309,7 @@ fn update_player(
             (player.exhaustion - time.delta_seconds() * exhaust_restore_speed).max(0.);
 
         // increase charge
-        if !spawn.waiting_for_next_wave && beats.level == 0 {
+        if (!spawn.waiting_for_next_wave || spawn.tutorial.is_some()) && beats.level == 0 {
             stats.ubercharge += time.delta_seconds() / charge_time_seconds;
         }
 

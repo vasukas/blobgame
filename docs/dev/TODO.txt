@@ -27,7 +27,6 @@ Needs to be done ASAP
 
 - more and better wave patterns
 - boss with rays and rockets, guided rockets
-
 - shield (sphere & magnet)
     - when equipped, appears in front of the player
     - absorbs projectiles
@@ -35,12 +34,6 @@ Needs to be done ASAP
     - sound
     - health is recharged
 - mini-bosses (like shield robot)
-- enemies
-    - bosses (just stuff moving in patterns)
-    - more wave patterns
-
-+ add description on itch
-- more compact tutorial text
 
 ...
 
