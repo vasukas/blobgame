@@ -25,22 +25,6 @@ Important bugs
 Needs to be done ASAP
 =====================
 - mechanics (intermediate)
-    - craft
-        + enemies drop parts: (group 1: sphere, ray; group 2: laser, magnet)
-        + parts can be combined, replacing current mega-weapon
-        - weapons (player can keep only two at once; have limited uses)
-            + rocket (sphere & laser)
-                + just projectile
-            - shield (sphere & magnet)
-                - when equipped, appears in front of the player
-                - absorbs projectiles
-                - deflects rays (still gets damaged, but less)
-            + railgun (ray & laser)
-                + just powerful ray which goes through all targets
-                + explodes projectiles
-            - deflector (ray & magnet)
-                - pushes all projectiles away (and turns them into player's)
-        + notify player when weapon breaks
     - advanced enemies
         - turret patterns
         - mini-bosses (like shield robot)
@@ -48,16 +32,23 @@ Needs to be done ASAP
         - bosses (just stuff moving in patterns)
         - some simple movement, maybe
         - asteroids, maybe, lol
+        - various wave patterns
+    - craft
+        - ui_weapon_broken
+        - 2nd group of weapons
+            - shield (sphere & magnet)
+                - when equipped, appears in front of the player
+                - absorbs projectiles
+                - deflects rays (still gets damaged, but less)
+            - deflector (ray & magnet)
+                - pushes all projectiles away (and turns them into player's)
 
 - audio
     - sounds
-        - crafted weapons: rocket, shield, railgun, deflector
-        - big explosion
+        - crafted weapons: plasma, shield, deflector
+        - ui_weapon_broken
         - ...
 
-- more enemy variety
-- more wave patterns
-    - add warning to last wave that it just loops endlessly
 - add description on itch
 - add player and item models (grep "blob")
 
@@ -94,6 +85,16 @@ Additional features
     + healing loot
 
 - mechanics (intermediate)
+    - craft
+        + enemies drop parts: (group 1: sphere, ray; group 2: laser, magnet)
+        + parts can be combined, replacing current mega-weapon
+        + 1st group of weapons (player can keep only two at once; have limited uses)
+            + rocket (sphere & laser)
+                + just projectile
+            + railgun (ray & laser)
+                + just powerful ray which goes through all targets
+                + explodes projectiles
+        + notify player when weapon breaks
     + interface etc
         + HUD
         + player reaction to being hit - [x]particles, [x]pulsating color, shaking, changing color, HUD, [x]sound, etc

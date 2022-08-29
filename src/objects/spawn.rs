@@ -256,7 +256,7 @@ fn spawn(
                     "Only two such weapons can be equipped at one time, and they have limited uses.\n",
                     "Press C to access crafting menu.\n",
                     "Shoot with right mouse button; some attacks can be combined,\n",
-                    "for example shooting plasma ball will make it explode.",
+                    "for example shooting plasma ball with railgun.",
                     "\n\nPress R key to show next message",
                 );
             }
