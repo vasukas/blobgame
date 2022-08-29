@@ -1,4 +1,5 @@
 use crate::common::*;
+use bevy::input::mouse::MouseWheel;
 use enum_map::{enum_map, Enum, EnumMap};
 use serde::{Deserialize, Serialize};
 
@@ -140,6 +141,7 @@ impl Plugin for InputPlugin {
 fn emit_action(
     lock: Res<InputLock>, map: Res<InputMap>, mut actions: EventWriter<InputAction>,
     keys: Res<Input<KeyCode>>, buttons: Res<Input<MouseButton>>,
+    scroll_evr: EventReader<MouseWheel>,
 ) {
     for (action, (key, ty)) in map.map.iter() {
         if match action {
@@ -162,7 +164,9 @@ fn emit_action(
                 InputType::Click => buttons.just_pressed(*button),
                 InputType::Hold => buttons.pressed(*button),
             },
-        };
+        }
+            // TODO: bad hack
+            || (action == InputAction::ChangeWeapon && !scroll_evr.is_empty());
         if active {
             actions.send(action)
         }

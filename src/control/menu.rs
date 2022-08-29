@@ -77,6 +77,10 @@ fn show_menu(
                                         if ui.button("Continue").clicked() {
                                             *state = MenuState::None
                                         }
+                                        if ui.button("Restart wave").clicked() {
+                                            *state = MenuState::None;
+                                            spawn.despawn = Some(true);
+                                        }
                                         if ui.button("Exit to main menu").clicked() {
                                             spawn.despawn = Some(false)
                                         }
@@ -126,7 +130,11 @@ fn show_menu(
                                             help.push(("".to_string(), "".to_string()));
                                         }
                                     }
-                                    help.push(("".to_string(), "".to_string()));
+                                    //help.push(("".to_string(), "".to_string()));
+                                    help.push((
+                                        "Mouse wheel".to_string(),
+                                        "Change weapon".to_string(),
+                                    ));
                                     help.push((
                                         "ESC or M".to_string(),
                                         "toggle this menu".to_string(),

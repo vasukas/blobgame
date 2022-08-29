@@ -117,6 +117,7 @@ fn weapon(
                     )
                     //
                     .insert(GameplayObject)
+                    .insert(SmallProjectile)
                     .insert(Damage::new(1.))
                     .insert(*team)
                     .insert(DamageOnContact)
@@ -137,9 +138,8 @@ fn weapon(
             }
 
             Weapon::PlayerGun { dir } | Weapon::PlayerCrafted { dir } => {
-                let mut transform = Transform::new_2d(
-                    transform.pos_2d() + dir.normalize_or_zero() * Player::RADIUS,
-                );
+                let dir = dir.try_normalize().unwrap_or(Vec2::Y);
+                let mut transform = Transform::new_2d(transform.pos_2d() + dir * Player::RADIUS);
                 let angle = dir.angle();
                 transform.set_angle_2d(angle);
 
@@ -156,6 +156,8 @@ fn weapon(
 
                 let mut commands = commands.spawn_bundle(SpatialBundle::from_transform(transform));
                 commands.insert(GameplayObject).insert(*team);
+
+                let mut explodes_projectiles = powered || ultra_powered;
 
                 let (damage, ray, sound) = match weapon {
                     Weapon::PlayerGun { .. } => (
@@ -199,19 +201,23 @@ fn weapon(
                             (CraftedWeapon::Railgun, uses) => {
                                 *uses -= 1.;
                                 if *uses <= 0. {
-                                    stats.player.weapon0 = None
+                                    stats.player.weapon0 = None;
+                                    sound_cmd.send(Sound {
+                                        sound: assets.ui_weapon_broken.clone(),
+                                        ..default()
+                                    });
                                 }
 
+                                explodes_projectiles = true;
                                 (
                                     [4., 6., 12.],
                                     Some(DamageRay {
                                         spawn_effect: Some(RayEffect {
                                             color: if powered || ultra_powered {
-                                                Color::WHITE
+                                                Color::rgb(1.0, 0.7, 0.4).with_a(0.6)
                                             } else {
-                                                Color::ALICE_BLUE
-                                            }
-                                            .with_a(0.5),
+                                                Color::WHITE.with_a(0.45)
+                                            },
                                             width: 0.4,
                                             fade_time: Duration::from_millis(if powered {
                                                 400
@@ -232,20 +238,88 @@ fn weapon(
                                     assets.player_railgun.clone(),
                                 )
                             }
+                            (CraftedWeapon::Plasma, uses) => {
+                                *uses -= 1.;
+                                if *uses <= 0. {
+                                    stats.player.weapon0 = None;
+                                    sound_cmd.send(Sound {
+                                        sound: assets.ui_weapon_broken.clone(),
+                                        ..default()
+                                    });
+                                }
+
+                                let mut speed = 8.;
+                                if powered {
+                                    speed *= 2.
+                                }
+                                if ultra_powered {
+                                    speed *= 1.5
+                                }
+
+                                let radius = 0.7;
+                                transform.add_2d(dir * (radius + 0.1));
+
+                                commands
+                                    .insert_bundle(GeometryBuilder::build_as(
+                                        &shapes::Circle {
+                                            radius,
+                                            center: Vec2::ZERO,
+                                        },
+                                        DrawMode::Fill(FillMode::color(Color::rgb(0.4, 1., 0.3))),
+                                        transform,
+                                    ))
+                                    .insert(Depth::Projectile)
+                                    .insert(Light {
+                                        radius: 2.,
+                                        color: Color::LIME_GREEN.with_a(0.07),
+                                    })
+                                    //
+                                    .insert(GameplayObject)
+                                    .insert(BigProjectile)
+                                    .insert(Team::YEEEEEEE)
+                                    .insert(DamageOnContact)
+                                    .insert(DieOnContact)
+                                    .insert(CollectContacts::default())
+                                    .insert(Health::new(3.))
+                                    .insert(ExplodeOnDeath {
+                                        damage: 1.,
+                                        radius: 3.,
+                                        effect: Explosion {
+                                            origin: Vec2::ZERO,
+                                            color0: Color::GREEN,
+                                            color1: Color::RED,
+                                            time: Duration::from_millis(400),
+                                            radius: 3.,
+                                            power: ExplosionPower::Small,
+                                        },
+                                        activated: false,
+                                    })
+                                    //
+                                    .insert(RigidBody::Dynamic)
+                                    .insert(Collider::ball(radius))
+                                    .insert(ColliderMassProperties::Mass(2.))
+                                    .insert(PhysicsType::Solid.rapier())
+                                    .insert(Velocity::linear(dir * speed));
+
+                                ([2., 5., 10.], None, assets.player_railgun.clone())
+                            }
                             _ => todo!(),
                         }
                     }
                 };
 
-                commands.insert(Damage::new(
-                    damage[if ultra_powered && powered {
-                        2
-                    } else if powered || ultra_powered {
-                        1
-                    } else {
-                        0
-                    }],
-                ));
+                commands.insert(
+                    Damage::new(
+                        damage[if ultra_powered && powered {
+                            2
+                        } else if powered || ultra_powered {
+                            1
+                        } else {
+                            0
+                        }],
+                    )
+                    .powerful(explodes_projectiles),
+                );
 
                 if let Some(ray) = ray {
                     commands

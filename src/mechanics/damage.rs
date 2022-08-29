@@ -2,13 +2,30 @@ use super::{health::*, physics::CollectContacts};
 use crate::{
     common::*,
     objects::stats::Stats,
-    present::effect::{Explosion, RayEffect},
+    present::effect::{Explosion, ExplosionPower, RayEffect},
 };
 
-#[derive(Component, Clone, Copy, PartialEq, Eq)]
+#[derive(Component, Clone, Copy)]
 pub enum Team {
     Player,
     Enemy,
+    YEEEEEEE,
+}
+
+impl Team {
+    pub fn is_same(&self, rhs: Team) -> bool {
+        match (self, rhs) {
+            (Team::Player, Team::Player) | (Team::Enemy, Team::Enemy) => true,
+            (Team::YEEEEEEE, _) | (_, Team::YEEEEEEE) => false,
+            _ => false,
+        }
+    }
+    pub fn is_player(&self) -> bool {
+        match self {
+            Team::Player => true,
+            _ => false,
+        }
+    }
 }
 
 /// Requires Damage
@@ -26,6 +43,20 @@ pub struct DamageRay {
     pub ignore_obstacles: bool,
 }
 
+#[derive(Component, Clone, Copy)]
+pub struct ExplodeOnDeath {
+    pub damage: f32,
+    pub radius: f32,
+    pub effect: Explosion,
+    pub activated: bool,
+}
+
+#[derive(Component)]
+pub struct SmallProjectile;
+
+#[derive(Component)]
+pub struct BigProjectile;
+
 //
 
 pub struct DamagePlugin;
@@ -34,7 +65,8 @@ impl Plugin for DamagePlugin {
     fn build(&self, app: &mut App) {
         app.add_system(damage_on_contact)
             .add_system(die_on_contact)
-            .add_system_to_stage(CoreStage::PostUpdate, damage_ray);
+            .add_system_to_stage(CoreStage::PostUpdate, damage_ray)
+            .add_system_to_stage(CoreStage::PostUpdate, explode_on_death.after(damage_ray));
     }
 }
 
@@ -74,11 +106,21 @@ fn damage_on_contact(
 }
 
 fn die_on_contact(
-    entities: Query<(Entity, &CollectContacts), With<DieOnContact>>,
-    mut death: CmdWriter<DeathEvent>,
+    entities: Query<(Entity, &CollectContacts, Option<&BigProjectile>), With<DieOnContact>>,
+    mut death: CmdWriter<DeathEvent>, projectiles: Query<(), With<SmallProjectile>>,
+    invincible: Query<&Health>,
 ) {
-    for (entity, contacts) in entities.iter() {
-        if !contacts.current.is_empty() {
+    for (entity, contacts, big) in entities.iter() {
+        if match big.is_some() {
+            true => {
+                contacts.current.iter().any(|e| !projectiles.contains(*e))
+                    && contacts
+                        .current
+                        .iter()
+                        .any(|e| !invincible.get(*e).map(|hp| hp.invincible).unwrap_or(false))
+            }
+            false => !contacts.current.is_empty(),
+        } {
             death.send((entity, default()))
         }
     }
@@ -86,9 +128,14 @@ fn die_on_contact(
 
 fn damage_ray(
     mut rays: Query<(&GlobalTransform, &DamageRay, &mut Damage, &Team)>,
-    targets: Query<(&Team, &Health)>, mut damage_cmd: CmdWriter<DamageEvent>,
-    phy: Res<RapierContext>, mut commands: Commands, mut explode: EventWriter<Explosion>,
-    mut stats: ResMut<Stats>,
+    mut targets: Query<(
+        &Team,
+        &Health,
+        Option<&SmallProjectile>,
+        Option<&mut ExplodeOnDeath>,
+    )>,
+    mut damage_cmd: CmdWriter<DamageEvent>, phy: Res<RapierContext>, mut commands: Commands,
+    mut explode: EventWriter<Explosion>, mut stats: ResMut<Stats>,
 ) {
     let huge_distance = 1000.;
 
@@ -105,9 +152,9 @@ fn damage_ray(
             |entity, intersect| {
                 let same_team = targets
                     .get(entity)
-                    .map(|other_team| *team == *other_team.0)
+                    .map(|other_team| team.is_same(*other_team.0))
                     .unwrap_or(false);
-                if !same_team {
+                if !same_team && targets.get(entity).map(|v| !v.1.invincible).unwrap_or(true) {
                     best_targets.push((entity, intersect.toi, intersect.point))
                 }
                 true
@@ -132,10 +179,22 @@ fn damage_ray(
                 },
             ));
 
-            if let Ok((_, health)) = targets.get(entity) {
-                // hack to get points for shooting projectiles
-                if *team == Team::Player {
-                    if health.max < 1. {
+            if let Ok((_, health, projectile, mut explode)) = targets.get_mut(entity) {
+                if team.is_player() {
+                    if let Some(explode) = explode.as_mut().filter(|_| damage.powerful) {
+                        stats.player.points += 50;
+                        explode.activated = true;
+
+                        // force death
+                        damage_cmd.send((
+                            entity,
+                            DamageEvent {
+                                damage: Damage::new(10000.),
+                                team: Team::YEEEEEEE,
+                                point,
+                            },
+                        ));
+                    } else if projectile.is_some() {
                         stats.player.points += 1
                     }
                 }
@@ -160,4 +219,52 @@ fn damage_ray(
                 .insert(effect);
         }
     }
+}
+
+fn explode_on_death(
+    mut entities: Query<(&GlobalTransform, &ExplodeOnDeath)>, mut death: CmdReader<DeathEvent>,
+    mut explode: EventWriter<Explosion>, phy: Res<RapierContext>,
+    mut damage: CmdWriter<DamageEvent>, targets: Query<&GlobalTransform>,
+) {
+    death.iter_cmd_mut(&mut entities, |_, (pos, e)| {
+        let pos = pos.pos_2d();
+
+        let mut e = *e;
+        e.effect.origin = pos;
+        if e.activated {
+            e.damage *= 2.;
+            e.radius *= 1.5;
+
+            e.effect.radius *= 1.5;
+            e.effect.color0 = Color::WHITE;
+            e.effect.color1 = Color::ORANGE_RED;
+            e.effect.power = ExplosionPower::Big;
+
+            e.effect.time = Duration::from_millis(250);
+            explode.send(e.effect);
+            e.effect.time = Duration::from_millis(1000);
+        }
+
+        phy.intersections_with_shape(
+            pos,
+            0.,
+            &Collider::ball(e.radius),
+            QueryFilter::new(),
+            |entity| {
+                damage.send((
+                    entity,
+                    DamageEvent {
+                        damage: Damage {
+                            explosion: true,
+                            ..Damage::new(e.damage)
+                        },
+                        team: Team::YEEEEEEE,
+                        point: targets.get(entity).map(|v| v.pos_2d()).unwrap_or_default(),
+                    },
+                ));
+                true
+            },
+        );
+        explode.send(e.effect);
+    });
 }

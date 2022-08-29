@@ -20,6 +20,7 @@ pub enum ExplosionPower {
     #[default]
     None,
     Small,
+    Big,
 }
 
 impl Explosion {
@@ -130,6 +131,7 @@ fn explosion(
         if let Some(sound) = match event.power {
             ExplosionPower::None => None,
             ExplosionPower::Small => Some(&assets.explosion_small),
+            ExplosionPower::Big => Some(&assets.explosion_big),
         } {
             sounds.send(Sound {
                 sound: sound.clone(),
@@ -279,7 +281,7 @@ fn hit_sparks(
         use bevy_lyon::*;
         use rand::*;
 
-        let count = event.damage as usize * 3;
+        let count = (event.damage as usize * 3).min(10);
         for _ in 0..count {
             let radius = thread_rng().gen_range(0.02..0.15);
             let offset = thread_rng().gen_range(0.5..0.7);

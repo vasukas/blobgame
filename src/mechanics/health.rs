@@ -47,6 +47,7 @@ impl DieAfter {
 pub struct Damage {
     pub value: f32,
     pub powerful: bool,
+    /// Reduced damage to some entities
     pub explosion: bool,
 }
 
@@ -56,14 +57,8 @@ impl Damage {
     }
 
     /// Explodes projectiles
-    pub fn powerful(mut self) -> Self {
-        self.powerful = true;
-        self
-    }
-
-    /// Reduced damage to some entities
-    pub fn explosion(mut self) -> Self {
-        self.explosion = true;
+    pub fn powerful(mut self, is: bool) -> Self {
+        self.powerful = is;
         self
     }
 }
@@ -122,7 +117,7 @@ fn damage(
     mut death: CmdWriter<DeathEvent>, mut received: CmdWriter<ReceivedDamage>,
 ) {
     damage.iter_cmd_mut(&mut entities, |event, (entity, mut health, team)| {
-        if *team != event.team && !health.invincible {
+        if !team.is_same(event.team) && !health.invincible {
             health.value -=
                 event.damage.value * if event.damage.explosion && health.armor { 0.5 } else { 1. };
             if health.value <= 0. {

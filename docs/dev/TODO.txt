@@ -29,24 +29,25 @@ Needs to be done ASAP
         + enemies drop parts: (group 1: sphere, ray; group 2: laser, magnet)
         + parts can be combined, replacing current mega-weapon
         - weapons (player can keep only two at once; have limited uses)
-            - rocket (sphere & laser)
-                - just projectile
+            + rocket (sphere & laser)
+                + just projectile
             - shield (sphere & magnet)
                 - when equipped, appears in front of the player
                 - absorbs projectiles
                 - deflects rays (still gets damaged, but less)
-            - railgun (ray & laser)
+            + railgun (ray & laser)
                 + just powerful ray which goes through all targets
-                - explodes projectiles
+                + explodes projectiles
             - deflector (ray & magnet)
                 - pushes all projectiles away (and turns them into player's)
-        - notify player when weapon breaks
+        + notify player when weapon breaks
     - advanced enemies
         - turret patterns
         - mini-bosses (like shield robot)
         - expand healing mechanics
         - bosses (just stuff moving in patterns)
         - some simple movement, maybe
+        - asteroids, maybe, lol
 
 - audio
     - sounds
