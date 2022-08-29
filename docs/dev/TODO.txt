@@ -24,32 +24,34 @@ Important bugs
 
 Needs to be done ASAP
 =====================
-- mechanics (intermediate)
-    - advanced enemies
-        - turret patterns
-        - mini-bosses (like shield robot)
-        - bosses (just stuff moving in patterns)
-        - some simple movement, maybe
-        - asteroids, maybe, lol
-        - various wave patterns
-    - craft
-        - 2nd group of weapons
-            - shield (sphere & magnet)
-                - when equipped, appears in front of the player
-                - absorbs projectiles
-                - deflects rays (still gets damaged, but less)
-            - deflector (ray & magnet)
-                - pushes all projectiles away (and turns them into player's)
 
-- audio
-    - sounds
-        - crafted weapons: plasma, shield, deflector
-        - ui_weapon_broken
-        - ...
+- immediate
+    - add player and item models (grep "blob")
+    - movement trail
+    - boss with rays and rockets
+    - guided rockets
+    - sounds: ui_weapon_broken
 
 - add description on itch
-- add player and item models (grep "blob")
 - more compact tutorial text
+
+- would be nice
+    - gameplay
+        - shield (sphere & magnet)
+            - when equipped, appears in front of the player
+            - absorbs projectiles
+            - deflects rays (still gets damaged, but less)
+            - sound
+        - mini-bosses (like shield robot)
+        - enemies
+            - bosses (just stuff moving in patterns)
+            - more wave patterns
+
+- later only if there is time
+    - deflector (ray & magnet)
+        - pushes all projectiles away (and turns them into player's)
+        - sound
+    - bonk projectiles in cursor direction
 
 ...
 
@@ -60,8 +62,8 @@ Additional features
 - weapon and part icons (for menu)
 - timing on beats (sound) might be wrong?
 - fix plasma balls being self-destroyed on contact with small projectiles
-- movement trail (esp. in dash)
 - expand healing mechanics
+- asteroids, maybe, lol
 
 ? more mechanics
 

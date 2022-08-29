@@ -22,6 +22,10 @@ pub enum Weapon {
     #[default]
     None,
     Turret,
+    AdvancedTurret {
+        offset: f32,
+    },
+    RotatingTurret,
 
     PlayerGun {
         dir: Vec2,
@@ -85,7 +89,7 @@ fn weapon(
 
             Weapon::Turret => {
                 let radius = 0.25;
-                let (transform, velocity) = make_origin(transform, 1.5, 10.);
+                let (transform, velocity) = make_origin(transform, 1.5, 10., 0.);
                 commands
                     .spawn_bundle(GeometryBuilder::build_as(
                         &shapes::Polygon {
@@ -133,6 +137,111 @@ fn weapon(
 
                 sound_cmd.send(Sound {
                     sound: assets.wpn_smg.clone(),
+                    position: Some(transform.pos_2d()),
+                });
+            }
+
+            Weapon::AdvancedTurret { offset } => {
+                let radius = 0.3;
+                let (transform, velocity) = make_origin(transform, 1.5, 7.5, offset);
+                commands
+                    .spawn_bundle(GeometryBuilder::build_as(
+                        &shapes::Polygon {
+                            points: vec![
+                                vec2(0., radius * 2.),
+                                vec2(0., radius).rotated(160f32.to_radians()),
+                                vec2(0., radius).rotated(-160f32.to_radians()),
+                            ],
+                            closed: true,
+                        },
+                        DrawMode::Fill(FillMode::color(Color::rgb(1., 0.3, 0.3))),
+                        transform,
+                    ))
+                    .insert(Depth::Projectile)
+                    .insert(Light {
+                        radius: 2.,
+                        color: Color::RED.with_a(0.07),
+                    })
+                    .insert(
+                        Explosion {
+                            origin: Vec2::ZERO,
+                            color0: Color::YELLOW,
+                            color1: Color::RED,
+                            time: Duration::from_millis(400),
+                            radius: 0.5,
+                            power: ExplosionPower::Small,
+                        }
+                        .death(),
+                    )
+                    //
+                    .insert(GameplayObject)
+                    .insert(SmallProjectile)
+                    .insert(Damage::new(1.))
+                    .insert(*team)
+                    .insert(DamageOnContact)
+                    .insert(DieOnContact)
+                    .insert(CollectContacts::default())
+                    .insert(Health::new(0.1))
+                    //
+                    .insert(RigidBody::Dynamic)
+                    .insert(Collider::ball(radius))
+                    .insert(ColliderMassProperties::Mass(1.))
+                    .insert(PhysicsType::Projectile.rapier())
+                    .insert(Velocity::linear(velocity));
+
+                sound_cmd.send(Sound {
+                    sound: assets.wpn_smg.clone(),
+                    position: Some(transform.pos_2d()),
+                });
+            }
+
+            Weapon::RotatingTurret => {
+                let radius = 0.4;
+                let (transform, velocity) = make_origin(transform, 1.5, 6., 0.);
+                commands
+                    .spawn_bundle(GeometryBuilder::build_as(
+                        &shapes::Circle {
+                            radius,
+                            center: Vec2::ZERO,
+                        },
+                        DrawMode::Fill(FillMode::color(Color::rgb(0.3, 1., 0.6))),
+                        transform,
+                    ))
+                    .insert(Depth::Projectile)
+                    .insert(Light {
+                        radius: 2.,
+                        color: Color::LIME_GREEN.with_a(0.07),
+                    })
+                    .insert(
+                        Explosion {
+                            origin: Vec2::ZERO,
+                            color0: Color::GREEN,
+                            color1: Color::YELLOW,
+                            time: Duration::from_millis(400),
+                            radius: 0.5,
+                            power: ExplosionPower::Small,
+                        }
+                        .death(),
+                    )
+                    //
+                    .insert(GameplayObject)
+                    .insert(SmallProjectile)
+                    .insert(Damage::new(1.))
+                    .insert(*team)
+                    .insert(DamageOnContact)
+                    .insert(DieOnContact)
+                    .insert(BigProjectile)
+                    .insert(CollectContacts::default())
+                    .insert(Health::new(2.))
+                    //
+                    .insert(RigidBody::Dynamic)
+                    .insert(Collider::ball(radius))
+                    .insert(ColliderMassProperties::Mass(3.))
+                    .insert(PhysicsType::Projectile.rapier())
+                    .insert(Velocity::linear(velocity));
+
+                sound_cmd.send(Sound {
+                    sound: assets.wpn_plasma.clone(),
                     position: Some(transform.pos_2d()),
                 });
             }
@@ -301,7 +410,7 @@ fn weapon(
                                     .insert(PhysicsType::Solid.rapier())
                                     .insert(Velocity::linear(dir * speed));
 
-                                ([2., 5., 10.], None, assets.player_railgun.clone())
+                                ([2., 5., 10.], None, assets.player_plasma.clone())
                             }
                             _ => todo!(),
                         }
@@ -337,9 +446,9 @@ fn weapon(
     );
 }
 
-fn make_origin(pos: &GlobalTransform, distance: f32, speed: f32) -> (Transform, Vec2) {
+fn make_origin(pos: &GlobalTransform, distance: f32, speed: f32, offset: f32) -> (Transform, Vec2) {
     let mut pos: Transform = (*pos).into();
     let forward = pos.local_y().truncate();
-    pos.add_2d(forward * distance);
+    pos.add_2d(forward * distance + forward.clockwise90() * offset);
     (pos, forward * speed)
 }

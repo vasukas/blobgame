@@ -92,7 +92,8 @@ fn show_menu(
                                         }
                                         if ui.button("Play (skip tutorial)").clicked() {
                                             *state = MenuState::None;
-                                            spawn.despawn = Some(true)
+                                            spawn.despawn = Some(true);
+                                            spawn.tutorial = None;
                                         }
                                     }
                                     #[cfg(not(target_arch = "wasm32"))]

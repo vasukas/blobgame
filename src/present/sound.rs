@@ -211,7 +211,7 @@ fn beats(
             1 => Duration::from_millis(1000),
             _ => Duration::from_millis(500),
         };
-        let initial_delay = Duration::from_millis(500);
+        let initial_delay = Duration::from_millis(300);
 
         let start = *beats
             .start

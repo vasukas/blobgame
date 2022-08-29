@@ -241,11 +241,13 @@ fn spawn(
                     &mut commands,
                     offset + vec2(world_size.x * -0.4, world_size.y * 0.1),
                     settings.difficulty,
+                    TurretType::Simple,
                 ));
                 wave_data.entities.push(create_turret(
                     &mut commands,
                     offset + vec2(world_size.x * 0.4, world_size.y * -0.1),
                     settings.difficulty,
+                    TurretType::Simple,
                 ));
             }
             Some(4) => {
@@ -277,6 +279,7 @@ fn spawn(
                     &mut commands,
                     offset + vec2(0., world_size.y * 0.35),
                     settings.difficulty,
+                    TurretType::Simple,
                 ));
             }
             Some(_) => {
@@ -308,41 +311,47 @@ fn spawn(
                     vec2(world_size.x * 0.1, world_size.y * 0.2),
                     vec2(world_size.x * 0.1, world_size.y * 0.4),
                 ] {
-                    create_wall(&mut commands, offset + pos, Vec2::splat(1.5))
+                    create_wall(&mut commands, offset + pos, Vec2::splat(1.3))
                 }
 
                 // test turret
-                if stats.wave % 2 == 0 {
+                if stats.wave % 2 == 1 {
                     wave_data.entities.push(create_turret(
                         &mut commands,
                         offset + vec2(-15., 0.),
                         settings.difficulty,
+                        TurretType::Simple,
                     ));
                     wave_data.entities.push(create_turret(
                         &mut commands,
                         offset + vec2(15., 0.),
                         settings.difficulty,
+                        TurretType::Simple,
                     ));
                 } else {
                     wave_data.entities.push(create_turret(
                         &mut commands,
                         offset + vec2(-10., 10.),
                         settings.difficulty,
-                    ));
-                    wave_data.entities.push(create_turret(
-                        &mut commands,
-                        offset + vec2(10., 10.),
-                        settings.difficulty,
+                        TurretType::Simple,
                     ));
                     wave_data.entities.push(create_turret(
                         &mut commands,
                         offset + vec2(-10., -10.),
                         settings.difficulty,
+                        TurretType::Simple,
                     ));
                     wave_data.entities.push(create_turret(
                         &mut commands,
-                        offset + vec2(10., -10.),
+                        offset + vec2(12., 8.),
                         settings.difficulty,
+                        TurretType::Advanced,
+                    ));
+                    wave_data.entities.push(create_turret(
+                        &mut commands,
+                        offset + vec2(10., -3.),
+                        settings.difficulty,
+                        TurretType::Rotating,
                     ));
                 }
             }
@@ -395,7 +404,16 @@ fn create_wall(commands: &mut Commands, origin: Vec2, extents: Vec2) {
         .insert(Collider::cuboid(extents.x / 2., extents.y / 2.));
 }
 
-fn create_turret(commands: &mut Commands, origin: Vec2, difficulty: Difficulty) -> Entity {
+#[derive(Clone, Copy, PartialEq, Eq)]
+enum TurretType {
+    Simple,
+    Advanced,
+    Rotating,
+}
+
+fn create_turret(
+    commands: &mut Commands, origin: Vec2, difficulty: Difficulty, ty: TurretType,
+) -> Entity {
     use bevy_lyon::*;
 
     let radius = 0.6;
@@ -408,12 +426,33 @@ fn create_turret(commands: &mut Commands, origin: Vec2, difficulty: Difficulty) 
             ],
             closed: true,
         },
-        DrawMode::Outlined {
-            fill_mode: FillMode::color(Color::ORANGE),
-            outline_mode: StrokeMode::new(Color::YELLOW, 0.05),
+        match ty {
+            TurretType::Simple => DrawMode::Outlined {
+                fill_mode: FillMode::color(Color::ORANGE),
+                outline_mode: StrokeMode::new(Color::YELLOW, 0.05),
+            },
+            TurretType::Advanced => DrawMode::Outlined {
+                fill_mode: FillMode::color(Color::SEA_GREEN),
+                outline_mode: StrokeMode::new(Color::DARK_GRAY, 0.05),
+            },
+            TurretType::Rotating => DrawMode::Outlined {
+                fill_mode: FillMode::color(Color::CRIMSON),
+                outline_mode: StrokeMode::new(Color::BEIGE, 0.05),
+            },
         },
         Transform::new_2d(origin),
     ));
+    match ty {
+        TurretType::Simple | TurretType::Advanced => {
+            commands.insert(LosCheck::default()).insert(FaceTarget {
+                rotation_speed: TAU * 0.4,
+                ..default()
+            });
+        }
+        TurretType::Rotating => {
+            commands.insert(HeSpinsHeRotats::new(TAU * 0.33));
+        }
+    }
     commands
         .insert(Depth::Player)
         .insert(SpawnEffect { radius: 1. })
@@ -422,25 +461,52 @@ fn create_turret(commands: &mut Commands, origin: Vec2, difficulty: Difficulty) 
         .insert(GameplayObject)
         .insert(Target::Player)
         .insert(Team::Enemy)
-        .insert(LosCheck::default())
-        .insert(FaceTarget {
-            rotation_speed: TAU * 0.4,
-            ..default()
-        })
-        .insert(
-            AttackPattern::default()
+        .insert(match ty {
+            TurretType::Simple => AttackPattern::default()
                 .stage(1, Duration::from_secs(1), AttackStage::Wait)
                 .stage(
                     5,
                     Duration::from_millis(300),
-                    AttackStage::Shoot(Weapon::Turret),
+                    AttackStage::Shoot(vec![Weapon::Turret]),
                 )
                 .stage(1, Duration::from_secs(1), AttackStage::Wait),
-        )
-        .insert(Health::new(3.))
-        .insert(DeathPoints {
-            value: 20,
-            charge: 0.2,
+
+            TurretType::Advanced => AttackPattern::default()
+                .stage(1, Duration::from_millis(500), AttackStage::Wait)
+                .stage(
+                    4,
+                    Duration::from_millis(250),
+                    AttackStage::Shoot(vec![
+                        Weapon::AdvancedTurret { offset: 0. },
+                        Weapon::AdvancedTurret { offset: -1.25 },
+                        Weapon::AdvancedTurret { offset: 1.25 },
+                    ]),
+                ),
+
+            TurretType::Rotating => AttackPattern::default().stage(
+                1,
+                Duration::from_millis(150),
+                AttackStage::Shoot(vec![Weapon::RotatingTurret]),
+            ),
+        })
+        .insert(Health::new(match ty {
+            TurretType::Simple => 3.,
+            TurretType::Advanced => 6.,
+            TurretType::Rotating => 4.,
+        }))
+        .insert(match ty {
+            TurretType::Simple => DeathPoints {
+                value: 20,
+                charge: 0.2,
+            },
+            TurretType::Advanced => DeathPoints {
+                value: 40,
+                charge: 0.3,
+            },
+            TurretType::Rotating => DeathPoints {
+                value: 60,
+                charge: 0.4,
+            },
         })
         //
         .insert(RigidBody::Fixed)

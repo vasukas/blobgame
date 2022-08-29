@@ -57,6 +57,9 @@ pub struct SmallProjectile;
 #[derive(Component)]
 pub struct BigProjectile;
 
+#[derive(Component)]
+pub struct BonkToTeam(pub Team);
+
 //
 
 pub struct DamagePlugin;
@@ -66,7 +69,8 @@ impl Plugin for DamagePlugin {
         app.add_system(damage_on_contact)
             .add_system(die_on_contact)
             .add_system_to_stage(CoreStage::PostUpdate, damage_ray)
-            .add_system_to_stage(CoreStage::PostUpdate, explode_on_death.after(damage_ray));
+            .add_system_to_stage(CoreStage::PostUpdate, explode_on_death.after(damage_ray))
+            .add_system_to_stage(CoreStage::Last, bonk_to_same_team);
     }
 }
 
@@ -274,4 +278,17 @@ fn explode_on_death(
         );
         explode.send(e.effect);
     });
+}
+
+fn bonk_to_same_team(
+    bonker: Query<(&CollectContacts, &BonkToTeam)>,
+    mut projectiles: Query<&mut Team, With<BigProjectile>>,
+) {
+    for (contacts, bonk) in bonker.iter() {
+        for entity in &contacts.current {
+            if let Ok(mut team) = projectiles.get_mut(*entity) {
+                *team = bonk.0
+            }
+        }
+    }
 }

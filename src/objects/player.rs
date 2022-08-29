@@ -12,7 +12,7 @@ use crate::{
         time::TimeMode,
     },
     mechanics::{
-        damage::Team,
+        damage::{BonkToTeam, Team},
         health::{Health, ReceivedDamage},
         movement::*,
     },
@@ -138,7 +138,8 @@ fn spawn_player(
             .insert(LootPicker {
                 radius: Player::RADIUS,
                 ..default()
-            });
+            })
+            .insert(BonkToTeam(Team::YEEEEEEE));
     }
 }
 
@@ -294,7 +295,7 @@ fn update_player(
             (player.exhaustion - time.delta_seconds() * exhaust_restore_speed).max(0.);
 
         // increase charge
-        if !spawn.waiting_for_next_wave {
+        if !spawn.waiting_for_next_wave && beats.level == 0 {
             stats.ubercharge += time.delta_seconds() / charge_time_seconds;
         }
     }

@@ -83,6 +83,8 @@ pub trait GlamVec2 {
     fn in_bounds(&self, min: Self, max: Self) -> bool;
     /// Returns copy of this vector rotated by specified angle (0 points to Y axis)
     fn rotated(&self, angle: f32) -> Self;
+    /// Returns copy rotated by 90 degrees clockwise
+    fn clockwise90(&self) -> Self;
 }
 
 impl GlamVec2 for Vec2 {
@@ -104,6 +106,9 @@ impl GlamVec2 for Vec2 {
         let cos = angle.cos();
         let sin = angle.sin();
         Self::new(self.x * cos - self.y * sin, self.x * sin + self.y * cos)
+    }
+    fn clockwise90(&self) -> Self {
+        Self::new(self.y, -self.x)
     }
 }
 

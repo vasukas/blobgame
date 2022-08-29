@@ -47,16 +47,32 @@ pub struct AttackPattern {
 impl AttackPattern {
     pub fn stage(mut self, repeat: usize, duration: Duration, stage: AttackStage) -> Self {
         for _ in 0..repeat {
-            self.stages.push((duration, stage))
+            self.stages.push((duration, stage.clone()))
         }
         self
     }
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub enum AttackStage {
     Wait,
-    Shoot(Weapon),
+    Shoot(Vec<Weapon>),
+}
+
+#[derive(Component)]
+pub struct HeSpinsHeRotats {
+    pub speed: f32,
+    pub angle: f32,
+}
+
+impl HeSpinsHeRotats {
+    pub fn new(speed: f32) -> Self {
+        use rand::*;
+        Self {
+            speed,
+            angle: thread_rng().gen_range(0. ..TAU),
+        }
+    }
 }
 
 //
@@ -69,7 +85,8 @@ impl Plugin for AiPlugin {
             .add_system(update_target)
             .add_system(los_check.after(update_target))
             .add_system(face_target.after(los_check))
-            .add_system(attack_pattern.after(face_target));
+            .add_system(attack_pattern.after(face_target))
+            .add_system(spins_rotats);
     }
 }
 
@@ -164,10 +181,21 @@ fn attack_pattern(
                 pattern.stage = 0;
             }
 
-            match pattern.stages.get(pattern.stage).unwrap().1 {
+            match &pattern.stages.get(pattern.stage).unwrap().1 {
                 AttackStage::Wait => (),
-                AttackStage::Shoot(weapon) => weapon_commands.send((entity, weapon)),
+                AttackStage::Shoot(weapon) => {
+                    for weapon in weapon {
+                        weapon_commands.send((entity, *weapon))
+                    }
+                }
             }
         }
+    }
+}
+
+fn spins_rotats(mut entities: Query<(&mut Transform, &mut HeSpinsHeRotats)>, time: Res<GameTime>) {
+    for (mut transform, mut spins) in entities.iter_mut() {
+        spins.angle += spins.speed * time.delta_seconds();
+        transform.set_angle_2d(spins.angle);
     }
 }

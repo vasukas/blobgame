@@ -18,11 +18,14 @@ pub struct MyAssets {
     pub player_gun: Handle<AudioSource>,
     pub player_gun_powered: Handle<AudioSource>,
     pub player_railgun: Handle<AudioSource>,
+    pub player_plasma: Handle<AudioSource>,
+    pub player_shield: Handle<AudioSource>,
 
     // world sounds
     pub explosion_small: Handle<AudioSource>,
     pub explosion_big: Handle<AudioSource>,
     pub wpn_smg: Handle<AudioSource>,
+    pub wpn_plasma: Handle<AudioSource>,
 }
 
 //
@@ -58,9 +61,12 @@ fn load_assets(mut assets: ResMut<MyAssets>, server: Res<AssetServer>) {
     assets.player_gun = server.load("sounds/ui/player_gun.ogg");
     assets.player_gun_powered = server.load("sounds/ui/player_gun_powered.ogg");
     assets.player_railgun = server.load("sounds/ui/player_railgun.ogg");
+    assets.player_plasma = server.load("sounds/ui/plasma.ogg");
+    assets.player_shield = server.load("sounds/ui/env_shield_hit.ogg");
 
     // world sounds
     assets.explosion_small = server.load("sounds/world/explosion.ogg");
     assets.explosion_big = server.load("sounds/world/explosion_large.ogg");
     assets.wpn_smg = server.load("sounds/world/smg.ogg");
+    assets.wpn_plasma = server.load("sounds/world/plasma.ogg");
 }

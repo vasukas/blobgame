@@ -32,11 +32,8 @@ impl Default for PersistentPlayer {
                 CraftPart::Laser => 2,
                 CraftPart::Magnet => 2,
             },
-            // TODO: RESTORE, DEBUGGING
-            // weapon0: Some((CraftedWeapon::Railgun, 3.)),
-            // weapon1: Some((CraftedWeapon::Plasma, 3.)),
-            weapon0: Some((CraftedWeapon::Railgun, 200.)),
-            weapon1: Some((CraftedWeapon::Plasma, 200.)),
+            weapon0: Some((CraftedWeapon::Railgun, 3.)),
+            weapon1: Some((CraftedWeapon::Plasma, 3.)),
         }
     }
 }
