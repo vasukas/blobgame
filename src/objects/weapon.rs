@@ -221,7 +221,7 @@ fn weapon(
                             color1: Color::YELLOW,
                             time: Duration::from_millis(400),
                             radius: 0.5,
-                            power: ExplosionPower::Small,
+                            power: ExplosionPower::None,
                         }
                         .death(),
                     )

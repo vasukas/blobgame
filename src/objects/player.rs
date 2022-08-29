@@ -36,7 +36,8 @@ impl Plugin for PlayerPlugin {
             .add_system(player_damage_reaction)
             .add_system(next_wave.exclusive_system())
             .add_system(hud_panel)
-            .add_system(craft_menu);
+            .add_system(craft_menu)
+            .add_system(god_mode);
     }
 }
 
@@ -657,5 +658,17 @@ fn craft_menu(
                 menu.show = true
             }
         }
+    }
+}
+
+fn god_mode(
+    keys: Res<Input<KeyCode>>, mut player: Query<&mut Health, With<Player>>,
+    mut stats: ResMut<Stats>,
+) {
+    if keys.just_pressed(KeyCode::P) {
+        if let Ok(mut health) = player.get_single_mut() {
+            health.invincible = true
+        }
+        stats.player.weapon0 = Some((CraftedWeapon::Railgun, 100000.))
     }
 }

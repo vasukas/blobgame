@@ -25,8 +25,6 @@ Important bugs
 Needs to be done ASAP
 =====================
 
-- more and better wave patterns
-
 - shield (sphere & magnet)
     - when equipped, appears in front of the player
     - absorbs projectiles
@@ -52,6 +50,7 @@ Additional features
     - pushes all projectiles away (and turns them into player's)
     - sound
 - bonk projectiles in cursor direction
+- fix projectile interference
 
 ? more mechanics
 

@@ -1,4 +1,9 @@
-use crate::common::*;
+use super::health::DieAfter;
+use crate::{
+    common::*,
+    objects::{player::Player, spawn::TemporaryWall},
+    present::hud_elements::WorldText,
+};
 
 #[derive(Component, Default)]
 pub struct KinematicController {
@@ -32,7 +37,47 @@ impl Plugin for MovementPlugin {
     fn build(&self, app: &mut App) {
         app.add_event::<(Entity, KinematicCommand)>()
             .add_system(kinematic_controller.label(MovementSystemLabel))
-            .add_system(drop_spread);
+            .add_system(drop_spread)
+            .add_system(save_from_walls);
+    }
+}
+
+// TODO: move this to player
+fn save_from_walls(
+    mut commands: Commands,
+    mut players: Query<(Entity, &GlobalTransform, &mut Transform), With<KinematicController>>,
+    walls: Query<(), With<TemporaryWall>>, phy: Res<RapierContext>,
+) {
+    for (entity, pos, mut transform) in players.iter_mut() {
+        let in_wall = [Vec2::X, -Vec2::X, Vec2::Y, -Vec2::Y]
+            .into_iter()
+            .all(|dir| {
+                let radius = Player::RADIUS;
+                let filter = QueryFilter::new()
+                    .exclude_rigid_body(entity)
+                    .groups(PhysicsType::MovementController.into());
+                if let Some((entity, ..)) = phy.cast_ray(
+                    pos.pos_2d() + dir * (radius * 0.9),
+                    -dir,
+                    radius * 0.2,
+                    true,
+                    filter,
+                ) {
+                    walls.contains(entity)
+                } else {
+                    false
+                }
+            });
+        if in_wall {
+            transform.set_2d(Vec2::ZERO);
+            commands
+                .spawn_bundle(SpatialBundle::default())
+                .insert(WorldText {
+                    text: vec![("SORRY".to_string(), Color::FUCHSIA)],
+                    size: 2.,
+                })
+                .insert(DieAfter::new(Duration::from_millis(500)));
+        }
     }
 }
 

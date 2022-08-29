@@ -51,6 +51,9 @@ pub enum WaveEvent {
     Restart, // sent with Started
 }
 
+#[derive(Component)]
+pub struct TemporaryWall;
+
 //
 
 pub struct SpawnPlugin;
@@ -77,13 +80,17 @@ fn spawn(
     entities: Query<Entity, With<GameplayObject>>, mut camera: Query<&mut WorldCamera>,
     mut stats: ResMut<Stats>, mut wave_data: ResMut<WaveData>,
     mut wave_event: EventWriter<WaveEvent>, settings: Res<Settings>,
-    mut tutorial_text: ResMut<TutorialText>,
+    mut tutorial_text: ResMut<TutorialText>, tmp_walls: Query<Entity, With<TemporaryWall>>,
 ) {
     if let Some(respawn) = control.despawn.take() {
         // despawn all objects only if it's despawn or respawn, but not next if it's next wave
         let despawn = !respawn || control.wave_spawned == Some(stats.wave);
         if despawn {
             for entity in entities.iter() {
+                commands.entity(entity).despawn_recursive()
+            }
+        } else {
+            for entity in tmp_walls.iter() {
                 commands.entity(entity).despawn_recursive()
             }
         }
@@ -296,70 +303,162 @@ fn spawn(
             None => {
                 tutorial_text.0 = default();
 
-                // static walls
-                for pos in [
-                    vec2(world_size.x * -0.1, world_size.y * -0.4),
-                    vec2(world_size.x * -0.1, world_size.y * -0.2),
-                    vec2(world_size.x * -0.1, world_size.y * 0.2),
-                    vec2(world_size.x * -0.1, world_size.y * 0.4),
-                    //
-                    vec2(world_size.x * 0.1, world_size.y * -0.4),
-                    vec2(world_size.x * 0.1, world_size.y * -0.2),
-                    vec2(world_size.x * 0.1, world_size.y * 0.2),
-                    vec2(world_size.x * 0.1, world_size.y * 0.4),
-                ] {
-                    create_wall(&mut commands, offset + pos, Vec2::splat(1.3))
-                }
-
-                // test turret
-                if stats.wave % 2 == 1 {
-                    wave_data.entities.push(create_turret(
-                        &mut commands,
-                        offset + vec2(-15., 0.),
-                        settings.difficulty,
-                        TurretType::Simple,
-                    ));
-                    wave_data.entities.push(create_turret(
-                        &mut commands,
-                        offset + vec2(15., 0.),
-                        settings.difficulty,
-                        TurretType::Simple,
-                    ));
-                } else {
-                    // wave_data.entities.push(create_turret(
-                    //     &mut commands,
-                    //     offset + vec2(-10., 10.),
-                    //     settings.difficulty,
-                    //     TurretType::Simple,
-                    // ));
-                    // wave_data.entities.push(create_turret(
-                    //     &mut commands,
-                    //     offset + vec2(-10., -10.),
-                    //     settings.difficulty,
-                    //     TurretType::Simple,
-                    // ));
-                    // wave_data.entities.push(create_turret(
-                    //     &mut commands,
-                    //     offset + vec2(12., 8.),
-                    //     settings.difficulty,
-                    //     TurretType::Advanced,
-                    // ));
-                    wave_data.entities.push(create_turret(
-                        &mut commands,
-                        offset + vec2(10., -3.),
-                        settings.difficulty,
-                        TurretType::Rotating,
-                    ));
-                    wave_data.entities.push(
-                        commands
-                            .spawn_bundle(SpatialBundle::from_transform(Transform::new_2d(vec2(
-                                0.,
-                                world_size.y / 2.,
-                            ))))
-                            .insert(TheBoss { world_size, offset })
-                            .insert(GameplayObject)
-                            .id(),
-                    );
+                match stats.wave % 5 {
+                    0 => {
+                        for pos in [
+                            vec2(world_size.x * -0.2, world_size.y * -0.3),
+                            vec2(world_size.x * -0.2, world_size.y * 0.3),
+                            //
+                            vec2(world_size.x * 0.2, world_size.y * -0.3),
+                            vec2(world_size.x * 0.2, world_size.y * 0.3),
+                        ] {
+                            create_wall(&mut commands, offset + pos, Vec2::splat(1.3))
+                        }
+                        wave_data.entities.push(create_turret(
+                            &mut commands,
+                            offset + vec2(-15., 0.),
+                            settings.difficulty,
+                            TurretType::Simple,
+                        ));
+                        wave_data.entities.push(create_turret(
+                            &mut commands,
+                            offset + vec2(15., 0.),
+                            settings.difficulty,
+                            TurretType::Simple,
+                        ));
+                    }
+                    1 => {
+                        for pos in [vec2(0., 8.)] {
+                            create_wall(&mut commands, offset + pos, Vec2::splat(1.3))
+                        }
+                        wave_data.entities.push(create_turret(
+                            &mut commands,
+                            offset + vec2(-12., 7.),
+                            settings.difficulty,
+                            TurretType::Advanced,
+                        ));
+                        wave_data.entities.push(create_turret(
+                            &mut commands,
+                            offset + vec2(12., 7.),
+                            settings.difficulty,
+                            TurretType::Advanced,
+                        ));
+                        wave_data.entities.push(create_turret(
+                            &mut commands,
+                            offset + vec2(0., -1.),
+                            settings.difficulty,
+                            TurretType::Rotating,
+                        ));
+                    }
+                    2 => {
+                        for pos in [
+                            vec2(world_size.x * -0.1, world_size.y * -0.2),
+                            vec2(world_size.x * -0.1, world_size.y * 0.2),
+                            vec2(world_size.x * -0.1, world_size.y * -0.4),
+                            vec2(world_size.x * -0.1, world_size.y * 0.4),
+                            //
+                            vec2(world_size.x * 0.1, world_size.y * -0.2),
+                            vec2(world_size.x * 0.1, world_size.y * 0.2),
+                            vec2(world_size.x * 0.1, world_size.y * -0.4),
+                            vec2(world_size.x * 0.1, world_size.y * 0.4),
+                        ] {
+                            create_wall(&mut commands, offset + pos, Vec2::splat(1.3))
+                        }
+                        wave_data.entities.push(create_turret(
+                            &mut commands,
+                            offset + vec2(-10., 10.),
+                            settings.difficulty,
+                            TurretType::Simple,
+                        ));
+                        wave_data.entities.push(create_turret(
+                            &mut commands,
+                            offset + vec2(-10., -10.),
+                            settings.difficulty,
+                            TurretType::Simple,
+                        ));
+                        wave_data.entities.push(create_turret(
+                            &mut commands,
+                            offset + vec2(12., 8.),
+                            settings.difficulty,
+                            TurretType::Advanced,
+                        ));
+                        wave_data.entities.push(create_turret(
+                            &mut commands,
+                            offset + vec2(10., -3.),
+                            settings.difficulty,
+                            TurretType::Rotating,
+                        ));
+                    }
+                    3 => {
+                        for pos in [
+                            vec2(world_size.x * -0.36, -1.),
+                            vec2(world_size.x * -0.23, 1.),
+                            vec2(world_size.x * -0.1, 1.),
+                            vec2(world_size.x * 0.1, -1.),
+                            vec2(world_size.x * 0.23, 1.),
+                            vec2(world_size.x * 0.36, -1.),
+                        ] {
+                            create_wall(&mut commands, offset + pos, Vec2::splat(1.))
+                        }
+                        wave_data.entities.push(create_turret(
+                            &mut commands,
+                            offset + vec2(-15., 5.),
+                            settings.difficulty,
+                            TurretType::Advanced,
+                        ));
+                        wave_data.entities.push(create_turret(
+                            &mut commands,
+                            offset + vec2(-15., -5.),
+                            settings.difficulty,
+                            TurretType::Simple,
+                        ));
+                        wave_data.entities.push(create_turret(
+                            &mut commands,
+                            offset + vec2(15., 5.),
+                            settings.difficulty,
+                            TurretType::Advanced,
+                        ));
+                        wave_data.entities.push(create_turret(
+                            &mut commands,
+                            offset + vec2(15., -5.),
+                            settings.difficulty,
+                            TurretType::Simple,
+                        ));
+                    }
+                    _ => {
+                        for pos in [
+                            vec2(world_size.x * -0.1, world_size.y * -0.4),
+                            vec2(world_size.x * -0.1, world_size.y * -0.2),
+                            vec2(world_size.x * -0.1, world_size.y * 0.2),
+                            //
+                            vec2(world_size.x * 0.1, world_size.y * -0.4),
+                            vec2(world_size.x * 0.1, world_size.y * -0.2),
+                            vec2(world_size.x * 0.1, world_size.y * 0.2),
+                        ] {
+                            create_wall(&mut commands, offset + pos, Vec2::splat(1.3))
+                        }
+                        wave_data.entities.push(create_turret(
+                            &mut commands,
+                            offset + vec2(-10., 3.),
+                            settings.difficulty,
+                            TurretType::Rotating,
+                        ));
+                        wave_data.entities.push(create_turret(
+                            &mut commands,
+                            offset + vec2(10., -3.),
+                            settings.difficulty,
+                            TurretType::Rotating,
+                        ));
+                        wave_data.entities.push(
+                            commands
+                                .spawn_bundle(SpatialBundle::from_transform(Transform::new_2d(
+                                    vec2(0., world_size.y / 2.),
+                                )))
+                                .insert(TheBoss { world_size, offset })
+                                .insert(GameplayObject)
+                                .id(),
+                        );
+                    }
                 }
             }
         }
@@ -408,7 +507,8 @@ fn create_wall(commands: &mut Commands, origin: Vec2, extents: Vec2) {
         //
         .insert(RigidBody::Fixed)
         .insert(PhysicsType::Solid.rapier())
-        .insert(Collider::cuboid(extents.x / 2., extents.y / 2.));
+        .insert(Collider::cuboid(extents.x / 2., extents.y / 2.))
+        .insert(TemporaryWall);
 }
 
 #[derive(Clone, Copy, PartialEq, Eq)]
