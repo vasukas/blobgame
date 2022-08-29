@@ -23,8 +23,7 @@ pub struct DieOnContact;
 pub struct DamageRay {
     pub spawn_effect: Option<RayEffect>, // length will be set on hit
     pub explosion_effect: Option<Explosion>, // show explosion where it hits
-
-                                         // TODO: other parameters
+    pub ignore_obstacles: bool,
 }
 
 //
@@ -86,18 +85,17 @@ fn die_on_contact(
 }
 
 fn damage_ray(
-    rays: Query<(&GlobalTransform, &DamageRay, &Damage, &Team)>, targets: Query<(&Team, &Health)>,
-    mut damage_cmd: CmdWriter<DamageEvent>, phy: Res<RapierContext>, mut commands: Commands,
-    mut explode: EventWriter<Explosion>, mut stats: ResMut<Stats>,
+    mut rays: Query<(&GlobalTransform, &DamageRay, &mut Damage, &Team)>,
+    targets: Query<(&Team, &Health)>, mut damage_cmd: CmdWriter<DamageEvent>,
+    phy: Res<RapierContext>, mut commands: Commands, mut explode: EventWriter<Explosion>,
+    mut stats: ResMut<Stats>,
 ) {
     let huge_distance = 1000.;
 
-    for (pos, ray, damage, team) in rays.iter() {
-        let mut best_distance = huge_distance;
-        let mut best_target = None;
-
+    for (pos, ray, mut damage, team) in rays.iter_mut() {
         let dir = Vec2::Y.rotated(pos.angle_2d());
 
+        let mut best_targets = vec![];
         phy.intersections_with_ray(
             pos.pos_2d(),
             dir,
@@ -109,21 +107,30 @@ fn damage_ray(
                     .get(entity)
                     .map(|other_team| *team == *other_team.0)
                     .unwrap_or(false);
-                if intersect.toi < best_distance && !same_team {
-                    best_distance = intersect.toi;
-                    best_target = Some((entity, intersect.point));
+                if !same_team {
+                    best_targets.push((entity, intersect.toi, intersect.point))
                 }
                 true
             },
         );
-        if let Some((entity, point)) = best_target {
-            // hack to get points for shooting projectiles
-            if *team == Team::Player {
-                if let Ok((_, health)) = targets.get(entity) {
+        best_targets.sort_by(|a, b| a.1.partial_cmp(&b.1).unwrap()); // by distance
+
+        for (entity, distance, point) in best_targets {
+            let mut new_damage = None;
+
+            if let Ok((_, health)) = targets.get(entity) {
+                // hack to get points for shooting projectiles
+                if *team == Team::Player {
                     if health.max < 1. {
                         stats.player.points += 1
                     }
                 }
+                if health.value < damage.value {
+                    new_damage =
+                        Some(damage.value - health.value - if health.max > 5. { 2. } else { 1. })
+                }
+            } else if !ray.ignore_obstacles {
+                break;
             }
 
             damage_cmd.send((
@@ -135,7 +142,7 @@ fn damage_ray(
                 },
             ));
             if let Some(mut effect) = ray.spawn_effect {
-                effect.length = best_distance;
+                effect.length = distance;
                 effect.destroy_parent = true;
                 commands
                     .spawn_bundle(SpatialBundle::from_transform((*pos).into()))
@@ -146,8 +153,13 @@ fn damage_ray(
                 explosion.origin = point;
                 explode.send(explosion)
             }
-        } else {
-            log::warn!("ray didn't hit anything!");
+
+            if let Some(new_damage) = new_damage {
+                if new_damage < 0. {
+                    break;
+                }
+                damage.value = new_damage
+            }
         }
     }
 }
