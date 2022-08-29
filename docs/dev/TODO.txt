@@ -59,7 +59,8 @@ Additional features
 ===================
 - coherent code
 - weapon and part icons (for menu)
-- timing on beats might be wrong?
+- timing on beats (sound) might be wrong?
+- fix plasma balls being self-destroyed on contact with small projectiles
 
 ? more mechanics
 

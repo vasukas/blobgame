@@ -1,3 +1,5 @@
+use bevy_prototype_lyon::prelude::DrawMode;
+
 use super::{light::Light, sound::Sound};
 use crate::{
     common::*,
@@ -74,6 +76,13 @@ pub enum FlashOnDamage {
     Radius(f32),
 }
 
+#[derive(Component, Clone, Copy)]
+pub struct ChargingAttack {
+    pub radius: f32,
+    pub duration: Duration,
+    pub color: Color,
+}
+
 //
 
 pub struct EffectPlugin;
@@ -90,7 +99,8 @@ impl Plugin for EffectPlugin {
             .add_system(hit_sparks)
             .add_system_to_stage(CoreStage::PostUpdate, hit_sparks_on_damage)
             .add_system(ray.exclusive_system())
-            .add_system(flash_on_damage);
+            .add_system(flash_on_damage)
+            .add_system(charging_attack.exclusive_system());
     }
 }
 
@@ -418,4 +428,144 @@ fn flash_on_damage(
             });
         }
     });
+}
+
+#[derive(Component)]
+struct ChargingSpark {
+    delta: Vec2,
+    origin: Vec2,
+    start: Duration,
+    radius: f32,
+}
+
+#[derive(Component)]
+struct ChargingState {
+    start: Duration,
+    inner: Entity,
+    outer: Entity,
+    count: usize,
+}
+
+fn charging_attack(
+    mut commands: Commands, new: Query<(Entity, &ChargingAttack), Added<ChargingAttack>>,
+    mut sparks: Query<(Entity, &mut Transform, &ChargingSpark)>,
+    mut stat: Query<(
+        Entity,
+        &GlobalTransform,
+        &mut ChargingState,
+        &ChargingAttack,
+    )>,
+    mut hints: Query<(&mut Transform, &mut DrawMode)>, time: Res<GameTime>,
+    mut explode: EventWriter<Explosion>,
+) {
+    use bevy_lyon::*;
+
+    for (entity, attack) in new.iter() {
+        let mut inner = BadEntityHack::default();
+        let mut outer = BadEntityHack::default();
+        commands
+            .entity(entity)
+            .with_children(|parent| {
+                inner.set(
+                    parent
+                        .spawn_bundle(GeometryBuilder::build_as(
+                            &shapes::Circle {
+                                radius: attack.radius,
+                                center: Vec2::ZERO,
+                            },
+                            DrawMode::Fill(FillMode::color(Color::NONE)),
+                            default(),
+                        ))
+                        .insert(Depth::ImportantEffect)
+                        .id(),
+                );
+                outer.set(
+                    parent
+                        .spawn_bundle(GeometryBuilder::build_as(
+                            &shapes::Circle {
+                                radius: attack.radius,
+                                center: Vec2::ZERO,
+                            },
+                            DrawMode::Stroke(StrokeMode::new(Color::NONE, 0.)),
+                            default(),
+                        ))
+                        .insert(Depth::ImportantEffect)
+                        .id(),
+                );
+            })
+            .insert(ChargingState {
+                start: time.now(),
+                inner: inner.get(),
+                outer: outer.get(),
+                count: 0,
+            });
+    }
+
+    for (entity, pos, mut state, attack) in stat.iter_mut() {
+        let pos = pos.pos_2d();
+        let t = time.t_passed(state.start, attack.duration);
+        if t >= 1. {
+            commands
+                .entity(entity)
+                .remove::<ChargingState>()
+                .remove::<ChargingAttack>();
+            commands.entity(state.inner).despawn_recursive();
+            commands.entity(state.outer).despawn_recursive();
+
+            explode.send(Explosion {
+                origin: pos,
+                color0: attack.color,
+                color1: attack.color.with_a(0.),
+                time: Duration::from_millis(300),
+                radius: attack.radius * 0.5,
+                power: ExplosionPower::None,
+            })
+        } else {
+            if let Ok((mut transform, mut draw)) = hints.get_mut(state.inner) {
+                transform.set_scale_2d(t);
+                *draw = DrawMode::Fill(FillMode::color(attack.color.with_a(lerp(0.5, 1., t))));
+            }
+            if let Ok((mut transform, mut draw)) = hints.get_mut(state.outer) {
+                transform.set_scale_2d(2. - t);
+                *draw =
+                    DrawMode::Stroke(StrokeMode::new(attack.color.with_a(lerp(0.5, 1., t)), 0.15));
+            }
+
+            let new_count =
+                time.t_passed(state.start, Duration::from_secs_f32(lerp(0.15, 0.033, t))) as usize;
+            for _ in state.count..new_count {
+                let offset = (Vec2::Y * attack.radius * thread_rng().gen_range(0.5..2.))
+                    .rotated(thread_rng().gen_range(0. ..TAU));
+                use rand::*;
+                commands
+                    .spawn_bundle(GeometryBuilder::build_as(
+                        &shapes::Circle {
+                            radius: thread_rng().gen_range(0.05..0.15),
+                            center: Vec2::ZERO,
+                        },
+                        DrawMode::Fill(FillMode::color(Color::NONE)),
+                        Transform::new_2d(pos + offset),
+                    ))
+                    .insert(GameplayObject)
+                    .insert(Depth::Effect)
+                    .insert(ChargingSpark {
+                        delta: offset,
+                        origin: pos,
+                        start: time.now(),
+                        radius: attack.radius,
+                    });
+            }
+            state.count = new_count;
+        }
+    }
+
+    for (entity, mut transform, spark) in sparks.iter_mut() {
+        let speed = spark.radius / 2. * time.passed(spark.start).as_secs_f32().powi(2);
+        transform.add_2d(-spark.delta * speed);
+
+        let delta = transform.pos_2d() - spark.origin;
+        if delta.x * spark.delta.x <= 0. && delta.y * spark.delta.y <= 0. {
+            commands.entity(entity).despawn_recursive()
+        }
+    }
 }

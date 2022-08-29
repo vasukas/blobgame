@@ -9,15 +9,21 @@ pub struct Health {
 
     pub invincible: bool,
     pub armor: bool, // reduced damage from explosions
+
+    pub recent_damage: HashMap<Entity, Duration>,
 }
 
 impl Health {
+    // damage from same source can't be dealt more frequently than that
+    const DAMAGE_PERIOD: Duration = Duration::from_millis(500);
+
     pub fn new(value: f32) -> Self {
         Self {
             value,
             max: value,
             invincible: false,
             armor: false,
+            recent_damage: default(),
         }
     }
 
@@ -65,6 +71,7 @@ impl Damage {
 
 /// Entity event
 pub struct DamageEvent {
+    pub source: Entity,
     pub damage: Damage,
     pub team: Team,
     pub point: Vec2,
@@ -114,14 +121,21 @@ fn die_after(
 
 fn damage(
     mut damage: CmdReader<DamageEvent>, mut entities: Query<(Entity, &mut Health, &Team)>,
-    mut death: CmdWriter<DeathEvent>, mut received: CmdWriter<ReceivedDamage>,
+    mut death: CmdWriter<DeathEvent>, mut received: CmdWriter<ReceivedDamage>, time: Res<GameTime>,
 ) {
     damage.iter_cmd_mut(&mut entities, |event, (entity, mut health, team)| {
         if !team.is_same(event.team) && !health.invincible {
+            health
+                .recent_damage
+                .retain(|_, at| time.passed(*at) < Health::DAMAGE_PERIOD);
+            if health.recent_damage.contains_key(&event.source) {
+                return;
+            }
+            health.recent_damage.insert(event.source, time.now());
+
             health.value -=
                 event.damage.value * if event.damage.explosion && health.armor { 0.5 } else { 1. };
             if health.value <= 0. {
-                // TODO: statistics
                 death.send((entity, DeathEvent))
             }
             received.send((

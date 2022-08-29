@@ -24,6 +24,8 @@ pub trait BevyTransform2dMut {
     fn set_2d(&mut self, value: Vec2);
     /// Sets 2D angle. Zero points to Y axis
     fn set_angle_2d(&mut self, value: f32);
+    /// Sets same scale to X and Y
+    fn set_scale_2d(&mut self, value: f32);
 }
 
 impl BevyTransform2d for Transform {
@@ -49,6 +51,10 @@ impl BevyTransform2dMut for Transform {
     }
     fn set_angle_2d(&mut self, value: f32) {
         self.rotation = Quat::from_axis_angle(Vec3::Z, value);
+    }
+    fn set_scale_2d(&mut self, value: f32) {
+        self.scale.x = value;
+        self.scale.y = value;
     }
 }
 

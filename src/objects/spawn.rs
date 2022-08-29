@@ -284,7 +284,8 @@ fn spawn(
                     "That's it, end of tutorial!\n",
                     "Game currently has no ending,\n",
                     "Waves will be repeated after some time",
-                    "\n\nPress R key to PLAY",
+                    "\n\nPress R key to PLAY\n",
+                    "And remember that you are damaged by your own explosions!",
                 );
                 control.tutorial = None;
             }

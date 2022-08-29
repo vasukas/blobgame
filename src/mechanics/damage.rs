@@ -71,11 +71,14 @@ impl Plugin for DamagePlugin {
 }
 
 fn damage_on_contact(
-    entities: Query<(&CollectContacts, &GlobalTransform, &Damage, &Team), With<DamageOnContact>>,
+    entities: Query<
+        (Entity, &CollectContacts, &GlobalTransform, &Damage, &Team),
+        With<DamageOnContact>,
+    >,
     targets: Query<&GlobalTransform, With<Health>>, mut damage_cmd: CmdWriter<DamageEvent>,
     phy: Res<RapierContext>,
 ) {
-    for (contacts, origin, damage, team) in entities.iter() {
+    for (source, contacts, origin, damage, team) in entities.iter() {
         for entity in contacts.current.iter().copied() {
             if let Ok(pos) = targets.get(entity) {
                 let origin = origin.pos_2d();
@@ -95,6 +98,7 @@ fn damage_on_contact(
                 damage_cmd.send((
                     entity,
                     DamageEvent {
+                        source,
                         damage: *damage,
                         team: *team,
                         point: origin + toi * dir,
@@ -127,7 +131,7 @@ fn die_on_contact(
 }
 
 fn damage_ray(
-    mut rays: Query<(&GlobalTransform, &DamageRay, &mut Damage, &Team)>,
+    mut rays: Query<(Entity, &GlobalTransform, &DamageRay, &mut Damage, &Team)>,
     mut targets: Query<(
         &Team,
         &Health,
@@ -139,7 +143,7 @@ fn damage_ray(
 ) {
     let huge_distance = 1000.;
 
-    for (pos, ray, mut damage, team) in rays.iter_mut() {
+    for (source, pos, ray, mut damage, team) in rays.iter_mut() {
         let dir = Vec2::Y.rotated(pos.angle_2d());
 
         let mut best_targets = vec![];
@@ -173,6 +177,7 @@ fn damage_ray(
             damage_cmd.send((
                 entity,
                 DamageEvent {
+                    source,
                     damage: *damage,
                     team: *team,
                     point,
@@ -189,6 +194,7 @@ fn damage_ray(
                         damage_cmd.send((
                             entity,
                             DamageEvent {
+                                source,
                                 damage: Damage::new(10000.),
                                 team: Team::YEEEEEEE,
                                 point,
@@ -222,11 +228,11 @@ fn damage_ray(
 }
 
 fn explode_on_death(
-    mut entities: Query<(&GlobalTransform, &ExplodeOnDeath)>, mut death: CmdReader<DeathEvent>,
-    mut explode: EventWriter<Explosion>, phy: Res<RapierContext>,
+    mut entities: Query<(Entity, &GlobalTransform, &ExplodeOnDeath)>,
+    mut death: CmdReader<DeathEvent>, mut explode: EventWriter<Explosion>, phy: Res<RapierContext>,
     mut damage: CmdWriter<DamageEvent>, targets: Query<&GlobalTransform>,
 ) {
-    death.iter_cmd_mut(&mut entities, |_, (pos, e)| {
+    death.iter_cmd_mut(&mut entities, |_, (source, pos, e)| {
         let pos = pos.pos_2d();
 
         let mut e = *e;
@@ -254,6 +260,7 @@ fn explode_on_death(
                 damage.send((
                     entity,
                     DamageEvent {
+                        source,
                         damage: Damage {
                             explosion: true,
                             ..Damage::new(e.damage)
