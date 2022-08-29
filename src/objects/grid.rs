@@ -116,7 +116,10 @@ fn select_grid_pulse(
 
     if state.wait_wave {
         *pulse = GridPulse::waiting()
-    } else if let Some(start) = beats.start {
+    } else if let Some(start) = beats
+        .start
+        .filter(|start| real_time.time_since_startup() >= *start)
+    {
         let adjust = 0.05;
         let t = (((real_time.time_since_startup() - start).as_secs_f32() + adjust)
             / beats.period.as_secs_f32())

@@ -26,8 +26,8 @@ pub struct Beats {
 
 impl Beats {
     pub fn in_beat(&self, time: &Time) -> bool {
-        let allow_before = 0.1;
-        let allow_after = 0.15;
+        let allow_before = 0.12;
+        let allow_after = 0.13;
 
         match self.start {
             Some(start) => {
