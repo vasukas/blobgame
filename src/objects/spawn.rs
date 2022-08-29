@@ -295,9 +295,7 @@ fn spawn(
 
             // not tutorial, actual game
             None => {
-                // TODO: warn about last wave
                 tutorial_text.0 = default();
-                control.tutorial = None;
 
                 // static walls
                 for pos in [

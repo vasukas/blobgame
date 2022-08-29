@@ -401,6 +401,9 @@ fn next_wave(
             ],
             Some(_) => vec![],
         };
+        if let Some(text) = data.text {
+            commands.entity(text).despawn_recursive();
+        }
         data.text = Some(
             commands
                 .spawn_bundle(SpatialBundle::default())
@@ -558,7 +561,7 @@ fn craft_menu(
             (CraftPart::Generator, CraftPart::Laser) => Some(CraftedWeapon::Plasma),
             (CraftPart::Generator, CraftPart::Magnet) => Some(CraftedWeapon::Shield),
             (CraftPart::Emitter, CraftPart::Laser) => Some(CraftedWeapon::Railgun),
-            (CraftPart::Emitter, CraftPart::Magnet) => Some(CraftedWeapon::Repeller),
+            // (CraftPart::Emitter, CraftPart::Magnet) => Some(CraftedWeapon::Repeller),
             _ => {
                 log::error!("Invalid craft slots: {:?} and {:?}", menu.slot0, menu.slot1);
                 None
@@ -619,8 +622,7 @@ fn craft_menu(
                         ui.label(format!("Result: {}", name));
                         ui.label(text);
                     } else {
-                        ui.label("CRAFT IS BROKEN LOL");
-                        ui.label("TRY TO PUSH SOME BUTTONS");
+                        ui.label("Combination not implemented");
                     }
                 });
                 ui.label("Press [C] to craft new weapon (replaces current)");

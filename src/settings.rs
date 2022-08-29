@@ -20,6 +20,7 @@ impl Settings {
         });
 
         changed |= ui.checkbox(&mut self.fullscreen, "Fullscreen").changed();
+        ui.label("If it doesn't change, click anywhere again or something");
 
         let (alt, text) = match self.difficulty {
             Difficulty::Easy => (Difficulty::Hard, "Difficulty: Easy"),

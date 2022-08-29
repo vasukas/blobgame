@@ -75,6 +75,28 @@ fn kinematic_controller(
                     .is_none()
                 {
                     transform.add_2d(dir * speed);
+                } else if phy
+                    .cast_ray(
+                        global_pos,
+                        vec2(dir.x, 0.),
+                        kinematic.radius + speed + ray_margin,
+                        true,
+                        filter,
+                    )
+                    .is_none()
+                {
+                    transform.add_2d(vec2(dir.x, 0.) * speed);
+                } else if phy
+                    .cast_ray(
+                        global_pos,
+                        vec2(0., dir.y),
+                        kinematic.radius + speed + ray_margin,
+                        true,
+                        filter,
+                    )
+                    .is_none()
+                {
+                    transform.add_2d(vec2(0., dir.y) * speed);
                 }
             }
             KinematicCommand::Dash { dir } => {

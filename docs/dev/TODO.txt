@@ -25,32 +25,22 @@ Important bugs
 Needs to be done ASAP
 =====================
 
-- immediate
-    + add player and item models (grep "blob")
-    - boss with rays and rockets
-    - guided rockets
-    + sounds: ui_weapon_broken
+- more and better wave patterns
+- boss with rays and rockets, guided rockets
 
-- add description on itch
+- shield (sphere & magnet)
+    - when equipped, appears in front of the player
+    - absorbs projectiles
+    - deflects rays (still gets damaged, but less)
+    - sound
+    - health is recharged
+- mini-bosses (like shield robot)
+- enemies
+    - bosses (just stuff moving in patterns)
+    - more wave patterns
+
++ add description on itch
 - more compact tutorial text
-
-- would be nice
-    - gameplay
-        - shield (sphere & magnet)
-            - when equipped, appears in front of the player
-            - absorbs projectiles
-            - deflects rays (still gets damaged, but less)
-            - sound
-        - mini-bosses (like shield robot)
-        - enemies
-            - bosses (just stuff moving in patterns)
-            - more wave patterns
-
-- later only if there is time
-    - deflector (ray & magnet)
-        - pushes all projectiles away (and turns them into player's)
-        - sound
-    - bonk projectiles in cursor direction
 
 ...
 
@@ -65,6 +55,10 @@ Additional features
 - asteroids, maybe, lol
 - movement trail
 - ui_weapon_broken has invalid pitch
+- deflector (ray & magnet)
+    - pushes all projectiles away (and turns them into player's)
+    - sound
+- bonk projectiles in cursor direction
 
 ? more mechanics
 
