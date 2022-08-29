@@ -13,6 +13,10 @@ pub struct MyAssets {
     pub ui_menu_drone: Handle<AudioSource>,
     pub ui_pickup: Handle<AudioSource>,
     pub ui_alert: Handle<AudioSource>,
+    pub beat: Handle<AudioSource>,
+    //
+    pub player_gun: Handle<AudioSource>,
+    pub player_gun_powered: Handle<AudioSource>,
 
     // world sounds
     pub explosion_small: Handle<AudioSource>,
@@ -44,11 +48,15 @@ fn load_assets(mut assets: ResMut<MyAssets>, server: Res<AssetServer>) {
     }
 
     // UI sounds
-    assets.ui_menu_drone = server.load("sounds/the_noise.ogg");
-    assets.ui_pickup = server.load("sounds/ui_pickup.ogg");
-    assets.ui_alert = server.load("sounds/ui_alert.ogg");
+    assets.ui_menu_drone = server.load("sounds/ui/the_noise.ogg");
+    assets.ui_pickup = server.load("sounds/ui/ui_pickup.ogg");
+    assets.ui_alert = server.load("sounds/ui/ui_alert.ogg");
+    assets.beat = server.load("sounds/ui/beat.ogg");
+    //
+    assets.player_gun = server.load("sounds/ui/player_gun.ogg");
+    assets.player_gun_powered = server.load("sounds/ui/player_gun_powered.ogg");
 
     // world sounds
-    assets.explosion_small = server.load("sounds/explosion_2.ogg");
-    assets.wpn_smg = server.load("sounds/wpn_smg.ogg");
+    assets.explosion_small = server.load("sounds/world/explosion.ogg");
+    assets.wpn_smg = server.load("sounds/world/smg.ogg");
 }

@@ -21,7 +21,7 @@ use crate::{
         effect::Flash,
         hud_elements::WorldText,
         simple_sprite::SimpleSprite,
-        sound::{AudioListener, Sound},
+        sound::{AudioListener, Beats, Sound},
     },
 };
 
@@ -45,6 +45,8 @@ pub struct Player {
     exhaustion: f32,
     dash_until: Option<Duration>,
     prev_move: Vec2,
+    beats_count: Option<i32>,
+    fire_lock: Option<(Duration, bool)>,
 }
 
 impl Player {
@@ -52,6 +54,7 @@ impl Player {
     const MAX_EXHAUSTION: f32 = 3.;
     pub const DASH_DISTANCE: f32 = 4.5;
     const DASH_DURATION: Duration = Duration::from_millis(250);
+    const SPEED: f32 = 7.;
 
     fn exhaust(&mut self, value: f32) -> bool {
         if self.exhaustion + value <= Player::MAX_EXHAUSTION {
@@ -60,6 +63,20 @@ impl Player {
         } else {
             false
         }
+    }
+
+    fn try_shoot(&mut self, time: &Time, mega: bool) -> bool {
+        let duration = Duration::from_millis(200);
+        let can_shoot = self
+            .fire_lock
+            .map(|(start, was_mega)| {
+                time.time_since_startup() - start >= duration || mega != was_mega
+            })
+            .unwrap_or(true);
+        if can_shoot {
+            self.fire_lock = Some((time.time_since_startup(), mega))
+        }
+        can_shoot
     }
 }
 
@@ -72,7 +89,7 @@ fn spawn_player(
         commands
             .entity(entity)
             .insert(KinematicController {
-                speed: 7.,
+                speed: Player::SPEED,
                 radius,
                 dash_distance: Player::DASH_DISTANCE,
                 dash_duration: Player::DASH_DURATION,
@@ -113,12 +130,18 @@ fn spawn_player(
 }
 
 fn controls(
-    mut player: Query<(Entity, &GlobalTransform, &mut Player)>,
+    mut player: Query<(
+        Entity,
+        &GlobalTransform,
+        &mut Player,
+        &mut KinematicController,
+    )>,
     mut input: EventReader<InputAction>, mut kinematic: CmdWriter<KinematicCommand>,
     window: Res<WindowInfo>, time: Res<GameTime>, mut commands: Commands,
-    mut weapon: CmdWriter<Weapon>, mut stats: ResMut<Stats>,
+    mut weapon: CmdWriter<Weapon>, mut stats: ResMut<Stats>, mut beats: ResMut<Beats>,
+    mut time_mode: ResMut<TimeMode>, real_time: Res<Time>,
 ) {
-    let (entity, pos, mut player) = match player.get_single_mut() {
+    let (entity, pos, mut player, mut kctr) = match player.get_single_mut() {
         Ok(v) => v,
         Err(_) => return,
     };
@@ -155,24 +178,47 @@ fn controls(
                 }
             }
 
-            InputAction::Fire => weapon.send((
-                entity,
-                Weapon::PlayerGun {
-                    dir: window.cursor - pos,
-                },
-            )),
-            InputAction::FireMega => weapon.send((
-                entity,
-                Weapon::PlayerCrafted {
-                    dir: window.cursor - pos,
-                },
-            )),
+            InputAction::Fire => {
+                if player.try_shoot(&real_time, false) {
+                    weapon.send((
+                        entity,
+                        Weapon::PlayerGun {
+                            dir: window.cursor - pos,
+                        },
+                    ))
+                }
+            }
+            InputAction::FireMega => {
+                if player.try_shoot(&real_time, true) {
+                    weapon.send((
+                        entity,
+                        Weapon::PlayerCrafted {
+                            dir: window.cursor - pos,
+                        },
+                    ))
+                }
+            }
             InputAction::ChangeWeapon => {
                 let stats = &mut *stats;
-                std::mem::swap(&mut stats.player.weapon0, &mut stats.player.weapon1)
+                std::mem::swap(&mut stats.player.weapon0, &mut stats.player.weapon1);
+                player.fire_lock = None;
             }
             InputAction::UberCharge => {
-                // TODO: implement
+                if stats.ubercharge >= 1. {
+                    stats.ubercharge = 0.;
+
+                    let add_beats = if beats.level == 0 {
+                        beats.level = 1;
+                        4
+                    } else {
+                        beats.level = 2;
+                        8
+                    };
+
+                    *player.beats_count.get_or_insert(0) += add_beats;
+                    kctr.speed = Player::SPEED * 2.;
+                    time_mode.overriden = Some(0.5);
+                }
             }
 
             _ => (),
@@ -219,10 +265,15 @@ fn respawn(
     }
 }
 
-fn update_player(mut player: Query<(&mut Player, &mut Health)>, time: Res<GameTime>) {
+fn update_player(
+    mut player: Query<(&mut Player, &mut Health, &mut KinematicController)>, time: Res<GameTime>,
+    mut beats: ResMut<Beats>, mut time_mode: ResMut<TimeMode>, mut stats: ResMut<Stats>,
+    spawn: Res<SpawnControl>,
+) {
     let exhaust_restore_speed = 1.;
+    let charge_time_seconds = 6.;
 
-    for (mut player, mut health) in player.iter_mut() {
+    for (mut player, mut health, _) in player.iter_mut() {
         // dash
         if let Some(until) = player.dash_until {
             let still_dashing = !time.reached(until);
@@ -235,15 +286,43 @@ fn update_player(mut player: Query<(&mut Player, &mut Health)>, time: Res<GameTi
         // reduce exhaustion
         player.exhaustion =
             (player.exhaustion - time.delta_seconds() * exhaust_restore_speed).max(0.);
+
+        // increase charge
+        if !spawn.waiting_for_next_wave {
+            stats.ubercharge += time.delta_seconds() / charge_time_seconds;
+        }
+    }
+
+    // beats
+    if player
+        .get_single()
+        .ok()
+        .and_then(|v| v.0.beats_count.map(|count| beats.count >= count))
+        .unwrap_or(true)
+    {
+        beats.level = 0;
+        time_mode.overriden = None;
+
+        if let Ok((mut player, _, mut kctr)) = player.get_single_mut() {
+            kctr.speed = Player::SPEED;
+            player.beats_count = None
+        }
     }
 }
 
 fn player_damage_reaction(
-    mut commands: Commands, mut player: Query<(Entity, &Health), With<Player>>,
+    mut commands: Commands, mut player: Query<(Entity, &Health, &mut Player)>,
     mut events: CmdReader<ReceivedDamage>, mut was_damaged: Local<bool>,
-    mut sound: EventWriter<Sound>, assets: Res<MyAssets>,
+    mut sound: EventWriter<Sound>, assets: Res<MyAssets>, mut stats: ResMut<Stats>,
 ) {
-    events.iter_cmd_mut(&mut player, |_, (entity, _)| {
+    let charge_loss_on_hit = 0.1;
+
+    events.iter_cmd_mut(&mut player, |_, (entity, _, mut player)| {
+        if let Some(beats) = player.beats_count.as_mut() {
+            *beats -= 1
+        }
+        stats.ubercharge = (stats.ubercharge.min(1.) - charge_loss_on_hit).max(0.);
+
         commands.entity(entity).insert(Flash {
             radius: Player::RADIUS,
             duration: Duration::from_millis(500),
@@ -316,7 +395,10 @@ fn next_wave(
     }
 }
 
-fn hud_panel(mut ctx: ResMut<EguiContext>, stats: Res<Stats>, player: Query<(&Health, &Player)>) {
+fn hud_panel(
+    mut ctx: ResMut<EguiContext>, stats: Res<Stats>, player: Query<(&Health, &Player)>,
+    beats: Res<Beats>,
+) {
     ctx.popup(
         "player::hud_panel",
         vec2(-1., -1.),
@@ -373,8 +455,31 @@ fn hud_panel(mut ctx: ResMut<EguiContext>, stats: Res<Stats>, player: Query<(&He
                         ui.label("empty");
                     }
                 }
+                ui.label("");
 
-                // TODO: show crafted weapons state
+                match player.beats_count {
+                    Some(count) => {
+                        ui.label("BEATS");
+                        ui.visuals_mut().override_text_color = match stats.ubercharge >= 1. {
+                            true => Some(egui::Color32::WHITE),
+                            false => None,
+                        };
+                        ui.label(format!("{:2} left", count - beats.count));
+                    }
+                    None => {
+                        ui.label("CHARGE");
+                        ui.visuals_mut().override_text_color = match stats.ubercharge >= 1. {
+                            true => Some(egui::Color32::WHITE),
+                            false => None,
+                        };
+                        ui.label(format!(
+                            "{:3}%",
+                            (stats.ubercharge * 100.).clamp(0., 100.) as u32
+                        ));
+                    }
+                }
+                ui.visuals_mut().override_text_color = None;
+                ui.label("");
             } else {
                 ui.visuals_mut().override_text_color = Some(egui::Color32::RED);
                 ui.label("DEAD");

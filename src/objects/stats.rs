@@ -7,6 +7,7 @@ pub struct Stats {
     pub wave: usize,
     pub time: Duration,
     pub restarts: usize,
+    pub ubercharge: f32,
 
     pub player: PersistentPlayer,
     last_wave: PersistentPlayer,
@@ -65,6 +66,7 @@ fn update_stats(
             WaveEvent::Restart => {
                 stats.player = stats.last_wave.clone();
                 stats.restarts += 1;
+                stats.ubercharge = 0.;
             }
         }
     }

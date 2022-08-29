@@ -20,6 +20,7 @@ pub struct GameplayObject;
 pub struct SpawnControl {
     /// Current state
     pub wave_spawned: Option<usize>,
+    pub waiting_for_next_wave: bool,
 
     /// Set this to Some(true) to respawn, to Some(false) to despawn
     pub despawn: Option<bool>,
@@ -88,6 +89,7 @@ fn spawn(
             wave_event.send(WaveEvent::Restart)
         }
         control.wave_spawned = Some(stats.wave);
+        control.waiting_for_next_wave = false;
         *wave_data = default();
         wave_event.send(WaveEvent::Started);
 
@@ -230,13 +232,14 @@ fn spawn(
 }
 
 fn wave_end_detect(
-    control: Res<SpawnControl>, entities: Query<()>, mut wave_data: ResMut<WaveData>,
+    mut control: ResMut<SpawnControl>, entities: Query<()>, mut wave_data: ResMut<WaveData>,
     mut event: EventWriter<WaveEvent>,
 ) {
     if control.is_game_running() {
         let was_empty = wave_data.entities.is_empty();
         wave_data.entities.retain(|e| entities.contains(*e));
         if wave_data.entities.is_empty() && !was_empty {
+            control.waiting_for_next_wave = true;
             event.send(WaveEvent::Ended)
         }
     }

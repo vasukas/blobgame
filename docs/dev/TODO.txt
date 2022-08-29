@@ -40,9 +40,6 @@ Needs to be done ASAP
                 - explodes projectiles
             - deflector (ray & magnet)
                 - pushes all projectiles away (and turns them into player's)
-    - combo-attacks & show them in world
-        + gun/dash combo
-    - ubercharge beats
     - advanced enemies
         - turret patterns
         - mini-bosses (like shield robot)
@@ -51,27 +48,9 @@ Needs to be done ASAP
             - player-based
         - expand healing mechanics
         - bosses
+    - increase ubercharge from dealing damage / maybe allow overcharge
 
 - audio
-    - play beats, controlled by level via state:
-        0 (no beats)
-        1 |       |
-        2 |   i   |   i  
-        3 | . i . | . i .
-            feel free to use other patterns, but you get the idea
-            also mb 3rd level would be too much, dunno
-        - beat timing should be adjustable (store them in resource)
-        - provide resource with timings - when beat will begin and how long till next one
-            // something like this - this is resource
-            struct BeatTimings {
-                next: Duration, // actually timestamp, not duration, based on GameTime::now()
-                period: Duration, // time between closest beats
-                level: u8, // or use separate struct/resource for it, doesn't matter
-            }
-        - sync to floor grid
-        ? use two sets of beats - for when player is having good damage and for when player is low on HP
-
-    + startup delay for positional sounds, depends on distance
     - sounds for everything
 
 - UX
@@ -91,6 +70,7 @@ Additional features
 ===================
 - coherent code
 - weapon and part icons
+- timing on beats might be wrong
 
 ? more mechanics
 
@@ -122,6 +102,9 @@ Additional features
         + player hit sound
         + animate background grid
     + simple statistics (point counting)
+    + ubercharge beats
+    + combo-attacks & show them in world
+        + gun/dash combo
 
 - delayed features
     - player
@@ -152,6 +135,11 @@ Additional features
     + world text
 
 - audio
+    + play beats (ubercharge)
+        + sync to floor grid
+        ? use two sets of beats - for when player is having good damage and for when player is low on HP
+    + startup delay for positional sounds, depends on distance
+
     - play ambient drone (tbh really not sure if this will work; maybe just use some music)
         - some system should control what to play; for now just change it over time
         - idea is there would be several drones of different tones, which could warn the player about

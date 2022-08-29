@@ -26,7 +26,7 @@ impl Settings {
 impl Default for Settings {
     fn default() -> Self {
         Self {
-            master_volume: 0.25,
+            master_volume: 0.6,
             fullscreen: false,
         }
     }

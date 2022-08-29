@@ -12,7 +12,7 @@ use crate::{
     present::{
         effect::{DontSparkMe, Explosion, ExplosionPower, RayEffect},
         light::Light,
-        sound::Sound,
+        sound::{Beats, Sound},
     },
 };
 
@@ -74,7 +74,7 @@ fn weapon(
         &Team,
         Option<&KinematicController>,
     )>,
-    mut sound: EventWriter<Sound>, assets: Res<MyAssets>,
+    mut sound: EventWriter<Sound>, assets: Res<MyAssets>, beats: Res<Beats>, real_time: Res<Time>,
 ) {
     use bevy_lyon::*;
     weapon.iter_cmd_mut(
@@ -142,19 +142,27 @@ fn weapon(
                 let angle = dir.angle();
                 transform.set_angle_2d(angle);
 
-                let powered = angle_delta(
-                    angle,
-                    kinematic
-                        .and_then(|ctr| ctr.dash.map(|v| v.0.angle()))
-                        .unwrap_or(angle + PI),
-                )
-                .abs()
-                    < 45f32.to_radians();
+                let ultra_powered = beats.in_beat(&real_time);
+                let powered = ultra_powered
+                    || angle_delta(
+                        angle,
+                        kinematic
+                            .and_then(|ctr| ctr.dash.map(|v| v.0.angle()))
+                            .unwrap_or(angle + PI),
+                    )
+                    .abs()
+                        < 60f32.to_radians();
 
                 commands
                     .spawn_bundle(SpatialBundle::from_transform(transform))
                     .insert(GameplayObject)
-                    .insert(Damage::new(if powered { 3. } else { 1. }))
+                    .insert(Damage::new(if ultra_powered && powered {
+                        6.
+                    } else if powered || ultra_powered {
+                        3.
+                    } else {
+                        1.
+                    }))
                     .insert(*team)
                     .insert(DieAfter::one_frame())
                     .insert(DamageRay {
@@ -175,6 +183,15 @@ fn weapon(
                         ..default()
                     })
                     .insert(DontSparkMe);
+
+                sound.send(Sound {
+                    sound: if powered {
+                        assets.player_gun_powered.clone()
+                    } else {
+                        assets.player_gun.clone()
+                    },
+                    position: Some(transform.pos_2d()),
+                });
             }
 
             Weapon::PlayerCrafted { dir } => {

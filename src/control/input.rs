@@ -108,7 +108,7 @@ impl Default for InputMap {
                 InputAction::CraftSelect3 => (InputKey::Key(KeyCode::Key3), InputType::Click),
                 InputAction::CraftSelect4 => (InputKey::Key(KeyCode::Key4), InputType::Click),
 
-                InputAction::UberCharge => (InputKey::Key(KeyCode::H), InputType::Click),
+                InputAction::UberCharge => (InputKey::Key(KeyCode::V), InputType::Click),
                 InputAction::Dash => (InputKey::Key(KeyCode::LShift), InputType::Click),
                 InputAction::TargetDash => (InputKey::Key(KeyCode::Space), InputType::Click),
                 Respawn => (InputKey::Key(KeyCode::R), InputType::Click),

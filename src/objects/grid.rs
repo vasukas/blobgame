@@ -1,5 +1,5 @@
 use super::{player::Player, spawn::WaveEvent};
-use crate::{common::*, mechanics::health::Health};
+use crate::{common::*, mechanics::health::Health, present::sound::Beats};
 
 #[derive(Component)]
 pub struct GridBar {
@@ -26,7 +26,7 @@ struct GridPulse {
 }
 
 enum PulseType {
-    Uniform,
+    Uniform { t: f32 },
     Collapse,
     Expand,
 }
@@ -53,6 +53,13 @@ impl GridPulse {
             ty: PulseType::Collapse,
         }
     }
+    fn beat(t: f32) -> Self {
+        GridPulse {
+            period: Duration::from_millis(1),
+            color: Color::ORANGE_RED.with_a(0.6),
+            ty: PulseType::Uniform { t },
+        }
+    }
 }
 
 fn draw_grid_pulse(
@@ -67,7 +74,7 @@ fn draw_grid_pulse(
 
     for (bar, mut draw) in bars.iter_mut() {
         let t = match pulse.ty {
-            PulseType::Uniform => wave.t_sin(),
+            PulseType::Uniform { t } => t,
             PulseType::Expand => {
                 if bar.vertical {
                     (bar.coord.abs() - *wave).t_sin()
@@ -96,7 +103,8 @@ struct SelectState {
 
 fn select_grid_pulse(
     mut pulse: ResMut<GridPulse>, player: Query<&Health, With<Player>>,
-    mut state: Local<SelectState>, mut wave_event: EventReader<WaveEvent>,
+    mut state: Local<SelectState>, mut wave_event: EventReader<WaveEvent>, beats: Res<Beats>,
+    real_time: Res<Time>,
 ) {
     for ev in wave_event.iter() {
         match ev {
@@ -108,6 +116,12 @@ fn select_grid_pulse(
 
     if state.wait_wave {
         *pulse = GridPulse::waiting()
+    } else if let Some(start) = beats.start {
+        let adjust = 0.05;
+        let t = (((real_time.time_since_startup() - start).as_secs_f32() + adjust)
+            / beats.period.as_secs_f32())
+        .fract();
+        *pulse = GridPulse::beat(1. - t)
     } else if let Ok(health) = player.get_single() {
         if health.value < health.max / 2. {
             *pulse = GridPulse::alert()

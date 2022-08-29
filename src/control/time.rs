@@ -39,6 +39,13 @@ pub struct TimeMode {
     pub main_menu: bool,
     pub craft_menu: bool,
     pub player_alive: bool,
+    pub overriden: Option<f32>,
+}
+
+impl TimeMode {
+    pub fn stopped(&self) -> bool {
+        self.main_menu || self.craft_menu || !self.player_alive
+    }
 }
 
 //
@@ -61,7 +68,7 @@ fn advance_time(
     mode: Res<TimeMode>, mut input_lock: ResMut<InputLock>,
 ) {
     // TODO: REMOVE THIS FROM HERE
-    let scale = if mode.main_menu || mode.craft_menu || !mode.player_alive { 0. } else { 1. };
+    let scale = if mode.stopped() { 0. } else { mode.overriden.unwrap_or(1.) };
     input_lock.active = mode.main_menu || mode.craft_menu;
     input_lock.allow_craft = mode.craft_menu;
 

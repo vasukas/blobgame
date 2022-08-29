@@ -1,9 +1,10 @@
 TODO: check and fill everything in
 
 * assets
-  * sounds - made by vasukas for rodent (old game)
-    * uses Soniss free GDC bundle: https://sonniss.com/gameaudiogdc
+  * sounds - mostly made by vasukas for rodent (old game)
+      using Soniss free GDC bundle: https://sonniss.com/gameaudiogdc
     * basically same as Public Domain, I think
+    * some sounds are custom-made, don't remember which
   * sprites - made by vasukas for this game
     * Public Domain or whatever
   * font - https://github.com/googlefonts/Inconsolata

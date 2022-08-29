@@ -100,7 +100,7 @@ fn show_menu(
                                     }
 
                                     ui.label(""); // separator
-                                    ui.label("Made with Bevy Engine");
+                                    ui.label("Made for Bevy Jam #2");
                                     // TODO: add credits?
                                 });
                             });

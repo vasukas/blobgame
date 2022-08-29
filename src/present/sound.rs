@@ -1,5 +1,5 @@
 use super::camera::WindowInfo;
-use crate::{common::*, objects::spawn::SpawnControl};
+use crate::{common::*, control::time::TimeMode, objects::spawn::SpawnControl};
 use bevy_kira_audio::prelude::*;
 
 /// Event
@@ -12,6 +12,34 @@ pub struct Sound {
 #[derive(Component)]
 pub struct AudioListener;
 
+/// Resource
+#[derive(Default)]
+pub struct Beats {
+    // settings
+    pub level: usize,
+
+    // report
+    pub start: Option<Duration>,
+    pub period: Duration,
+    pub count: i32,
+}
+
+impl Beats {
+    pub fn in_beat(&self, time: &Time) -> bool {
+        let allow_before = 0.1;
+        let allow_after = 0.15;
+
+        match self.start {
+            Some(start) => {
+                let period = self.period.as_secs_f32();
+                let at = (time.time_since_startup() - start).as_secs_f32() % period;
+                at < allow_after || at > period - allow_before
+            }
+            None => false,
+        }
+    }
+}
+
 //
 
 pub struct SoundPlugin;
@@ -20,12 +48,14 @@ impl Plugin for SoundPlugin {
     fn build(&self, app: &mut App) {
         app.add_plugin(bevy_kira_audio::AudioPlugin)
             .init_resource::<ListenerConfig>()
+            .init_resource::<Beats>()
             .add_event::<Sound>()
             .add_system(apply_settings)
             .add_system(update_listener_config)
             .add_system(play_sounds)
             .add_system(update_positional.exclusive_system().at_start())
-            .add_system(menu_drone);
+            .add_system(menu_drone)
+            .add_system_to_stage(CoreStage::First, beats);
     }
 }
 
@@ -95,7 +125,7 @@ fn update_listener_config(
 
 fn play_sounds(
     mut events: EventReader<Sound>, audio: Res<Audio>, config: Res<ListenerConfig>,
-    mut commands: Commands,
+    mut commands: Commands, time_mode: Res<TimeMode>,
 ) {
     let leading_silence = 0.25; // TODO: this is atrocious hack since bevy_kira_audio doesn't expose kira's start time
 
@@ -112,10 +142,12 @@ fn play_sounds(
             .unwrap_or(((1., 0.5), 0.));
 
         let mut cmd = audio.play(event.sound.clone());
-        cmd.with_playback_rate(thread_rng().gen_range(0.9..1.2))
-            .with_volume(volume * K_VOLUME)
-            .with_panning(panning)
-            .start_from(start_pos);
+        cmd.with_playback_rate(
+            thread_rng().gen_range(0.9..1.2) * time_mode.overriden.unwrap_or(1.) as f64,
+        )
+        .with_volume(volume * K_VOLUME)
+        .with_panning(panning)
+        .start_from(start_pos);
         if let Some(pos) = event.position {
             commands
                 .spawn_bundle(SpatialBundle::from_transform(Transform::new_2d(pos)))
@@ -167,5 +199,35 @@ fn menu_drone(
                 *sound = Some(audio.play(assets.ui_menu_drone.clone()).looped().handle())
             }
         }
+    }
+}
+
+fn beats(
+    mut beats: ResMut<Beats>, time: Res<Time>, time_mode: Res<TimeMode>, audio: Res<Audio>,
+    assets: Res<MyAssets>,
+) {
+    if beats.level != 0 && !time_mode.stopped() {
+        beats.period = match beats.level {
+            1 => Duration::from_millis(1000),
+            _ => Duration::from_millis(500),
+        };
+        let initial_delay = Duration::from_millis(500);
+
+        let start = *beats
+            .start
+            .get_or_insert(time.time_since_startup() + initial_delay);
+        match time.time_since_startup().checked_sub(start) {
+            Some(passed) => {
+                let count = (passed.as_micros() / beats.period.as_micros()) as i32;
+                if count != beats.count {
+                    beats.count = count;
+                    audio.play(assets.beat.clone());
+                }
+            }
+            None => (),
+        }
+    } else {
+        beats.start = None;
+        beats.count = 0;
     }
 }
