@@ -230,7 +230,8 @@ fn spawn(
                     "Move around with W/A/S/D keys.\n",
                     "Press SPACE key to dash in movement direction.\n",
                     "You can change direction mid-dash, but can't stop.\n",
-                    "Dash gives temporary invincibilty, but consumes stamina.",
+                    "\n",
+                    "Dash gives temporary INVINCIBILITY, but consumes stamina.",
                     "\n\nPress R key to show next message",
                 );
             }
@@ -328,6 +329,32 @@ fn spawn(
                         ));
                     }
                     1 => {
+                        wave_data.entities.push(create_turret(
+                            &mut commands,
+                            offset + vec2(-12., -7.),
+                            settings.difficulty,
+                            TurretType::Simple,
+                        ));
+                        wave_data.entities.push(create_turret(
+                            &mut commands,
+                            offset + vec2(-12., 7.),
+                            settings.difficulty,
+                            TurretType::Simple,
+                        ));
+                        wave_data.entities.push(create_turret(
+                            &mut commands,
+                            offset + vec2(12., -7.),
+                            settings.difficulty,
+                            TurretType::Simple,
+                        ));
+                        wave_data.entities.push(create_turret(
+                            &mut commands,
+                            offset + vec2(12., 7.),
+                            settings.difficulty,
+                            TurretType::Simple,
+                        ));
+                    }
+                    2 => {
                         for pos in [vec2(0., 8.)] {
                             create_wall(&mut commands, offset + pos, Vec2::splat(1.3))
                         }
@@ -350,7 +377,7 @@ fn spawn(
                             TurretType::Rotating,
                         ));
                     }
-                    2 => {
+                    3 => {
                         for pos in [
                             vec2(world_size.x * -0.1, world_size.y * -0.2),
                             vec2(world_size.x * -0.1, world_size.y * 0.2),
@@ -389,7 +416,7 @@ fn spawn(
                             TurretType::Rotating,
                         ));
                     }
-                    3 => {
+                    4 => {
                         for pos in [
                             vec2(world_size.x * -0.36, -1.),
                             vec2(world_size.x * -0.23, 1.),
@@ -447,7 +474,7 @@ fn spawn(
                             &mut commands,
                             offset + vec2(10., -3.),
                             settings.difficulty,
-                            TurretType::Rotating,
+                            TurretType::Advanced,
                         ));
                         wave_data.entities.push(
                             commands
@@ -599,7 +626,7 @@ fn create_turret(
         .insert(Health::new(match ty {
             TurretType::Simple => 3.,
             TurretType::Advanced => 6.,
-            TurretType::Rotating => 4.,
+            TurretType::Rotating => 10.,
         }))
         .insert(match ty {
             TurretType::Simple => DeathPoints {

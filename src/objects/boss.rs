@@ -96,7 +96,7 @@ fn the_boss_spawn(
                             center: Vec2::ZERO,
                         },
                         DrawMode::Outlined {
-                            fill_mode: FillMode::color(Color::rgb(0.2, 0.2, 1.)),
+                            fill_mode: FillMode::color(Color::rgb(1., 0.3, 0.3)),
                             outline_mode,
                         },
                         Transform::new_2d(vec2(0., -center_radius * 0.2 - 1.)),
@@ -124,7 +124,7 @@ fn the_boss_spawn(
                                 origin: RectangleOrigin::Center,
                             },
                             DrawMode::Outlined {
-                                fill_mode: FillMode::color(Color::rgb(1., 0.3, 0.3)),
+                                fill_mode: FillMode::color(Color::rgb(0.8, 0.8, 1.)),
                                 outline_mode,
                             },
                             Transform::new_2d(vec2(x, -1.)),
@@ -398,7 +398,7 @@ fn the_boss_logic(
                             commands.entity(entity).insert(ChargingAttack {
                                 radius: 3.,
                                 duration: charge_duration,
-                                color: Color::rgb(0.8, 1., 1.),
+                                color: Color::rgb(1., 0.4, 0.3),
                             });
                             sound.send(Sound {
                                 sound: assets.ray_charge.clone(),
@@ -417,7 +417,7 @@ fn the_boss_logic(
                                 commands.entity(entity).insert(ChargingAttack {
                                     radius: 3.,
                                     duration: charge_duration,
-                                    color: Color::rgb(1., 0.5, 0.4),
+                                    color: Color::rgb(0.8, 1., 1.),
                                 });
                                 sound.send(Sound {
                                     sound: assets.ray_charge.clone(),
