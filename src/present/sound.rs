@@ -33,7 +33,10 @@ impl Beats {
         match self.start {
             Some(start) => {
                 let period = self.period.as_secs_f32();
-                let at = (time.time_since_startup() - start).as_secs_f32() % period;
+                let at = match time.time_since_startup().checked_sub(start) {
+                    Some(v) => v.as_secs_f32() % period,
+                    None => return false
+                };
                 at < allow_after || at > period - allow_before
             }
             None => false,
