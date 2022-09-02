@@ -35,7 +35,7 @@ impl Beats {
                 let period = self.period.as_secs_f32();
                 let at = match time.time_since_startup().checked_sub(start) {
                     Some(v) => v.as_secs_f32() % period,
-                    None => return false
+                    None => return false,
                 };
                 at < allow_after || at > period - allow_before
             }
@@ -56,9 +56,9 @@ impl Plugin for SoundPlugin {
             .add_event::<Sound>()
             .add_system(apply_settings)
             .add_system(update_listener_config)
-            .add_system(play_sounds)
+            // .add_system(play_sounds)
             .add_system(update_positional.exclusive_system().at_start())
-            .add_system(menu_drone)
+            // .add_system(menu_drone)
             .add_system_to_stage(CoreStage::First, beats);
     }
 }

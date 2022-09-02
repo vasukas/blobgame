@@ -17,27 +17,38 @@ General reminder
 
 Post-jam fixes and improvements
 ===============================
-- fix panic on subtracting durations when entering focus mode
-    - maybe use custom Instant for timepoints instead of Duration?
-- stop enemies from shooting immediatly after wave starts
-- fix player getting stuck in newly spawned enemies
-- suggestions from comments on itch
-    - alter boss behavior when parts are destroyed
-        - skip rockets if both towers are destroyed
-        - "angry phase" for when laser is destroyed
-            - constantly move it around and shoot rockets
-    - make advanced turrets better
-        - try timing shots so it's easy to dash through them
-        - or just reduce pressure
-            - try reducing damage to 0.5
-            - try making it so only one projectile in "line" can harm player
-                (use same DamageEvent::source for all three projectiles)
-                - or use ONE wide projectile with high HP
-- detect if game is minimized and go to menu in that case?
-- wasm - blocking escape in fullscreen mode? and allow switching modes with F11
-- add beat immediatly after entering focus? and don't count that one
-- bevy_kira_audio::audio_output: Failed to set volume for instance: CommandQueueFul
-    - in wasm audio completely breaks when entering menu (hint!)
+
+- tech stuff
+    + fix panic on subtracting durations when entering focus modes
+    - refactor at least the most hacky systems
+    - detect if game is minimized and go to menu in that case?
+
+    - don't use bevy_kira_audio? just kira directly?
+        - ENABLE COMMENTED-OUT SYSTEMS BACK
+        - fix volume setting not working
+        - bevy_kira_audio::audio_output: Failed to set volume for instance: CommandQueueFul
+            apparently happens due to master volume constantly being updated
+        - in wasm audio completely breaks when entering menu
+
+- gameplay
+    + stop enemies from shooting immediatly after wave starts
+    - add beat immediatly after entering focus? and don't count that one
+    - fix player getting stuck in newly spawned enemies
+    - determine which loot to drop on death, based on player's current state (but don't overdo it)
+    - additional healing sources?
+
+    - suggestions from comments on itch
+        - alter boss behavior when parts are destroyed
+            - skip rockets if both towers are destroyed
+            - "angry phase" for when laser is destroyed
+                - constantly move it around and shoot rockets
+        - make advanced turrets better
+            - try timing shots so it's easy to dash through them
+            - or just reduce pressure
+                - try reducing damage to 0.5
+                - try making it so only one projectile in "line" can harm player
+                    (use same DamageEvent::source for all three projectiles)
+                    - or use ONE wide projectile with high HP
 
 
 Stuff

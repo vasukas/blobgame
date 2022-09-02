@@ -42,6 +42,7 @@ pub struct AttackPattern {
     // state
     pub stage: usize,
     pub start: Option<Duration>,
+    pub created: Option<Duration>,
 }
 
 impl AttackPattern {
@@ -76,6 +77,8 @@ impl HeSpinsHeRotats {
 }
 
 //
+
+const INITIAL_FIRE_DELAY: Duration = Duration::from_millis(500);
 
 pub struct AiPlugin;
 
@@ -165,6 +168,9 @@ fn attack_pattern(
 ) {
     for (entity, mut pattern) in entities.iter_mut() {
         if pattern.stages.is_empty() {
+            continue;
+        }
+        if time.passed(*pattern.created.get_or_insert(time.now())) < INITIAL_FIRE_DELAY {
             continue;
         }
 
