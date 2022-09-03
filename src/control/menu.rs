@@ -1,13 +1,30 @@
-use super::{input::InputMap, time::TimeMode};
-use crate::{common::*, objects::spawn::SpawnControl, present::camera::WindowInfo};
+use super::input::*;
+use crate::{
+    common::*,
+    objects::{player::Player, spawn::SpawnControl},
+    present::camera::WindowInfo,
+};
 use bevy::app::AppExit;
 use bevy_egui::EguiSettings;
+use leafwing_input_manager::plugin::ToggleActions;
 
+// TODO: improve this
 #[derive(Default)]
 pub struct PlayNowHack(pub bool);
 
-pub fn is_exit_menu(keys: &Input<KeyCode>) -> bool {
-    keys.any_just_pressed([KeyCode::Escape, KeyCode::M])
+// TODO: REPLACE THIS
+#[derive(Default, Debug)]
+pub struct TimeMode {
+    pub main_menu: bool,
+    pub craft_menu: bool,
+    pub player_alive: bool,
+    pub overriden: Option<f32>,
+}
+
+impl TimeMode {
+    pub fn stopped(&self) -> bool {
+        self.main_menu || self.craft_menu || !self.player_alive
+    }
 }
 
 //
@@ -18,7 +35,9 @@ impl Plugin for MenuPlugin {
     fn build(&self, app: &mut App) {
         app.init_resource::<MenuState>()
             .init_resource::<PlayNowHack>()
+            .init_resource::<TimeMode>()
             .add_system(show_menu)
+            .add_system(mega_mode)
             .add_startup_system(setup)
             .add_startup_system(play_now_hack);
     }
@@ -32,12 +51,12 @@ enum MenuState {
 }
 
 fn show_menu(
-    mut ctx: ResMut<EguiContext>, mut state: ResMut<MenuState>, keys: Res<Input<KeyCode>>,
-    mut exit_app: EventWriter<AppExit>, mut spawn: ResMut<SpawnControl>, window: Res<WindowInfo>,
-    mut settings: ResMut<Settings>, input_map: Res<InputMap>, mut windows: ResMut<Windows>,
-    mut time_ctl: ResMut<TimeMode>,
+    mut ctx: ResMut<EguiContext>, mut state: ResMut<MenuState>,
+    keys: Res<ActionState<ControlAction>>, mut exit_app: EventWriter<AppExit>,
+    mut spawn: ResMut<SpawnControl>, window: Res<WindowInfo>, mut settings: ResMut<Settings>,
+    mut windows: ResMut<Windows>, mut time_mode: ResMut<TimeMode>,
 ) {
-    if is_exit_menu(&keys) && !time_ctl.craft_menu {
+    if keys.just_pressed(ControlAction::ExitMenu) && !time_mode.craft_menu {
         match *state {
             MenuState::None => *state = MenuState::Root,
             MenuState::Root => {
@@ -47,7 +66,7 @@ fn show_menu(
             }
         }
     }
-    time_ctl.main_menu = *state != MenuState::None;
+    time_mode.main_menu = *state != MenuState::None;
 
     match *state {
         MenuState::None => (),
@@ -104,7 +123,9 @@ fn show_menu(
                                     ui.label(""); // separator
                                     ui.heading("SETTINGS");
                                     let was_fullscreen = settings.fullscreen;
-                                    settings.menu(ui);
+                                    if settings.menu(ui) {
+                                        settings.save()
+                                    }
                                     if was_fullscreen != settings.fullscreen {
                                         set_fullscreen(&mut windows, settings.fullscreen);
                                     }
@@ -120,41 +141,10 @@ fn show_menu(
                                 ui.group(|ui| {
                                     ui.heading("CONTROLS");
 
-                                    let mut help = vec![];
-                                    for (i, (action, (key, ty))) in input_map.map.iter().enumerate()
-                                    {
-                                        help.push((
-                                            action.description().to_string(),
-                                            format!("{} ({})", key.to_string(), ty.description()),
-                                        ));
-                                        if i % 4 == 3 {
-                                            help.push(("".to_string(), "".to_string()));
-                                        }
+                                    // TODO: apply settings
+                                    if settings.input.menu(ui) {
+                                        settings.save()
                                     }
-                                    //help.push(("".to_string(), "".to_string()));
-                                    help.push((
-                                        "Mouse wheel".to_string(),
-                                        "Change weapon".to_string(),
-                                    ));
-                                    help.push((
-                                        "ESC or M".to_string(),
-                                        "toggle this menu".to_string(),
-                                    ));
-                                    help.push(("Ctrl + Q".to_string(), "exit app".to_string()));
-
-                                    // poor man's table
-                                    ui.horizontal(|ui| {
-                                        ui.vertical(|ui| {
-                                            for v in &help {
-                                                ui.label(&v.0);
-                                            }
-                                        });
-                                        ui.vertical(|ui| {
-                                            for v in &help {
-                                                ui.label(&v.1);
-                                            }
-                                        });
-                                    });
                                 });
                             });
                         });
@@ -163,6 +153,22 @@ fn show_menu(
             );
         }
     }
+}
+
+fn mega_mode(
+    mut mode: ResMut<TimeMode>, mut time: ResMut<GameTime>,
+    mut player: ResMut<ToggleActions<PlayerAction>>, mut craft: ResMut<ToggleActions<CraftAction>>,
+    mut control: ResMut<ToggleActions<ControlAction>>, actual_player: Query<(), With<Player>>,
+) {
+    mode.player_alive = !actual_player.is_empty();
+
+    let lock_active = mode.main_menu || mode.craft_menu;
+    let lock_allow_craft = mode.craft_menu;
+    time.scale = if mode.stopped() { 0. } else { mode.overriden.unwrap_or(1.) };
+
+    player.enabled = !lock_active;
+    craft.enabled = !lock_active || lock_allow_craft;
+    control.enabled = !lock_active;
 }
 
 fn setup(mut egui: ResMut<EguiSettings>, settings: Res<Settings>, mut windows: ResMut<Windows>) {

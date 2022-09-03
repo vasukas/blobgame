@@ -1,7 +1,7 @@
 use super::stats::Stats;
 use crate::{
     common::*,
-    control::input::InputAction,
+    control::input::CraftAction,
     mechanics::{
         health::{DeathEvent, DieAfter, Health},
         movement::DropSpread,
@@ -42,12 +42,12 @@ impl CraftPart {
             .into_iter()
             .random()
     }
-    pub fn description(&self) -> (InputAction, &'static str, usize) {
+    pub fn description(&self) -> (CraftAction, &'static str, usize) {
         match self {
-            CraftPart::Generator => (InputAction::CraftSelect1, "Generator", 1),
-            CraftPart::Emitter => (InputAction::CraftSelect2, "Emitter", 1),
-            CraftPart::Laser => (InputAction::CraftSelect3, "Laser", 2),
-            CraftPart::Magnet => (InputAction::CraftSelect4, "Magnet", 2),
+            CraftPart::Generator => (CraftAction::CraftSelect1, "Generator", 1),
+            CraftPart::Emitter => (CraftAction::CraftSelect2, "Emitter", 1),
+            CraftPart::Laser => (CraftAction::CraftSelect3, "Laser", 2),
+            CraftPart::Magnet => (CraftAction::CraftSelect4, "Magnet", 2),
         }
     }
 }

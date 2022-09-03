@@ -1,15 +1,19 @@
-use crate::common::*;
+use crate::{common::*, control::input::InputSettings};
 pub use serde::{Deserialize, Serialize};
+
+// TODO: platform-dependent default path to save settings
 
 #[derive(Serialize, Deserialize)]
 pub struct Settings {
     pub master_volume: f32,
     pub fullscreen: bool,
     pub difficulty: Difficulty,
+    pub input: InputSettings,
 }
 
 impl Settings {
-    pub fn menu(&mut self, ui: &mut egui::Ui) {
+    /// Returns true if changed
+    pub fn menu(&mut self, ui: &mut egui::Ui) -> bool {
         let mut changed = false;
 
         ui.horizontal(|ui| {
@@ -35,9 +39,7 @@ impl Settings {
         };
         ui.label("Changes to difficulty will be applied after respawn");
 
-        if changed {
-            self.save()
-        }
+        changed
     }
 }
 
@@ -47,6 +49,7 @@ impl Default for Settings {
             master_volume: 0.6,
             fullscreen: false,
             difficulty: Difficulty::Hard,
+            input: default(),
         }
     }
 }

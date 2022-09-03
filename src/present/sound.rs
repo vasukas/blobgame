@@ -1,5 +1,5 @@
 use super::camera::WindowInfo;
-use crate::{common::*, control::time::TimeMode, objects::spawn::SpawnControl};
+use crate::{common::*, control::menu::TimeMode, objects::spawn::SpawnControl};
 use bevy_kira_audio::prelude::*;
 
 /// Event

@@ -3,8 +3,6 @@ use bevy_egui::EguiPlugin;
 use bevy_rapier2d::plugin::RapierPhysicsPlugin;
 use control::menu::PlayNowHack;
 
-// TODO: use leafwing-input-manager for ALL input except debug ones; also add keybinds
-
 mod assets;
 mod common;
 mod control;
@@ -20,6 +18,7 @@ fn main() {
     // detect window size changes
     #[cfg(target_arch = "wasm32")]
     {
+        // TODO: is this really needed?
         app.add_plugin(bevy_web_resizer::Plugin);
     }
     // exit app on Ctrl+Q
@@ -51,6 +50,8 @@ fn main() {
             width: 1280.,
             height: 720.,
 
+            // TODO: try fit_to_canvas
+
             #[cfg(target_os = "linux")] // avoid hanging on exit
             present_mode: PresentMode::Mailbox,
             ..default()
@@ -67,7 +68,7 @@ fn main() {
     .add_plugin(RapierPhysicsPlugin::<()>::pixels_per_meter(1.))
     .insert_resource({
         let mut config = bevy_rapier2d::plugin::RapierConfiguration::default();
-        config.gravity = Vec2::ZERO; //-Vec2::Y * 10.;
+        config.gravity = Vec2::ZERO;
         config
     })
     .add_plugin(control::ControlPlugin)

@@ -1,11 +1,12 @@
 use crate::common::*;
-use bevy::input::mouse::MouseWheel;
-use enum_map::{enum_map, Enum, EnumMap};
+use leafwing_input_manager::prelude::*;
 use serde::{Deserialize, Serialize};
 
-/// Event
-#[derive(Clone, Copy, PartialEq, Eq, Enum, Serialize, Deserialize)]
-pub enum InputAction {
+pub use leafwing_input_manager::prelude::ActionState;
+
+/// Read with ActionState component
+#[derive(Actionlike, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub enum PlayerAction {
     MoveLeft,
     MoveRight,
     MoveUp,
@@ -14,112 +15,46 @@ pub enum InputAction {
     Fire,
     FireMega,
     ChangeWeapon,
-    Craft,
 
+    Dash,
+    Focus,
+}
+
+/// Read with ActionState resource
+#[derive(Actionlike, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub enum ControlAction {
+    Restart,
+    ExitMenu,
+}
+
+/// Read with ActionState component
+#[derive(Actionlike, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub enum CraftAction {
     CraftSelect1,
     CraftSelect2,
     CraftSelect3,
     CraftSelect4,
-
-    UberCharge,
-    Dash,
-    Respawn,
+    Craft,
 }
 
-impl InputAction {
-    pub fn description(&self) -> &'static str {
-        match self {
-            InputAction::MoveLeft => "Move left",
-            InputAction::MoveRight => "Move right",
-            InputAction::MoveUp => "Move up",
-            InputAction::MoveDown => "Move down",
+#[derive(Serialize, Deserialize)]
+pub struct InputSettings {
+    // TODO: implement
+}
 
-            InputAction::Fire => "Fire",
-            InputAction::FireMega => "Fire Megagun",
-            InputAction::ChangeWeapon => "Change weapon",
-            InputAction::Craft => "Craft weapon",
-
-            InputAction::CraftSelect1 => "Select craft part 1",
-            InputAction::CraftSelect2 => "Select craft part 2",
-            InputAction::CraftSelect3 => "Select craft part 3",
-            InputAction::CraftSelect4 => "Select craft part 4",
-
-            InputAction::UberCharge => "Ubercharge",
-            InputAction::Dash => "Dash",
-            InputAction::Respawn => "Retry",
-        }
+impl InputSettings {
+    /// Returns true if changed
+    pub fn menu(&mut self, ui: &mut egui::Ui) -> bool {
+        ui.label("NOT IMPLEMENTED"); // TODO: implement
+        false
     }
 }
 
-#[derive(Clone, Copy, Serialize, Deserialize)]
-pub enum InputKey {
-    Key(KeyCode),
-    Button(MouseButton),
-}
-
-impl ToString for InputKey {
-    fn to_string(&self) -> String {
-        match self {
-            InputKey::Key(key) => format!("{:?}", key),
-            InputKey::Button(key) => format!("{:?}", key),
-        }
-    }
-}
-
-#[derive(Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
-pub enum InputType {
-    Click,
-    Hold,
-}
-
-impl InputType {
-    pub fn description(&self) -> &'static str {
-        match self {
-            InputType::Click => "Click",
-            InputType::Hold => "Hold",
-        }
-    }
-}
-
-/// Resource
-#[derive(Clone, Serialize, Deserialize)]
-pub struct InputMap {
-    pub map: EnumMap<InputAction, (InputKey, InputType)>,
-}
-
-impl Default for InputMap {
+impl Default for InputSettings {
     fn default() -> Self {
-        use InputAction::*;
-        Self {
-            map: enum_map! {
-                MoveLeft => (InputKey::Key(KeyCode::A), InputType::Hold),
-                MoveRight => (InputKey::Key(KeyCode::D), InputType::Hold),
-                MoveUp => (InputKey::Key(KeyCode::W), InputType::Hold),
-                MoveDown => (InputKey::Key(KeyCode::S), InputType::Hold),
-
-                InputAction::Fire => (InputKey::Button(MouseButton::Left), InputType::Click),
-                InputAction::FireMega => (InputKey::Button(MouseButton::Right), InputType::Click),
-                InputAction::ChangeWeapon => (InputKey::Key(KeyCode::F), InputType::Click),
-                InputAction::Craft => (InputKey::Key(KeyCode::C), InputType::Click),
-
-                InputAction::CraftSelect1 => (InputKey::Key(KeyCode::Key1), InputType::Click),
-                InputAction::CraftSelect2 => (InputKey::Key(KeyCode::Key2), InputType::Click),
-                InputAction::CraftSelect3 => (InputKey::Key(KeyCode::Key3), InputType::Click),
-                InputAction::CraftSelect4 => (InputKey::Key(KeyCode::Key4), InputType::Click),
-
-                InputAction::UberCharge => (InputKey::Key(KeyCode::LShift), InputType::Click),
-                InputAction::Dash => (InputKey::Key(KeyCode::Space), InputType::Click),
-                Respawn => (InputKey::Key(KeyCode::R), InputType::Click),
-            },
-        }
+        // TODO: implement
+        Self {}
     }
-}
-
-/// Resource - prevent action emit
-#[derive(Default)]
-pub struct InputLock {
-    pub active: bool,
-    pub allow_craft: bool, // TODO: another horrible hack
 }
 
 //
@@ -128,44 +63,14 @@ pub struct InputPlugin;
 
 impl Plugin for InputPlugin {
     fn build(&self, app: &mut App) {
-        app.init_resource::<InputMap>()
-            .init_resource::<InputLock>()
-            .add_event::<InputAction>()
-            .add_system_to_stage(CoreStage::PreUpdate, emit_action);
-    }
-}
-
-fn emit_action(
-    lock: Res<InputLock>, map: Res<InputMap>, mut actions: EventWriter<InputAction>,
-    keys: Res<Input<KeyCode>>, buttons: Res<Input<MouseButton>>,
-    scroll_evr: EventReader<MouseWheel>,
-) {
-    for (action, (key, ty)) in map.map.iter() {
-        if match action {
-            InputAction::Craft
-            | InputAction::CraftSelect1
-            | InputAction::CraftSelect2
-            | InputAction::CraftSelect3
-            | InputAction::CraftSelect4 => lock.active && !lock.allow_craft,
-            _ => lock.active,
-        } {
-            continue;
-        }
-
-        let active = match key {
-            InputKey::Key(key) => match ty {
-                InputType::Click => keys.just_pressed(*key),
-                InputType::Hold => keys.pressed(*key),
-            },
-            InputKey::Button(button) => match ty {
-                InputType::Click => buttons.just_pressed(*button),
-                InputType::Hold => buttons.pressed(*button),
-            },
-        }
-            // TODO: bad hack
-            || (action == InputAction::ChangeWeapon && !scroll_evr.is_empty());
-        if active {
-            actions.send(action)
-        }
+        app.add_plugin(InputManagerPlugin::<PlayerAction>::default())
+            .add_plugin(InputManagerPlugin::<CraftAction>::default())
+            .add_plugin(InputManagerPlugin::<ControlAction>::default())
+            .insert_resource(ActionState::<ControlAction>::default())
+            .insert_resource(InputMap::<ControlAction>::new([
+                (KeyCode::R, ControlAction::Restart),
+                (KeyCode::Escape, ControlAction::ExitMenu),
+                (KeyCode::M, ControlAction::ExitMenu),
+            ]));
     }
 }

@@ -26,6 +26,7 @@ bevy_egui = {version = "0.15", default-features = false, features = ["default_fo
 bevy_kira_audio = {version = "0.12", features = ["wav", "ogg"]}
 bevy_prototype_lyon = "0.6"
 bevy_rapier2d = "0.16"
+leafwing-input-manager = {version = "0.5", default-features = false}
 
 # General utilities
 enum-map = {version = "2.4", features = ["serde"]}

@@ -1,3 +1,7 @@
+use leafwing_input_manager::{
+    buttonlike::MouseWheelDirection, prelude::InputMap, InputManagerBundle,
+};
+
 use super::{
     loot::{CraftPart, LootPicker},
     spawn::{SpawnControl, WaveEvent},
@@ -6,11 +10,7 @@ use super::{
 };
 use crate::{
     common::*,
-    control::{
-        input::{InputAction, InputMap},
-        menu::is_exit_menu,
-        time::TimeMode,
-    },
+    control::{input::*, menu::TimeMode},
     mechanics::{
         damage::{BonkToTeam, Team},
         health::{Health, ReceivedDamage},
@@ -149,7 +149,35 @@ fn spawn_player(
                 radius: Player::RADIUS,
                 ..default()
             })
-            .insert(BonkToTeam(Team::YEEEEEEE));
+            .insert(BonkToTeam(Team::YEEEEEEE))
+            //
+            .insert_bundle(InputManagerBundle::<PlayerAction> {
+                action_state: default(),
+                input_map: InputMap::new([
+                    (KeyCode::A, PlayerAction::MoveLeft),
+                    (KeyCode::D, PlayerAction::MoveRight),
+                    (KeyCode::W, PlayerAction::MoveUp),
+                    (KeyCode::S, PlayerAction::MoveDown),
+                    (KeyCode::F, PlayerAction::ChangeWeapon),
+                    (KeyCode::Space, PlayerAction::Dash),
+                    (KeyCode::LShift, PlayerAction::Focus),
+                ])
+                .insert(MouseButton::Left, PlayerAction::Fire)
+                .insert(MouseButton::Right, PlayerAction::FireMega)
+                .insert(MouseWheelDirection::Up, PlayerAction::ChangeWeapon)
+                .insert(MouseWheelDirection::Down, PlayerAction::ChangeWeapon)
+                .build(),
+            })
+            .insert_bundle(InputManagerBundle::<CraftAction> {
+                action_state: default(),
+                input_map: InputMap::new([
+                    (KeyCode::Key1, CraftAction::CraftSelect1),
+                    (KeyCode::Key2, CraftAction::CraftSelect2),
+                    (KeyCode::Key3, CraftAction::CraftSelect3),
+                    (KeyCode::Key4, CraftAction::CraftSelect4),
+                    (KeyCode::C, CraftAction::Craft),
+                ]),
+            });
     }
 }
 
@@ -159,73 +187,72 @@ fn controls(
         &GlobalTransform,
         &mut Player,
         &mut KinematicController,
+        &ActionState<PlayerAction>,
     )>,
-    mut input: EventReader<InputAction>, mut kinematic: CmdWriter<KinematicCommand>,
-    window: Res<WindowInfo>, time: Res<GameTime>, mut commands: Commands,
-    mut weapon: CmdWriter<Weapon>, mut stats: ResMut<Stats>, mut beats: ResMut<Beats>,
-    mut time_mode: ResMut<TimeMode>, real_time: Res<Time>,
+    mut kinematic: CmdWriter<KinematicCommand>, window: Res<WindowInfo>, time: Res<GameTime>,
+    mut commands: Commands, mut weapon: CmdWriter<Weapon>, mut stats: ResMut<Stats>,
+    mut beats: ResMut<Beats>, mut time_mode: ResMut<TimeMode>, real_time: Res<Time>,
 ) {
-    let (entity, pos, mut player, mut kctr) = match player.get_single_mut() {
+    let (entity, pos, mut player, mut kctr, input) = match player.get_single_mut() {
         Ok(v) => v,
         Err(_) => return,
     };
     let pos = pos.pos_2d();
 
-    let mut mov = Vec2::ZERO;
-    let mut dash = false;
-    for action in input.iter() {
-        match action {
-            InputAction::MoveLeft => mov.x -= 1.,
-            InputAction::MoveRight => mov.x += 1.,
-            InputAction::MoveUp => mov.y += 1.,
-            InputAction::MoveDown => mov.y -= 1.,
+    let mov = vec2(
+        match (
+            input.pressed(PlayerAction::MoveLeft),
+            input.pressed(PlayerAction::MoveRight),
+        ) {
+            (true, false) => -1.,
+            (false, true) => 1.,
+            _ => 0.,
+        },
+        match (
+            input.pressed(PlayerAction::MoveDown),
+            input.pressed(PlayerAction::MoveUp),
+        ) {
+            (true, false) => -1.,
+            (false, true) => 1.,
+            _ => 0.,
+        },
+    );
+    let dash = input.just_pressed(PlayerAction::Dash);
 
-            InputAction::Dash => dash = true,
-
-            InputAction::Fire => {
-                if player.try_shoot(&real_time, false) {
-                    weapon.send((
-                        entity,
-                        Weapon::PlayerGun {
-                            dir: window.cursor - pos,
-                        },
-                    ))
-                }
-            }
-            InputAction::FireMega => {
-                if player.try_shoot(&real_time, true) {
-                    weapon.send((
-                        entity,
-                        Weapon::PlayerCrafted {
-                            dir: window.cursor - pos,
-                        },
-                    ))
-                }
-            }
-            InputAction::ChangeWeapon => {
-                let stats = &mut *stats;
-                std::mem::swap(&mut stats.player.weapon0, &mut stats.player.weapon1);
-                player.fire_lock = None;
-            }
-            InputAction::UberCharge => {
-                if stats.ubercharge >= 1. {
-                    stats.ubercharge = 0.;
-
-                    if beats.level == 0 {
-                        beats.level = 1;
-                    } else {
-                        beats.level = 2;
-                    };
-
-                    player.add_beats(beats.level);
-                    kctr.speed = Player::SPEED * 2.;
-                    time_mode.overriden = Some(0.5);
-                }
-            }
-
-            _ => (),
-        }
+    if input.just_pressed(PlayerAction::Fire) && player.try_shoot(&real_time, false) {
+        weapon.send((
+            entity,
+            Weapon::PlayerGun {
+                dir: window.cursor - pos,
+            },
+        ))
     }
+    if input.just_pressed(PlayerAction::FireMega) && player.try_shoot(&real_time, true) {
+        weapon.send((
+            entity,
+            Weapon::PlayerCrafted {
+                dir: window.cursor - pos,
+            },
+        ))
+    }
+    if input.just_pressed(PlayerAction::Focus) && stats.ubercharge >= 1. {
+        stats.ubercharge = 0.;
+
+        if beats.level == 0 {
+            beats.level = 1;
+        } else {
+            beats.level = 2;
+        };
+
+        player.add_beats(beats.level);
+        kctr.speed = Player::SPEED * 2.;
+        time_mode.overriden = Some(0.5);
+    }
+    if input.just_pressed(PlayerAction::ChangeWeapon) {
+        let stats = &mut *stats;
+        std::mem::swap(&mut stats.player.weapon0, &mut stats.player.weapon1)
+    }
+
     if let Some(dir) = mov.try_normalize() {
         player.prev_move = dir;
         kinematic.send((entity, KinematicCommand::Move { dir }))
@@ -249,7 +276,7 @@ fn controls(
 
 fn respawn(
     mut ctx: ResMut<EguiContext>, player: Query<With<Player>>, mut spawn: ResMut<SpawnControl>,
-    mut input: EventReader<InputAction>, input_map: Res<InputMap>,
+    input: Res<ActionState<ControlAction>>,
 ) {
     if !spawn.is_game_running() {
         return;
@@ -267,17 +294,14 @@ fn respawn(
                     // TODO: where should be a better way to make multicolored text
                     ui.label("Press [");
                     ui.visuals_mut().override_text_color = Some(egui::Color32::RED);
-                    ui.label(input_map.map[InputAction::Respawn].0.to_string());
+                    // ui.label(input_map.map[InputAction::Respawn].0.to_string());
                     ui.visuals_mut().override_text_color = None;
                     ui.label("] to restart level");
                 });
             },
         );
-        for action in input.iter() {
-            match action {
-                InputAction::Respawn => spawn.despawn = Some(true),
-                _ => (),
-            }
+        if input.just_pressed(ControlAction::Restart) {
+            spawn.despawn = Some(true)
         }
     }
 }
@@ -382,11 +406,8 @@ struct NextWaveMenu {
 
 fn next_wave(
     mut wave: EventReader<WaveEvent>, mut stats: ResMut<Stats>, mut spawn: ResMut<SpawnControl>,
-    mut commands: Commands, mut input: EventReader<InputAction>, input_map: Res<InputMap>,
-    mut data: Local<NextWaveMenu>,
+    mut commands: Commands, input: Res<ActionState<ControlAction>>, mut data: Local<NextWaveMenu>,
 ) {
-    let input_action = InputAction::Respawn;
-
     // begin user input
     if wave.iter().any(|ev| *ev == WaveEvent::Ended) {
         let text = match spawn.tutorial {
@@ -397,7 +418,7 @@ fn next_wave(
             // THE UGLY HACK. this is # of tutorial wave + 1
             Some(4) | Some(7) | None => vec![
                 ("Press [".to_string(), Color::WHITE),
-                (input_map.map[input_action].0.to_string(), Color::RED),
+                // (input_map.map[input_action].0.to_string(), Color::RED),
                 ("] to go to next level".to_string(), Color::WHITE),
             ],
             Some(_) => vec![],
@@ -411,24 +432,20 @@ fn next_wave(
                 .insert(WorldText { text, size: 2. })
                 .id(),
         );
-    }
-    // waiting for user input
-    else if let Some(text) = data.text {
+    } else if let Some(text) = data.text {
+        // waiting for user input
         if spawn.is_game_running() {
-            for input in input.iter() {
-                if *input == input_action {
-                    if spawn.tutorial.is_none() {
-                        stats.wave += 1;
-                    }
-                    spawn.despawn = Some(true);
-
-                    commands.entity(text).despawn_recursive();
-                    data.text = None;
-                    break;
+            if input.just_pressed(ControlAction::Restart) {
+                if spawn.tutorial.is_none() {
+                    stats.wave += 1;
                 }
+                spawn.despawn = Some(true);
+
+                commands.entity(text).despawn_recursive();
+                data.text = None;
             }
         } else {
-            // npott anymore
+            // not anymore
             commands.entity(text).despawn_recursive();
             data.text = None;
         }
@@ -546,15 +563,23 @@ impl Default for CraftMenu {
 }
 
 fn craft_menu(
-    mut ctx: ResMut<EguiContext>, mut stats: ResMut<Stats>, input_map: Res<InputMap>,
-    mut input: EventReader<InputAction>, mut menu: Local<CraftMenu>, keys: Res<Input<KeyCode>>,
-    mut time_mode: ResMut<TimeMode>, player: Query<(), With<Player>>,
+    mut ctx: ResMut<EguiContext>, mut stats: ResMut<Stats>, mut menu: Local<CraftMenu>,
+    mut time_mode: ResMut<TimeMode>, player: Query<&ActionState<CraftAction>, With<Player>>,
+    ctl_input: Res<ActionState<ControlAction>>,
 ) {
     time_mode.craft_menu = menu.show;
     time_mode.player_alive = !player.is_empty();
 
+    let input = match player.get_single() {
+        Ok(v) => v,
+        Err(_) => {
+            menu.show = false;
+            return;
+        }
+    };
+
     if menu.show {
-        if is_exit_menu(&keys) {
+        if ctl_input.just_pressed(ControlAction::ExitMenu) {
             menu.show = false
         }
 
@@ -591,9 +616,9 @@ fn craft_menu(
                             egui::Color32::WHITE
                         });
                         ui.label(format!(
-                            "[slot {}: {}] {} x{}",
+                            "[slot {}: BUTTON] {} x{}",
                             slot,
-                            input_map.map[action].0.to_string(),
+                            // input_map.map[action].0.to_string(),
                             name,
                             *value
                         ));
@@ -630,33 +655,34 @@ fn craft_menu(
             },
         );
 
-        for action in input.iter() {
-            match action {
-                InputAction::CraftSelect1 => menu.slot0 = CraftPart::Generator,
-                InputAction::CraftSelect2 => menu.slot0 = CraftPart::Emitter,
-                InputAction::CraftSelect3 => menu.slot1 = CraftPart::Laser,
-                InputAction::CraftSelect4 => menu.slot1 = CraftPart::Magnet,
-                InputAction::Craft => {
-                    if let Some(weapon) = craft_result {
-                        if stats.player.craft_parts[menu.slot0] != 0
-                            && stats.player.craft_parts[menu.slot1] != 0
-                        {
-                            stats.player.craft_parts[menu.slot0] -= 1;
-                            stats.player.craft_parts[menu.slot1] -= 1;
-                            menu.show = false;
+        if input.just_pressed(CraftAction::CraftSelect1) {
+            menu.slot0 = CraftPart::Generator
+        }
+        if input.just_pressed(CraftAction::CraftSelect2) {
+            menu.slot0 = CraftPart::Emitter
+        }
+        if input.just_pressed(CraftAction::CraftSelect3) {
+            menu.slot1 = CraftPart::Laser
+        }
+        if input.just_pressed(CraftAction::CraftSelect4) {
+            menu.slot1 = CraftPart::Magnet
+        }
+        if input.just_pressed(CraftAction::Craft) {
+            if let Some(weapon) = craft_result {
+                if stats.player.craft_parts[menu.slot0] != 0
+                    && stats.player.craft_parts[menu.slot1] != 0
+                {
+                    stats.player.craft_parts[menu.slot0] -= 1;
+                    stats.player.craft_parts[menu.slot1] -= 1;
+                    menu.show = false;
 
-                            stats.player.weapon0 = Some((weapon, weapon.description().2))
-                        }
-                    }
+                    stats.player.weapon0 = Some((weapon, weapon.description().2))
                 }
-                _ => (),
             }
         }
     } else {
-        for action in input.iter() {
-            if *action == InputAction::Craft {
-                menu.show = true
-            }
+        if input.just_pressed(CraftAction::Craft) {
+            menu.show = true
         }
     }
 }
