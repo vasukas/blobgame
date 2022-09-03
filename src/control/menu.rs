@@ -232,7 +232,7 @@ fn show_menu(
 fn mega_mode(
     mut mode: ResMut<TimeMode>, mut time: ResMut<GameTime>,
     mut player: ResMut<ToggleActions<PlayerAction>>, mut craft: ResMut<ToggleActions<CraftAction>>,
-    mut control: ResMut<ToggleActions<ControlAction>>, actual_player: Query<(), With<Player>>,
+    actual_player: Query<(), With<Player>>,
 ) {
     mode.player_alive = !actual_player.is_empty();
 
@@ -242,7 +242,6 @@ fn mega_mode(
 
     player.enabled = !lock_active;
     craft.enabled = !lock_active || lock_allow_craft;
-    control.enabled = !lock_active;
 }
 
 fn setup(mut egui: ResMut<EguiSettings>, settings: Res<Settings>, mut windows: ResMut<Windows>) {

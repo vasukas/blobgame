@@ -1,5 +1,5 @@
 use crate::common::*;
-use leafwing_input_manager::{plugin::InputManagerSystem, prelude::*};
+use leafwing_input_manager::{plugin::InputManagerSystem, prelude::*, user_input::InputKind};
 use serde::{Deserialize, Serialize};
 
 pub use leafwing_input_manager::prelude::{ActionState, InputManagerBundle, InputMap};
@@ -92,6 +92,35 @@ impl Default for InputSettings {
                 (KeyCode::M, ControlAction::ExitMenu),
             ]),
         }
+    }
+}
+
+pub trait InputMapExtended<A> {
+    fn prompt(&self, action: A) -> String;
+}
+
+impl<A: Actionlike> InputMapExtended<A> for InputMap<A> {
+    fn prompt(&self, action: A) -> String {
+        self.get(action)
+            .get_at(0)
+            .map(|v| match v {
+                UserInput::Single(InputKind::Keyboard(v)) => {
+                    format!("{:?}", v)
+                }
+                UserInput::Single(InputKind::Mouse(v)) => {
+                    format!("{:?} mouse button", v)
+                }
+                UserInput::Single(InputKind::MouseWheel(v)) => {
+                    format!("{:?} mouse wheel", v)
+                }
+                UserInput::Single(InputKind::GamepadButton(v)) => {
+                    format!("{:?}", v)
+                }
+                UserInput::Single(_) => "<SINGLE>".to_string(),
+                UserInput::Chord(_) => "<CHORD>".to_string(),
+                UserInput::VirtualDPad(_) => "<VDPAD>".to_string(),
+            })
+            .unwrap_or_else(|| "<NONE>".to_string())
     }
 }
 

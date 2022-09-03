@@ -9,7 +9,7 @@ use crate::{
     objects::{
         boss::TheBoss,
         grid::GridBar,
-        loot::{CraftPart, DropsLoot, Loot},
+        loot::{DropsLoot, Loot},
         stats::DeathPoints,
         weapon::Weapon,
     },
@@ -647,17 +647,7 @@ fn create_turret(
         .insert(PhysicsType::Solid.rapier())
         .insert(Collider::ball(radius))
         .insert(DropsLoot({
-            use rand::*;
-            let mut loot = vec![];
-            if thread_rng().gen_bool(0.8) {
-                if thread_rng().gen_bool(0.66) {
-                    loot.push(Loot::Health { value: 1.5 });
-                }
-                if thread_rng().gen_bool(0.33) {
-                    loot.push(Loot::CraftPart(CraftPart::random()));
-                }
-            }
-            loot
+            vec![(Loot::Health(1.5), 0.5), (Loot::CraftPart(None), 0.25)]
         }));
 
     commands.id()

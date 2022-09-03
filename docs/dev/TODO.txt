@@ -30,12 +30,12 @@ Post-jam fixes and improvements
     - refactor at least the most hacky systems
 
     - keybinding + test on gamepad, mb it works
+        - insert and test all prompts (tutorial, etc)
     - rework main menu
     ? pause game if window loses focus (and un-pause on gaining it *only after pausing because of losing*)
 
 - gameplay
     - mid-combat healing (HOW)
-    - determine which loot to drop on death, based on player's current state (but don't overdo it)
     - fix player getting stuck in newly spawned enemies
         - use entry/exit points (elevators) instead of spawning
           (also auto-collect all loot at the end of the wave)

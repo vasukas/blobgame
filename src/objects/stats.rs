@@ -10,7 +10,14 @@ pub struct Stats {
     pub ubercharge: f32,
 
     pub player: PersistentPlayer,
+    pub player_weapon_slot: usize, // which weapon slot used
     last_wave: PersistentPlayer,
+}
+
+impl Stats {
+    pub fn weapon_mut(&mut self) -> &mut Option<(CraftedWeapon, f32)> {
+        &mut self.player.weapons[self.player_weapon_slot]
+    }
 }
 
 /// Stuff restored after respawn
@@ -18,8 +25,7 @@ pub struct Stats {
 pub struct PersistentPlayer {
     pub points: usize,
     pub craft_parts: EnumMap<CraftPart, usize>, // count
-    pub weapon0: Option<(CraftedWeapon, f32)>,  // usage left
-    pub weapon1: Option<(CraftedWeapon, f32)>,
+    pub weapons: [Option<(CraftedWeapon, f32)>; 2], // usage left
 }
 
 impl Default for PersistentPlayer {
@@ -29,11 +35,13 @@ impl Default for PersistentPlayer {
             craft_parts: enum_map::enum_map! {
                 CraftPart::Generator => 2,
                 CraftPart::Emitter => 2,
-                CraftPart::Laser => 2,
+                CraftPart::Laser => 0,
                 CraftPart::Magnet => 2,
             },
-            weapon0: Some((CraftedWeapon::Railgun, 3.)),
-            weapon1: Some((CraftedWeapon::Plasma, 3.)),
+            weapons: [
+                Some((CraftedWeapon::Railgun, 3.)),
+                Some((CraftedWeapon::Plasma, 3.)),
+            ],
         }
     }
 }
@@ -61,9 +69,11 @@ fn update_stats(
 ) {
     for ev in events.iter() {
         match ev {
-            WaveEvent::Started => *wave_now = true,
-            WaveEvent::Ended => {
+            WaveEvent::Started => {
                 stats.last_wave = stats.player.clone();
+                *wave_now = true;
+            }
+            WaveEvent::Ended => {
                 *wave_now = false;
             }
             WaveEvent::Restart => {

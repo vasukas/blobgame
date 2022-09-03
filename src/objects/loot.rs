@@ -1,4 +1,4 @@
-use super::stats::Stats;
+use super::{player::Player, stats::Stats};
 use crate::{
     common::*,
     control::input::CraftAction,
@@ -12,13 +12,14 @@ use enum_map::Enum;
 
 #[derive(Clone, Copy)]
 pub enum Loot {
-    Health { value: f32 },
-    CraftPart(CraftPart),
+    Health(f32),
+    /// If None, random one will be selected
+    CraftPart(Option<CraftPart>),
 }
 
-/// If present, entity will drop that on death
+/// List of which loot entity can drop on death and what is the drop chance
 #[derive(Component)]
-pub struct DropsLoot(pub Vec<Loot>);
+pub struct DropsLoot(pub Vec<(Loot, f32)>);
 
 #[derive(Component)]
 pub struct PickableLoot(pub Loot);
@@ -63,15 +64,59 @@ impl Plugin for LootPlugin {
     }
 }
 
+fn adjust_loot((loot, chance): (Loot, f32), player: Option<&Health>, stats: &Stats) -> (Loot, f32) {
+    let k_health_chance = 1.5; // chance multiplier to get health if HP <= 50% by x1.5
+
+    // chance of getting most needed part; actual drop chance not changed
+    let zero_parts_chance = 0.8; // if count is zero
+    let many_parts_chance = 0.1; // if count is more than zero
+
+    match loot {
+        Loot::Health(_) => (
+            loot,
+            player
+                .and_then(|hp| (hp.t() <= 0.5).then_some(chance * k_health_chance))
+                .unwrap_or(chance),
+        ),
+        // increase chance to get part which player doesn't have enough
+        Loot::CraftPart(part) => match part {
+            Some(_) => (loot, chance),
+            None => {
+                let (part, count) = stats
+                    .player
+                    .craft_parts
+                    .iter()
+                    .min_by_key(|v| v.1)
+                    .unwrap_or((CraftPart::Generator, &0));
+                let part_chance = if *count == 0 { zero_parts_chance } else { many_parts_chance };
+
+                use rand::*;
+                if thread_rng().gen_bool(part_chance) {
+                    (Loot::CraftPart(Some(part)), chance)
+                } else {
+                    (loot, chance)
+                }
+            }
+        },
+    }
+}
+
 fn drop_loot(
     mut death: CmdReader<DeathEvent>, mut commands: Commands,
-    mut entities: Query<(&GlobalTransform, &DropsLoot)>,
+    mut entities: Query<(&GlobalTransform, &DropsLoot)>, player: Query<&Health, With<Player>>,
+    stats: Res<Stats>,
 ) {
     death.iter_cmd_mut(&mut entities, |_, (pos, loot)| {
         for loot in &loot.0 {
+            let (loot, chance) = adjust_loot(*loot, player.get_single().ok(), &stats);
+            use rand::*;
+            if !thread_rng().gen_bool(chance.clamp(0., 1.) as f64) {
+                continue;
+            }
+
             let (radius, color) = match loot {
-                Loot::Health { .. } => (0.3, Color::GREEN * 0.8),
-                Loot::CraftPart(_) => (0.4, Color::ORANGE_RED * 0.8),
+                Loot::Health(..) => (0.3, Color::GREEN * 0.8),
+                Loot::CraftPart(..) => (0.4, Color::ORANGE_RED * 0.8),
             };
             let lifetime = Duration::from_secs(8);
 
@@ -87,7 +132,7 @@ fn drop_loot(
                 .with_children(|parent| {
                     use bevy_lyon::*;
                     match loot {
-                        Loot::Health { .. } => {
+                        Loot::Health(..) => {
                             parent.spawn_bundle(GeometryBuilder::build_as(
                                 &shapes::Circle {
                                     radius: radius * 0.9,
@@ -97,7 +142,7 @@ fn drop_loot(
                                 default(),
                             ));
                         }
-                        Loot::CraftPart(_) => {
+                        Loot::CraftPart(..) => {
                             parent.spawn_bundle(GeometryBuilder::build_as(
                                 &shapes::Polygon {
                                     points: vec![
@@ -114,7 +159,7 @@ fn drop_loot(
                         }
                     };
                 })
-                .insert(PickableLoot(*loot))
+                .insert(PickableLoot(loot))
                 .insert(DieAfter::new(lifetime))
                 .insert(DropSpread::default());
         }
@@ -138,7 +183,7 @@ fn pick_loot(
                 if let Ok(loot) = loot.get(entity) {
                     //
                     match loot.0 {
-                        Loot::Health { value } => {
+                        Loot::Health(value) => {
                             let new_health = (health.value + value).min(health.max);
                             if new_health > health.value {
                                 health.value = new_health;
@@ -154,6 +199,7 @@ fn pick_loot(
                         }
 
                         Loot::CraftPart(part) => {
+                            let part = part.unwrap_or_else(|| CraftPart::random());
                             stats.player.craft_parts[part] += 1;
 
                             commands.entity(entity).despawn_recursive();

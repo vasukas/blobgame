@@ -82,9 +82,7 @@ impl Player {
     }
 }
 
-fn spawn_player(
-    mut commands: Commands, player: Query<Entity, Added<Player>>, settings: Res<Settings>,
-) {
+fn spawn_player(mut commands: Commands, player: Query<Entity, Added<Player>>) {
     for entity in player.iter() {
         let radius = Player::RADIUS;
 
@@ -239,8 +237,8 @@ fn controls(
         time_mode.overriden = Some(0.5);
     }
     if input.just_pressed(PlayerAction::ChangeWeapon) {
-        let stats = &mut *stats;
-        std::mem::swap(&mut stats.player.weapon0, &mut stats.player.weapon1)
+        let slot = &mut stats.player_weapon_slot;
+        *slot = if *slot == 1 { 0 } else { 1 }
     }
 
     if let Some(dir) = mov.try_normalize() {
@@ -397,6 +395,7 @@ struct NextWaveMenu {
 fn next_wave(
     mut wave: EventReader<WaveEvent>, mut stats: ResMut<Stats>, mut spawn: ResMut<SpawnControl>,
     mut commands: Commands, input: Res<ActionState<ControlAction>>, mut data: Local<NextWaveMenu>,
+    input_map: Res<InputMap<ControlAction>>,
 ) {
     // begin user input
     if wave.iter().any(|ev| *ev == WaveEvent::Ended) {
@@ -408,7 +407,7 @@ fn next_wave(
             // THE UGLY HACK. this is # of tutorial wave + 1
             Some(4) | Some(7) | None => vec![
                 ("Press [".to_string(), Color::WHITE),
-                // (input_map.map[input_action].0.to_string(), Color::RED),
+                (input_map.prompt(ControlAction::Restart), Color::RED),
                 ("] to go to next level".to_string(), Color::WHITE),
             ],
             Some(_) => vec![],
@@ -494,7 +493,7 @@ fn hud_panel(
                 ui.label("");
 
                 ui.label("WEAPONS");
-                for v in [stats.player.weapon0, stats.player.weapon1] {
+                for v in &stats.player.weapons {
                     if let Some((weapon, uses)) = v {
                         let (name, _, max_uses) = weapon.description();
                         ui.label(format!("{} {}%", name, (uses / max_uses * 100.) as u32));
@@ -554,13 +553,14 @@ impl Default for CraftMenu {
 
 fn craft_menu(
     mut ctx: ResMut<EguiContext>, mut stats: ResMut<Stats>, mut menu: Local<CraftMenu>,
-    mut time_mode: ResMut<TimeMode>, player: Query<&ActionState<CraftAction>, With<Player>>,
+    mut time_mode: ResMut<TimeMode>,
+    player: Query<(&ActionState<CraftAction>, &InputMap<CraftAction>), With<Player>>,
     ctl_input: Res<ActionState<ControlAction>>,
 ) {
     time_mode.craft_menu = menu.show;
     time_mode.player_alive = !player.is_empty();
 
-    let input = match player.get_single() {
+    let (input, input_map) = match player.get_single() {
         Ok(v) => v,
         Err(_) => {
             menu.show = false;
@@ -606,9 +606,9 @@ fn craft_menu(
                             egui::Color32::WHITE
                         });
                         ui.label(format!(
-                            "[slot {}: BUTTON] {} x{}",
+                            "[slot {}: {}] {} x{}",
                             slot,
-                            // input_map.map[action].0.to_string(),
+                            input_map.prompt(action),
                             name,
                             *value
                         ));
@@ -666,7 +666,7 @@ fn craft_menu(
                     stats.player.craft_parts[menu.slot1] -= 1;
                     menu.show = false;
 
-                    stats.player.weapon0 = Some((weapon, weapon.description().2))
+                    *stats.weapon_mut() = Some((weapon, weapon.description().2))
                 }
             }
         }
@@ -685,6 +685,6 @@ fn god_mode(
         if let Ok(mut health) = player.get_single_mut() {
             health.invincible = true
         }
-        stats.player.weapon0 = Some((CraftedWeapon::Railgun, 100000.))
+        *stats.weapon_mut() = Some((CraftedWeapon::Railgun, 100000.))
     }
 }

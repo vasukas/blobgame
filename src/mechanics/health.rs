@@ -31,6 +31,11 @@ impl Health {
         self.armor = true;
         self
     }
+
+    /// How many health has relative to max, normally in 0-1 range
+    pub fn t(&self) -> f32 {
+        self.value / self.max
+    }
 }
 
 #[derive(Component)]

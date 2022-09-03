@@ -36,8 +36,7 @@ impl Plugin for BossPlugin {
 }
 
 fn the_boss_spawn(
-    mut commands: Commands, boss: Query<(Entity, &TheBoss), Added<TheBoss>>,
-    settings: Res<Settings>, time: Res<GameTime>,
+    mut commands: Commands, boss: Query<(Entity, &TheBoss), Added<TheBoss>>, time: Res<GameTime>,
 ) {
     use bevy_lyon::*;
     for (entity, boss) in boss.iter() {

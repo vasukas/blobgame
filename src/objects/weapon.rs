@@ -301,18 +301,12 @@ fn weapon(
                         },
                     ),
                     _ => {
-                        let mega_weapon = match stats.player.weapon0.as_mut() {
-                            Some(w) => w,
-                            None => {
-                                commands.insert(DieAfter::one_frame());
-                                return;
-                            }
-                        };
+                        let mega_weapon = stats.weapon_mut();
                         match mega_weapon {
-                            (CraftedWeapon::Railgun, uses) => {
+                            Some((CraftedWeapon::Railgun, uses)) => {
                                 *uses -= 1.;
                                 if *uses <= 0. {
-                                    stats.player.weapon0 = None;
+                                    *mega_weapon = None;
                                     sound_cmd.send(Sound {
                                         sound: assets.ui_weapon_broken.clone(),
                                         non_randomized: true,
@@ -350,10 +344,10 @@ fn weapon(
                                     assets.player_railgun.clone(),
                                 )
                             }
-                            (CraftedWeapon::Plasma, uses) => {
+                            Some((CraftedWeapon::Plasma, uses)) => {
                                 *uses -= 1.;
                                 if *uses <= 0. {
-                                    stats.player.weapon0 = None;
+                                    *mega_weapon = None;
                                     sound_cmd.send(Sound {
                                         sound: assets.ui_weapon_broken.clone(),
                                         non_randomized: true,
@@ -416,7 +410,10 @@ fn weapon(
 
                                 ([2., 5., 10.], None, assets.player_plasma.clone())
                             }
-                            _ => todo!(),
+                            _ => {
+                                commands.insert(DieAfter::one_frame());
+                                return;
+                            }
                         }
                     }
                 };
