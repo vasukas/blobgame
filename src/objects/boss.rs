@@ -62,11 +62,7 @@ fn the_boss_spawn(
             })
             .with_children(|parent| {
                 let outline_mode = StrokeMode::new(Color::rgb(0.8, 0.8, 0.8), 0.1);
-                let health = 40.
-                    * match settings.difficulty {
-                        crate::settings::Difficulty::Easy => 0.6,
-                        crate::settings::Difficulty::Hard => 1.,
-                    };
+                let health = 40.;
 
                 // background
                 parent

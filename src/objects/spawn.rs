@@ -546,7 +546,7 @@ enum TurretType {
 }
 
 fn create_turret(
-    commands: &mut Commands, origin: Vec2, difficulty: Difficulty, ty: TurretType,
+    commands: &mut Commands, origin: Vec2, _difficulty: Difficulty, ty: TurretType,
 ) -> Entity {
     use bevy_lyon::*;
 
@@ -649,17 +649,9 @@ fn create_turret(
         .insert(DropsLoot({
             use rand::*;
             let mut loot = vec![];
-            if match difficulty {
-                Difficulty::Easy => true,
-                Difficulty::Hard => thread_rng().gen_bool(0.8),
-            } {
+            if thread_rng().gen_bool(0.8) {
                 if thread_rng().gen_bool(0.66) {
-                    loot.push(Loot::Health {
-                        value: match difficulty {
-                            Difficulty::Easy => 4.,
-                            Difficulty::Hard => 1.5,
-                        },
-                    });
+                    loot.push(Loot::Health { value: 1.5 });
                 }
                 if thread_rng().gen_bool(0.33) {
                     loot.push(Loot::CraftPart(CraftPart::random()));

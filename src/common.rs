@@ -4,7 +4,7 @@ pub use crate::{
     mechanics::physics::PhysicsType,
     objects::spawn::GameplayObject,
     present::depth::Depth,
-    settings::Settings,
+    settings::{Difficulty, Settings},
     utils::{bevy::*, bevy_egui::*, math::*, rust::*},
 };
 pub use bevy::{log, math::vec2, prelude::*, utils::HashMap};

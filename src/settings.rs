@@ -11,38 +11,6 @@ pub struct Settings {
     pub input: InputSettings,
 }
 
-impl Settings {
-    /// Returns true if changed
-    pub fn menu(&mut self, ui: &mut egui::Ui) -> bool {
-        let mut changed = false;
-
-        ui.horizontal(|ui| {
-            ui.label("Master volume");
-            changed |= ui
-                .add(egui::Slider::new(&mut self.master_volume, 0. ..=1.))
-                .changed();
-        });
-
-        changed |= ui.checkbox(&mut self.fullscreen, "Fullscreen").changed();
-        ui.label("If it doesn't change, click anywhere again or something");
-
-        let (alt, text) = match self.difficulty {
-            Difficulty::Easy => (Difficulty::Hard, "Difficulty: Easy"),
-            Difficulty::Hard => (Difficulty::Easy, "Difficulty: Hard"),
-        };
-        changed |= {
-            let clicked = ui.button(text).clicked();
-            if clicked {
-                self.difficulty = alt
-            }
-            clicked
-        };
-        ui.label("Changes to difficulty will be applied after respawn");
-
-        changed
-    }
-}
-
 impl Default for Settings {
     fn default() -> Self {
         Self {
@@ -56,7 +24,6 @@ impl Default for Settings {
 
 #[derive(Clone, Copy, Serialize, Deserialize, PartialEq, Eq)]
 pub enum Difficulty {
-    Easy,
     Hard,
 }
 

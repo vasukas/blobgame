@@ -18,24 +18,33 @@ General reminder
 Post-jam fixes and improvements
 ===============================
 
-- tech stuff
-    + fix panic on subtracting durations when entering focus modes
-    - refactor at least the most hacky systems
-    - detect if game is minimized and go to menu in that case?
-
-    - don't use bevy_kira_audio? just kira directly?
-        - ENABLE COMMENTED-OUT SYSTEMS BACK
-        - fix volume setting not working
-        - bevy_kira_audio::audio_output: Failed to set volume for instance: CommandQueueFul
-            apparently happens due to master volume constantly being updated
+- don't use bevy_kira_audio? just kira directly?
+    - ENABLE COMMENTED-OUT SYSTEMS BACK
+    - fix volume setting not working
+    - ui_weapon_broken has invalid pitch
+    - bevy_kira_audio::audio_output: Failed to set volume for instance: CommandQueueFul
+        apparently happens due to master volume constantly being updated
         - in wasm audio completely breaks when entering menu
 
+- tech stuff
+    - refactor at least the most hacky systems
+
+    - keybinding + test on gamepad, mb it works
+    - rework main menu
+    ? pause game if window loses focus (and un-pause on gaining it *only after pausing because of losing*)
+
 - gameplay
-    + stop enemies from shooting immediatly after wave starts
-    - add beat immediatly after entering focus? and don't count that one
-    - fix player getting stuck in newly spawned enemies
+    - mid-combat healing (HOW)
     - determine which loot to drop on death, based on player's current state (but don't overdo it)
-    - additional healing sources?
+    - fix player getting stuck in newly spawned enemies
+        - use entry/exit points (elevators) instead of spawning
+          (also auto-collect all loot at the end of the wave)
+
+    - fix plasma balls being self-destroyed on contact with small projectiles
+        - maybe rework it into something shotgun-like?
+    - maybe rework railgun into continious ray which does more and more damage?
+    - maybe make player invulnerable for short time after receiving damage?
+    - maybe add beat immediatly after entering focus and don't count it
 
     - suggestions from comments on itch
         - alter boss behavior when parts are destroyed
@@ -64,17 +73,14 @@ Stuff
 
 - coherent code
 - weapon and part icons (for menu)
-- timing on beats (sound) might be wrong?
-- fix plasma balls being self-destroyed on contact with small projectiles
-- expand healing mechanics
 - asteroids, maybe, lol
 - movement trail
-- ui_weapon_broken has invalid pitch
 - deflector (ray & magnet)
     - pushes all projectiles away (and turns them into player's)
     - sound
 - bonk projectiles in cursor direction
 - fix projectile interference
+    - expand on what the hell that means
 
 ? more mechanics
 
@@ -192,15 +198,7 @@ Stuff
 
 Important bugs (old)
 ==============
-- really important
-    - sometimes screen is black - egui actually draws windows in random order??
-        + fixed (except for main menu, which seems to work correctly anyway)
-        - not thoroughly tested
-- don't care for know
-    - switching to fullscreen SOMETIMES doesn't work on itch.io with Firefox
-    - (seems fixed) sometimes player seems to be hit by projectiles but isn't damaged
-+ ESC/F10/F3 buttons might not work in browsers! they're used by browsers themselves
-+ add LICENSE file and list used assets, with source and license
+- switching to fullscreen SOMETIMES doesn't work on itch.io with Firefox
 
 
 
@@ -217,7 +215,6 @@ Would be nice to have but not important
 Only after jam
 ==============
 - refactor, comment, playtest
-- try using leafwing-input-manager
 - co-op - possibly even over network; would require adjusting difficulty
 - is bevy_web_resizer still required or is that issue already fixed?
 

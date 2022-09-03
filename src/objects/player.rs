@@ -1,7 +1,3 @@
-use leafwing_input_manager::{
-    buttonlike::MouseWheelDirection, prelude::InputMap, InputManagerBundle,
-};
-
 use super::{
     loot::{CraftPart, LootPicker},
     spawn::{SpawnControl, WaveEvent},
@@ -22,8 +18,8 @@ use crate::{
         hud_elements::WorldText,
         sound::{AudioListener, Beats, Sound},
     },
-    settings::Difficulty,
 };
+use leafwing_input_manager::buttonlike::MouseWheelDirection;
 
 pub struct PlayerPlugin;
 
@@ -138,13 +134,7 @@ fn spawn_player(
             .insert(AudioListener)
             //
             .insert(Team::Player)
-            .insert(
-                Health::new(match settings.difficulty {
-                    Difficulty::Easy => 8.,
-                    Difficulty::Hard => 3.,
-                })
-                .armor(),
-            )
+            .insert(Health::new(3.).armor())
             .insert(LootPicker {
                 radius: Player::RADIUS,
                 ..default()
