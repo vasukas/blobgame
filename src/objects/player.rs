@@ -238,7 +238,7 @@ fn controls(
 
 fn respawn(
     mut ctx: ResMut<EguiContext>, player: Query<With<Player>>, mut spawn: ResMut<SpawnControl>,
-    input: Res<ActionState<ControlAction>>,
+    input: Res<ActionState<ControlAction>>, input_map: ResMut<InputMap<ControlAction>>,
 ) {
     if !spawn.is_game_running() {
         return;
@@ -256,7 +256,7 @@ fn respawn(
                     // TODO: where should be a better way to make multicolored text
                     ui.label("Press [");
                     ui.visuals_mut().override_text_color = Some(egui::Color32::RED);
-                    // ui.label(input_map.map[InputAction::Respawn].0.to_string());
+                    ui.label(input_map.prompt(ControlAction::Restart));
                     ui.visuals_mut().override_text_color = None;
                     ui.label("] to restart level");
                 });
@@ -615,7 +615,10 @@ fn craft_menu(
                         ui.label("Combination not implemented");
                     }
                 });
-                ui.label("Press [C] to craft new weapon (replaces current)");
+                ui.label(format!(
+                    "Press [{}] to craft new weapon (replaces current)",
+                    input_map.prompt(CraftAction::Craft)
+                ));
             },
         );
 

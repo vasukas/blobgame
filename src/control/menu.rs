@@ -52,6 +52,17 @@ enum MenuState {
     None,
     #[default]
     Root,
+    Controls(ControlsBinding),
+    Settings,
+    Credits,
+}
+
+#[derive(Default, PartialEq, Eq)]
+enum ControlsBinding {
+    #[default]
+    None,
+    Player(PlayerAction),
+    Craft(CraftAction),
 }
 
 fn show_menu(
@@ -62,12 +73,14 @@ fn show_menu(
 ) {
     if keys.just_pressed(ControlAction::ExitMenu) && !time_mode.craft_menu {
         match *state {
-            MenuState::None => *state = MenuState::Root,
             MenuState::Root => {
                 if spawn.is_game_running() {
                     *state = MenuState::None
                 }
             }
+            MenuState::Controls(ControlsBinding::None) => *state = MenuState::Root,
+            MenuState::Controls(_) => *state = MenuState::Controls(default()),
+            _ => *state = MenuState::Root,
         }
     }
     time_mode.main_menu = *state != MenuState::None;
@@ -87,140 +100,208 @@ fn show_menu(
             egui::Order::Foreground,
             |ui| {
                 egui::ScrollArea::both().show(ui, |ui| {
-                    match *state {
+                    match &mut *state {
                         MenuState::None => unimplemented!(),
 
                         MenuState::Root => {
-                            ui.horizontal(|ui| {
-                                // left pane - general
-                                ui.vertical(|ui| {
-                                    ui.heading("SCRAPBOT");
-                                    ui.label(""); // separator
+                            ui.heading("SCRAPBOT");
+                            ui.label(""); // separator
 
-                                    if ingame {
-                                        if ui.button("Continue").clicked() {
-                                            *state = MenuState::None
-                                        }
-                                        if ui.button("Restart wave").clicked() {
-                                            *state = MenuState::None;
-                                            spawn.despawn = Some(true);
-                                        }
-                                        if ui.button("Exit to main menu").clicked() {
-                                            spawn.despawn = Some(false)
-                                        }
-                                    } else {
-                                        if ui.button("Play (with tutorial)").clicked() {
-                                            *state = MenuState::None;
-                                            spawn.despawn = Some(true);
-                                            spawn.tutorial = Some(0);
-                                        }
-                                        if ui.button("Play (skip tutorial)").clicked() {
-                                            *state = MenuState::None;
-                                            spawn.despawn = Some(true);
-                                            spawn.tutorial = None;
-                                        }
-                                    }
-                                    #[cfg(not(target_arch = "wasm32"))]
-                                    if ui.button("Exit to desktop").clicked() {
-                                        exit_app.send_default()
-                                    }
+                            if ingame {
+                                if ui.button("Continue").clicked() {
+                                    *state = MenuState::None
+                                }
+                                if ui.button("Restart wave").clicked() {
+                                    *state = MenuState::None;
+                                    spawn.despawn = Some(true);
+                                }
+                            } else {
+                                if ui.button("Play (with tutorial)").clicked() {
+                                    *state = MenuState::None;
+                                    spawn.despawn = Some(true);
+                                    spawn.tutorial = Some(0);
+                                }
+                                if ui.button("Play (skip tutorial)").clicked() {
+                                    *state = MenuState::None;
+                                    spawn.despawn = Some(true);
+                                    spawn.tutorial = None;
+                                }
+                            }
+                            ui.label(""); // separator
 
-                                    ui.label(""); // separator
-                                    ui.heading("SETTINGS");
+                            if ui.button("Controls").clicked() {
+                                *state = MenuState::Controls(default());
+                            }
+                            if ui.button("Settings").clicked() {
+                                *state = MenuState::Settings;
+                            }
+                            ui.label(""); // separator
 
-                                    // settings
+                            if ingame {
+                                if ui.button("Exit to main menu").clicked() {
+                                    spawn.despawn = Some(false)
+                                }
+                            } else {
+                                if ui.button("Credits").clicked() {
+                                    *state = MenuState::Credits;
+                                }
+                            }
+                            #[cfg(not(target_arch = "wasm32"))]
+                            if ui.button("Exit to desktop").clicked() {
+                                exit_app.send_default()
+                            }
+                        }
 
-                                    let mut changed = false;
+                        MenuState::Controls(binding) => {
+                            ui.heading("CONTROLS");
+                            ui.label(""); // separator
 
-                                    ui.horizontal(|ui| {
-                                        ui.label("Master volume");
-                                        changed |= ui
-                                            .add(egui::Slider::new(
-                                                &mut settings.master_volume,
-                                                0. ..=1.,
-                                            ))
-                                            .changed();
-                                    });
+                            let mut changed = false;
 
-                                    if ui
-                                        .checkbox(&mut settings.fullscreen, "Fullscreen")
-                                        .changed()
-                                    {
-                                        changed = true;
-                                        set_fullscreen(&mut windows, settings.fullscreen);
-                                    }
-                                    #[cfg(target_arch = "wasm32")]
-                                    ui.label(
-                                        "If it doesn't change, click anywhere again or something",
-                                    );
+                            // TODO: this is horrible
+                            // - InputMap::insert_at swaps mappings if same input already used
+                            // - there is no conflict resolution
+                            // - duplicate code
+                            // - terrible UX in general
+                            // - you can't rebind restart button
 
-                                    ui.label(
-                                        "Difficulty: Hard. Other levels will be implemented later.",
-                                    );
-                                    // let (alt, text) = match settings.difficulty {
-                                    //     Difficulty::Easy => (Difficulty::Hard, "Difficulty: Easy"),
-                                    //     Difficulty::Hard => (Difficulty::Easy, "Difficulty: Hard"),
-                                    // };
-                                    // changed |= {
-                                    //     let clicked = ui.button(text).clicked();
-                                    //     if clicked {
-                                    //         settings.difficulty = alt
-                                    //     }
-                                    //     clicked
-                                    // };
-                                    // ui.label("Changes to difficulty will be applied after respawn");
-
-                                    if changed {
-                                        settings.save()
-                                    }
-
-                                    // settings ended
-
-                                    ui.label(""); // separator
-                                    ui.label("Made with Bevy engine");
-                                    // TODO: add credits?
-                                });
-
-                                // right pane - controls
-                                ui.vertical(|ui| {
-                                    ui.heading("CONTROLS");
-                                    ui.label(""); // separator
-
-                                    // Based on https://github.com/Leafwing-Studios/leafwing-input-manager/blob/main/examples/binding_menu.rs
-
-                                    egui::Grid::new("settings controls").show(ui, |ui| {
-                                        for action in PlayerAction::variants() {
-                                            ui.label(action.description());
-                                            for v in settings.input.player.get(action).iter() {
-                                                let text = match v {
-                                                    UserInput::Single(InputKind::Keyboard(v)) => {
-                                                        format!("{:?} key", v)
-                                                    }
-                                                    UserInput::Single(InputKind::Mouse(v)) => {
-                                                        format!("{:?} button", v)
-                                                    }
-                                                    UserInput::Single(InputKind::MouseWheel(v)) => {
-                                                        format!("{:?} wheel", v)
-                                                    }
-                                                    UserInput::Single(
-                                                        InputKind::GamepadButton(v),
-                                                    ) => {
-                                                        format!("{:?}", v)
-                                                    }
-                                                    UserInput::Single(_) => "<SINGLE>".to_string(),
-                                                    UserInput::Chord(_) => "<CHORD>".to_string(),
-                                                    UserInput::VirtualDPad(_) => {
-                                                        "<VDPAD>".to_string()
-                                                    }
-                                                };
-                                                ui.label(text);
-                                                // TODO: implement actual binding
+                            // Based on https://github.com/Leafwing-Studios/leafwing-input-manager/blob/main/examples/binding_menu.rs
+                            // TODO: spacing between columns is almost non-existent
+                            egui::Grid::new("settings controls")
+                                .striped(true)
+                                .show(ui, |ui| {
+                                    for action in PlayerAction::variants() {
+                                        if *binding == ControlsBinding::Player(action) {
+                                            if let Some(input) = input_events.input_button() {
+                                                settings.input.player.insert_at(input, action, 0);
+                                                changed = true;
                                             }
-                                            ui.end_row()
                                         }
-                                    });
+                                        if ui
+                                            .selectable_label(
+                                                *binding == ControlsBinding::Player(action),
+                                                action.description(),
+                                            )
+                                            .clicked()
+                                        {
+                                            *binding = ControlsBinding::Player(action);
+                                        }
+                                        for input in settings.input.player.get(action).iter() {
+                                            ui.label(input.description());
+                                        }
+                                        ui.end_row()
+                                    }
                                 });
-                            })
+                            egui::Grid::new("settings controls 2")
+                                .striped(true)
+                                .show(ui, |ui| {
+                                    for action in CraftAction::variants() {
+                                        if *binding == ControlsBinding::Craft(action) {
+                                            if let Some(input) = input_events.input_button() {
+                                                settings.input.craft.insert_at(input, action, 0);
+                                                changed = true;
+                                            }
+                                        }
+                                        if ui
+                                            .selectable_label(
+                                                *binding == ControlsBinding::Craft(action),
+                                                action.description(),
+                                            )
+                                            .clicked()
+                                        {
+                                            *binding = ControlsBinding::Craft(action);
+                                        }
+                                        for input in settings.input.craft.get(action).iter() {
+                                            ui.label(input.description());
+                                        }
+                                        ui.end_row()
+                                    }
+                                });
+
+                            if changed {
+                                settings.save()
+                            }
+
+                            ui.label(""); // separator
+                            ui.label("Click on an action to change controls (press ESC tp cancel)");
+                            ui.label("Settings are saved automatically on change");
+
+                            if ui.button("Reset to defaults").clicked() {
+                                *binding = default();
+                                settings.input = default();
+                                settings.save()
+                            }
+                            if ui.button("Back to main menu").clicked() {
+                                *state = MenuState::Root
+                            }
+                        }
+
+                        MenuState::Settings => {
+                            ui.heading("SETTINGS");
+                            ui.label(""); // separator
+
+                            let mut changed = false;
+
+                            ui.horizontal(|ui| {
+                                ui.label("Master volume");
+                                changed |= ui
+                                    .add(egui::Slider::new(&mut settings.master_volume, 0. ..=1.))
+                                    .changed();
+                            });
+
+                            if ui
+                                .checkbox(&mut settings.fullscreen, "Fullscreen")
+                                .changed()
+                            {
+                                changed = true;
+                                set_fullscreen(&mut windows, settings.fullscreen);
+                            }
+                            #[cfg(target_arch = "wasm32")]
+                            ui.label("If it doesn't change, click anywhere again or something");
+
+                            ui.label("Difficulty: Hard. Other levels will be implemented later.");
+                            // let (alt, text) = match settings.difficulty {
+                            //     Difficulty::Easy => (Difficulty::Hard, "Difficulty: Easy"),
+                            //     Difficulty::Hard => (Difficulty::Easy, "Difficulty: Hard"),
+                            // };
+                            // changed |= {
+                            //     let clicked = ui.button(text).clicked();
+                            //     if clicked {
+                            //         settings.difficulty = alt
+                            //     }
+                            //     clicked
+                            // };
+                            // ui.label("Changes to difficulty will be applied after respawn");
+
+                            if changed {
+                                settings.save()
+                            }
+
+                            ui.label(""); // separator
+                            ui.label("Settings are saved automatically on change");
+
+                            if ui.button("Reset to defaults").clicked() {
+                                let input = settings.input.clone();
+                                *settings = default();
+                                settings.input = input;
+                                settings.save()
+                            }
+                            if ui.button("Back to main menu").clicked() {
+                                *state = MenuState::Root
+                            }
+                        }
+
+                        MenuState::Credits => {
+                            ui.heading("CREDITS");
+                            ui.label(""); // separator
+
+                            // TODO: add everything
+                            ui.label("Made with Bevy engine");
+
+                            ui.label(""); // separator
+                            if ui.button("Back to main menu").clicked() {
+                                *state = MenuState::Root
+                            }
                         }
                     }
                 });

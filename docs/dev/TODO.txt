@@ -25,11 +25,18 @@ Post-jam fixes and improvements
         - in wasm audio completely breaks when entering menu
 
     - refactor at least the most hacky systems
+    - refactor tutorial and levels (even better - add level editor)
 
-    - keybinding + test on gamepad, mb it works
-        - insert and test all prompts (tutorial, etc)
-    - rework main menu
-    ? pause game if window loses focus (and un-pause on gaining it *only after pausing because of losing*)
+    - menu
+        + keybinding
+        - fix keybinding (grep TODOs there)
+        + restore and test all prompts
+        - use keybinds in tutorial text
+        - test on gamepad, maybe it works (for the gameplay)
+        + rework main menu
+        - allow keyboard navigation in the menu (NO)
+        - pause game if window loses focus (and un-pause on gaining it *only after pausing because of losing focus*)
+        - add window icon
 
 - gameplay
     - mid-combat healing (HOW)
@@ -64,6 +71,7 @@ Post-jam fixes and improvements
 
     - implement some other intended stuff
     - maybe improve/fix graphical effects
+    - maybe allow restarting with button at any time
 
 
 Stuff

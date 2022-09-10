@@ -219,6 +219,7 @@ fn spawn(
 
         match control.tutorial {
             // IF YOU CHANGE ANYTHING HERE DON'T FORGET TO UPDATE HACK IN PLAYER NEXT WAVE MESSAGE!!!!
+            // TODO: use actual keybinds in text
             Some(0) => {
                 tutorial_text.0 = concat!(
                     "This is a tutorial message!\n",

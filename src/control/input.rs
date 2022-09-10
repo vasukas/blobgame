@@ -53,7 +53,19 @@ pub enum CraftAction {
     Craft,
 }
 
-#[derive(Serialize, Deserialize)]
+impl CraftAction {
+    pub fn description(self) -> &'static str {
+        match self {
+            CraftAction::CraftSelect1 => "Select part 1",
+            CraftAction::CraftSelect2 => "Select part 2",
+            CraftAction::CraftSelect3 => "Select part 3",
+            CraftAction::CraftSelect4 => "Select part 4",
+            CraftAction::Craft => "Craft",
+        }
+    }
+}
+
+#[derive(Clone, Serialize, Deserialize)]
 pub struct InputSettings {
     pub player: InputMap<PlayerAction>,
     pub craft: InputMap<CraftAction>,
@@ -119,10 +131,10 @@ impl UserInputExtended for UserInput {
                 format!("{:?}", v)
             }
             UserInput::Single(InputKind::Mouse(v)) => {
-                format!("{:?} mouse button", v)
+                format!("{:?} button", v)
             }
             UserInput::Single(InputKind::MouseWheel(v)) => {
-                format!("Mouse wheel {:?}", v)
+                format!("Wheel {:?}", v)
             }
             UserInput::Single(InputKind::GamepadButton(v)) => {
                 format!("{:?}", v)
