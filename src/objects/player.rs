@@ -19,7 +19,6 @@ use crate::{
         sound::{AudioListener, Beats, Sound},
     },
 };
-use leafwing_input_manager::buttonlike::MouseWheelDirection;
 
 pub struct PlayerPlugin;
 
@@ -139,33 +138,8 @@ fn spawn_player(mut commands: Commands, player: Query<Entity, Added<Player>>) {
             })
             .insert(BonkToTeam(Team::YEEEEEEE))
             //
-            .insert_bundle(InputManagerBundle::<PlayerAction> {
-                action_state: default(),
-                input_map: InputMap::new([
-                    (KeyCode::A, PlayerAction::MoveLeft),
-                    (KeyCode::D, PlayerAction::MoveRight),
-                    (KeyCode::W, PlayerAction::MoveUp),
-                    (KeyCode::S, PlayerAction::MoveDown),
-                    (KeyCode::F, PlayerAction::ChangeWeapon),
-                    (KeyCode::Space, PlayerAction::Dash),
-                    (KeyCode::LShift, PlayerAction::Focus),
-                ])
-                .insert(MouseButton::Left, PlayerAction::Fire)
-                .insert(MouseButton::Right, PlayerAction::FireMega)
-                .insert(MouseWheelDirection::Up, PlayerAction::ChangeWeapon)
-                .insert(MouseWheelDirection::Down, PlayerAction::ChangeWeapon)
-                .build(),
-            })
-            .insert_bundle(InputManagerBundle::<CraftAction> {
-                action_state: default(),
-                input_map: InputMap::new([
-                    (KeyCode::Key1, CraftAction::CraftSelect1),
-                    (KeyCode::Key2, CraftAction::CraftSelect2),
-                    (KeyCode::Key3, CraftAction::CraftSelect3),
-                    (KeyCode::Key4, CraftAction::CraftSelect4),
-                    (KeyCode::C, CraftAction::Craft),
-                ]),
-            });
+            .insert_bundle(InputManagerBundle::<PlayerAction>::default())
+            .insert_bundle(InputManagerBundle::<CraftAction>::default());
     }
 }
 

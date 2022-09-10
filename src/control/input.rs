@@ -103,24 +103,34 @@ impl<A: Actionlike> InputMapExtended<A> for InputMap<A> {
     fn prompt(&self, action: A) -> String {
         self.get(action)
             .get_at(0)
-            .map(|v| match v {
-                UserInput::Single(InputKind::Keyboard(v)) => {
-                    format!("{:?}", v)
-                }
-                UserInput::Single(InputKind::Mouse(v)) => {
-                    format!("{:?} mouse button", v)
-                }
-                UserInput::Single(InputKind::MouseWheel(v)) => {
-                    format!("{:?} mouse wheel", v)
-                }
-                UserInput::Single(InputKind::GamepadButton(v)) => {
-                    format!("{:?}", v)
-                }
-                UserInput::Single(_) => "<SINGLE>".to_string(),
-                UserInput::Chord(_) => "<CHORD>".to_string(),
-                UserInput::VirtualDPad(_) => "<VDPAD>".to_string(),
-            })
+            .map(UserInputExtended::description)
             .unwrap_or_else(|| "<NONE>".to_string())
+    }
+}
+
+pub trait UserInputExtended {
+    fn description(&self) -> String;
+}
+
+impl UserInputExtended for UserInput {
+    fn description(&self) -> String {
+        match self {
+            UserInput::Single(InputKind::Keyboard(v)) => {
+                format!("{:?}", v)
+            }
+            UserInput::Single(InputKind::Mouse(v)) => {
+                format!("{:?} mouse button", v)
+            }
+            UserInput::Single(InputKind::MouseWheel(v)) => {
+                format!("Mouse wheel {:?}", v)
+            }
+            UserInput::Single(InputKind::GamepadButton(v)) => {
+                format!("{:?}", v)
+            }
+            UserInput::Single(_) => "<SINGLE>".to_string(),
+            UserInput::Chord(_) => "<CHORD>".to_string(),
+            UserInput::VirtualDPad(_) => "<VDPAD>".to_string(),
+        }
     }
 }
 
@@ -154,5 +164,16 @@ fn update_settings(
             *map = settings.input.craft.clone()
         }
         *control = settings.input.control.clone()
+    }
+
+    for mut map in player.iter_mut() {
+        if map.is_added() {
+            *map = settings.input.player.clone()
+        }
+    }
+    for mut map in craft.iter_mut() {
+        if map.is_added() {
+            *map = settings.input.craft.clone()
+        }
     }
 }

@@ -50,15 +50,16 @@ pub struct SoundPlugin;
 
 impl Plugin for SoundPlugin {
     fn build(&self, app: &mut App) {
-        app.add_plugin(bevy_kira_audio::AudioPlugin)
+        app.insert_resource(AudioSettings { ..default() })
+            .add_plugin(AudioPlugin)
             .init_resource::<ListenerConfig>()
             .init_resource::<Beats>()
             .add_event::<Sound>()
             .add_system(apply_settings)
             .add_system(update_listener_config)
-            // .add_system(play_sounds)
+            .add_system(play_sounds)
             .add_system(update_positional.exclusive_system().at_start())
-            // .add_system(menu_drone)
+            .add_system(menu_drone)
             .add_system_to_stage(CoreStage::First, beats);
     }
 }
@@ -113,7 +114,7 @@ struct PositionalSound {
 
 fn apply_settings(audio: Res<Audio>, settings: Res<Settings>) {
     if settings.is_added() || settings.is_changed() {
-        audio.set_volume(settings.master_volume as f64);
+        // audio.set_volume(settings.master_volume as f64);
     }
 }
 
@@ -189,21 +190,22 @@ fn update_positional(
 // gameplay-related stuff
 
 fn menu_drone(
-    audio: Res<Audio>, mut sound: Local<Option<Handle<AudioInstance>>>,
+    audio: Res<Audio>, mut sound: Local<(Handle<AudioInstance>, bool)>,
     mut instances: ResMut<Assets<AudioInstance>>, spawn: Res<SpawnControl>, assets: Res<MyAssets>,
 ) {
-    match sound.as_ref() {
-        Some(sound) => {
-            if spawn.is_game_running() {
-                if let Some(sound) = instances.get_mut(sound) {
-                    sound.stop(AudioTween::linear(Duration::from_secs(1)));
-                }
-            }
-        }
-        None => {
-            if !spawn.is_game_running() {
-                *sound = Some(audio.play(assets.ui_menu_drone.clone()).looped().handle())
-            }
+    let (sound, running) = &mut *sound;
+    if *sound == default() {
+        *sound = audio.play(assets.ui_menu_drone.clone()).looped().handle();
+        *running = true;
+    }
+
+    if *running != spawn.is_game_running() {
+        *running = spawn.is_game_running();
+        if let Some(sound) = instances.get_mut(sound) {
+            match *running {
+                true => sound.pause(AudioTween::linear(Duration::from_millis(600))),
+                false => sound.resume(AudioTween::linear(Duration::from_millis(150))),
+            };
         }
     }
 }

@@ -18,15 +18,12 @@ General reminder
 Post-jam fixes and improvements
 ===============================
 
-- don't use bevy_kira_audio? just kira directly?
-    - ENABLE COMMENTED-OUT SYSTEMS BACK
-    - fix volume setting not working
-    - ui_weapon_broken has invalid pitch
-    - bevy_kira_audio::audio_output: Failed to set volume for instance: CommandQueueFul
-        apparently happens due to master volume constantly being updated
+- tech stuff
+    - audio
+        - fix volume setting not working
+        - ui_weapon_broken has invalid pitch
         - in wasm audio completely breaks when entering menu
 
-- tech stuff
     - refactor at least the most hacky systems
 
     - keybinding + test on gamepad, mb it works
@@ -46,6 +43,11 @@ Post-jam fixes and improvements
     - maybe make player invulnerable for short time after receiving damage?
     - maybe add beat immediatly after entering focus and don't count it
 
+    - tie weapon damage and enemy HP
+    - boss animations
+    - more levels & bosses, maybe some lore
+    - level select + CLI args
+
     - suggestions from comments on itch
         - alter boss behavior when parts are destroyed
             - skip rockets if both towers are destroyed
@@ -56,8 +58,12 @@ Post-jam fixes and improvements
             - or just reduce pressure
                 - try reducing damage to 0.5
                 - try making it so only one projectile in "line" can harm player
-                    (use same DamageEvent::source for all three projectiles)
+                    (use same DamageEvent::source for all three projectiles; but it should differ between lines)
                     - or use ONE wide projectile with high HP
+        - different difficulties, which are *actually* working
+
+    - implement some other intended stuff
+    - maybe improve/fix graphical effects
 
 
 Stuff
