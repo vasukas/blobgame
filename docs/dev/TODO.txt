@@ -15,51 +15,49 @@ General reminder
 - ALL WORLD (POSITIONAL) SOUNDS MUST BE PREFIXED with 250ms SILENCE !!!
 
 
-Post-jam fixes and improvements
-===============================
 
-- tech stuff
-    - audio
-        - fix volume setting not working
-        - ui_weapon_broken has invalid pitch
-        - in wasm audio completely breaks when entering menu
+Update 1
+========
 
-    - refactor at least the most hacky systems
-    - refactor tutorial and levels (even better - add level editor)
-
-    - menu
-        + keybinding
-        - fix keybinding (grep TODOs there)
-        + restore and test all prompts
-        - use keybinds in tutorial text
-        - test on gamepad, maybe it works (for the gameplay)
-        + rework main menu
-        - allow keyboard navigation in the menu (NO)
-        - pause game if window loses focus (and un-pause on gaining it *only after pausing because of losing focus*)
-        - add window icon
+- (!!!) find what makes gameplay fun, what doesn't, and what makes it less fun
+- (!!!) prioritize features and split this into several "updates"
 
 - gameplay
-    - mid-combat healing (HOW)
-    - fix player getting stuck in newly spawned enemies
-        - use entry/exit points (elevators) instead of spawning
-          (also auto-collect all loot at the end of the wave)
+    - improve collision detection for player (use red2's controller)
 
-    - fix plasma balls being self-destroyed on contact with small projectiles
-        - maybe rework it into something shotgun-like?
-    - maybe rework railgun into continious ray which does more and more damage?
-    - maybe make player invulnerable for short time after receiving damage?
-    - maybe add beat immediatly after entering focus and don't count it
+    - maybe some options for mid-combat healing (at least on lower difficulties)
+    - use entry/exit elevator instead of spawning level (this fixes player getting stuck in spawned enemies)
+        - some levels may have TWO elevators, for secret bosses and such
+        - some levels might be bigger and have camera following the player
+    - auto-collect all loot at the end of the level (and stop it's timer)
+    - different difficulties (which to some extent alter game's behaviour while keeping pace etc, except lowest ones maybe)
 
-    - tie weapon damage and enemy HP
-    - boss animations
-    - more levels & bosses, maybe some lore
-    - level select + CLI args
+    - weapons
+        - improve plasma
+            - fix balls being self-destroyed on contact with small projectiles
+            - maybe rework into something shotgun-like (faster AoE projectile with damage fall-off)
 
-    - suggestions from comments on itch
-        - alter boss behavior when parts are destroyed
-            - skip rockets if both towers are destroyed
-            - "angry phase" for when laser is destroyed
-                - constantly move it around and shoot rockets
+        - fix craft UX
+            - whole crafting thing feels *completely unneccessary*
+            - replacing current weapon on craft is unwieldy, esp. since it's done outside of the menu
+            - readability is bad
+            - having two separate input action sets is a mess
+
+        - add shield (sphere & magnet)
+            - when equipped, appears in front of the player
+            - absorbs projectiles
+            - deflects rays (still gets damaged, but less)
+            - sound
+            - health is recharged
+        
+        - add repeller
+            - pushes all projectiles away (and turns them into player's)
+                - fix bonking, it should (slightly?) direct projectiles to cursor, probably (not sure if it should work for repeller!)
+            - sound
+
+        - tie weapon damage and enemy HP (so i.e. it would take exactly 3 powered railgun shots to defeat the boss)
+
+    - enemies
         - make advanced turrets better
             - try timing shots so it's easy to dash through them
             - or just reduce pressure
@@ -67,168 +65,78 @@ Post-jam fixes and improvements
                 - try making it so only one projectile in "line" can harm player
                     (use same DamageEvent::source for all three projectiles; but it should differ between lines)
                     - or use ONE wide projectile with high HP
-        - different difficulties, which are *actually* working
+        
+        - add mini-boss
+            - bears shield
+            - moves around, keeping distance to player
+            - fires rockets (better than boss ones; though may be same ones)
+            - fires ray
+            - can be dismantled part-by-part
+            - some parts can be picked up by the player and used as weapons
 
-    - implement some other intended stuff
-    - maybe improve/fix graphical effects
-    - maybe allow restarting with button at any time
+        - more types, including moving ones (based both on patterns and player position)
+            (ADD NEW MECHANICS, NOT JUST MORE TURRETS!)
 
+    - boss
+        - better model (this is supposed to be cross between plane (VTOL?) and a small fortress)
+        - movement & animations
+        - alter behaviour
+            - skip rockets if both towers are destroyed
+            - "angry phase" for when laser is destroyed (constantly move it around and shoot rockets)
+            - maybe third phase when all is destroyed (tries to ram player, damage is received by engines)
 
-Stuff
-=====
+    - environmental hazards, including moving ones? would work nice with repeller
+    - destructible walls (probably won't work with non-targeted fire, like rotating turrets)
+    
+    - levels (DEPENDS ON LEVEL EDITOR)
+        - more
+        - bosses
+        - lore
+        - ending
 
-- shield (sphere & magnet)
-    - when equipped, appears in front of the player
-    - absorbs projectiles
-    - deflects rays (still gets damaged, but less)
-    - sound
-    - health is recharged
-- mini-bosses (like shield robot)
-
-- coherent code
-- weapon and part icons (for menu)
-- asteroids, maybe, lol
-- movement trail
-- deflector (ray & magnet)
-    - pushes all projectiles away (and turns them into player's)
-    - sound
-- bonk projectiles in cursor direction
-- fix projectile interference
-    - expand on what the hell that means
-
-? more mechanics
-
-+ mechanics (minimal)
-    + walls and player movement
-        + spawn
-        + simple kinematic controller
-    + turret enemy
-        + rotating turret
-        + health
-        + projectiles (ALL attacks in game are projectiles, techically)
-        + respawn
-    + player
-        + dash
-            + dash to cursor, to the exact point if it's in range
-        + fire
-            + ray: hits first target
-            + fix ray
-                + damage applied multiple times (and effect spawned multiple times too)
-                + hit point is invalid if origin.x < 0 ??? (invalid angle math)
-            + hitting projectile will destroy it
-    + spawn waves
-    + healing loot
-
-- mechanics (intermediate)
-    - craft
-        + enemies drop parts: (group 1: sphere, ray; group 2: laser, magnet)
-        + parts can be combined, replacing current mega-weapon
-        + 1st group of weapons (player can keep only two at once; have limited uses)
-            + rocket (sphere & laser)
-                + just projectile
-            + railgun (ray & laser)
-                + just powerful ray which goes through all targets
-                + explodes projectiles
-        + notify player when weapon breaks
-    + interface etc
-        + HUD
-        + player reaction to being hit - [x]particles, [x]pulsating color, shaking, changing color, HUD, [x]sound, etc
-        + player hit sound
-        + animate background grid
-    + simple statistics (point counting)
-    + ubercharge beats
-    + combo-attacks & show them in world
-        + gun/dash combo
-    - advanced enemies
-        - movement
-            - patterns
-            - player-based
-
-- delayed features
-    - player
-        - fire
-            - hitting Volatile projectile will explode it
-            - during dash makes x2 damage if shot goes in 90 arc in dash direction
-            ? if button held, makes charged shot, which will fire a projectile when released
-        - punch
-            - hitting volatile projectile will make it do x2 damage and fly x2 faster
-                - also if it enemy's, makes it player's and deflects it to cursor
-            - during dash applied to whole trajectory, not just in front of player
-            ? does x2 damage if executed immediatly after dash (and x4 damage to punched projectile instead of x2)
-    - advanced enemies
-        - collision avoidance
-    - asteroids (just big rocks, what else is there?)
-        - would be fun to split them in parts on hit
-
-- mechanics (advanced)
-    ? maybe add shop? points are from asters
-    ? combining smaller enemies into bigger ones
-    ? add gamepad/touch support
-
-+ graphics
-    + explosions
-    + particles
-        + hit sparks
-    + animated rays
-    + world text
+    - write documentation on mechanics
 
 - audio
-    + play beats (ubercharge)
-        + sync to floor grid
-        ? use two sets of beats - for when player is having good damage and for when player is low on HP
-    + startup delay for positional sounds, depends on distance
+    - fix volume setting not working
+    - ui_weapon_broken has invalid pitch
+    - add music (make it quieter in in-game menues, a-la Ultrakill)
+    - layer-based dynamic music (not sure on criterias for layers)
 
-    - play ambient drone (tbh really not sure if this will work; maybe just use some music)
-        - some system should control what to play; for now just change it over time
-        - idea is there would be several drones of different tones, which could warn the player about
-            being low on HP, boss appearing, etc
+- re-implement tutorial without ANY hacks
+    - use keybinds in tutorial text
+- improve levels
+    - add level editor
+    - add level select & CLI args
 
-    + sound playback
-        + features
-            + positional sound (not all sounds are positional)
-                + has fixed position
-                + panning and volume change depending on distance and direction relatively to player
-                + fix panning
-            + slightly randomized parameters - volume, speed, panning
-        + event (just play sound once)
-    ? advanced sound playback
-        - positional sound
-            - follows specified entity
-            - doppler effect, but not sure if it would be even heard
-        - loop (play looped sound when component is added to the entity; removal doesn't matter for now)
-            - sound pitch should be controlled, probably via same component
+- graphics
+    - improve effects (higher fidelity, better visibility on some)
+    - better models in general (use SVG?)
+    - add weapon and part icons (for craft menu)
+    - maybe add movement trail
 
-    ? would be nice to have volume limiter to avoid peaking, but that may be non-doable
+- fix god mode (just prevent player's death) & add one-hit kill weapon
+- maybe allow restarting the level with a single key press at any time
+- focus mode: tween time scale and add slight camera zoom
 
-+ UX
-    + add lore
-        + rename the projectile
-        + change various texts
-    + tutorial messages (and tutorial wave)
-    + add difficulty selection (scale HP and loot drop chance)
+
+
+Later updates
+=============
+
+- code improvements
+    - reduce number of exclusive systems
+    - fix system order (esp. delays!)
+    - try to remove hacks
+    - documentation
+
+- menu
+    - fix keybinding (grep TODOs there)
+    - test on gamepad, maybe it works (for the gameplay)
+    - allow keyboard navigation in the menu
+    - pause game if window loses focus (and un-pause on gaining it *only after pausing because of losing focus*)
+    - add window icon
+    - play sound when adjusting volume (when user stops moving slider, after delay)
+
+- co-op, possibly even over network; would require adjusting difficulty
 
 ...
-
-
-Important bugs (old)
-==============
-- switching to fullscreen SOMETIMES doesn't work on itch.io with Firefox
-
-
-
-Would be nice to have but not important
-=======================================
-- settings
-    - remappable controls (just make UI for InputMap)
-    - play sound when adjusting volume - when user stops moving slider
-- player cursor / laser sight - to indicate where shots will go
-- reduce amount of exclusive systems
-? gamepad and touch support - probably will be unplayable
-
-
-Only after jam
-==============
-- refactor, comment, playtest
-- co-op - possibly even over network; would require adjusting difficulty
-- is bevy_web_resizer still required or is that issue already fixed?
-
