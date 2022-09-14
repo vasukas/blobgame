@@ -1,10 +1,10 @@
+use crate::common::lerp;
 use bevy::{
     ecs::query::{QueryItem, WorldQuery},
     log,
     prelude::*,
 };
-
-use crate::common::lerp;
+use std::time::Duration;
 
 // 2D transform
 
@@ -169,5 +169,44 @@ impl<'w, 's, Event: 'static + Send + Sync> CmdReaderExtended<Event> for CmdReade
                 apply(cmd, data)
             }
         }
+    }
+}
+
+// Time
+
+pub trait BevyTimeExtended {
+    /// Current time. Monotonically advances
+    fn now(&self) -> Duration;
+
+    /// How much time advanced last frame
+    fn delta(&self) -> Duration;
+
+    /// Note that this might be zero!
+    fn delta_seconds(&self) -> f32 {
+        self.delta().as_secs_f32()
+    }
+
+    /// Have reached or passed that time
+    fn reached(&self, time: Duration) -> bool {
+        self.now() >= time
+    }
+
+    /// How much passed since that time
+    fn passed(&self, since: Duration) -> Duration {
+        self.now().checked_sub(since).unwrap_or_default()
+    }
+
+    /// Returns `passed(since) / period`
+    fn t_passed(&self, since: Duration, period: Duration) -> f32 {
+        self.passed(since).as_secs_f32() / period.as_secs_f32()
+    }
+}
+
+impl BevyTimeExtended for Time {
+    fn now(&self) -> Duration {
+        self.time_since_startup()
+    }
+    fn delta(&self) -> Duration {
+        self.delta()
     }
 }

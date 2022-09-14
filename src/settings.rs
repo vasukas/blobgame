@@ -51,7 +51,7 @@ impl Settings {
 // wasm
 #[cfg(target_arch = "wasm32")]
 impl Settings {
-    const NAME: &'static str = "blobfight-settings";
+    const NAME: &'static str = "scrapbot-settings";
     const EXPIRE: Duration = Duration::from_secs(60 * 60 * 24 * 30); // 30 days
 
     pub fn save(&self) {

@@ -9,35 +9,12 @@ pub struct GameTime {
     pub scale: f32,
 }
 
-impl GameTime {
-    /// Current time. Monotonically advances
-    pub fn now(&self) -> Duration {
+impl BevyTimeExtended for GameTime {
+    fn now(&self) -> Duration {
         self.now
     }
-
-    /// How much time advanced last frame
-    pub fn delta(&self) -> Duration {
+    fn delta(&self) -> Duration {
         self.delta
-    }
-
-    /// Note that this might be zero!
-    pub fn delta_seconds(&self) -> f32 {
-        self.delta.as_secs_f32()
-    }
-
-    /// Have reached or passed that time
-    pub fn reached(&self, time: Duration) -> bool {
-        self.now >= time
-    }
-
-    /// How much passed since that time
-    pub fn passed(&self, since: Duration) -> Duration {
-        self.now.checked_sub(since).unwrap_or_default()
-    }
-
-    /// Returns `passed(since) / period`
-    pub fn t_passed(&self, since: Duration, period: Duration) -> f32 {
-        self.passed(since).as_secs_f32() / period.as_secs_f32()
     }
 }
 

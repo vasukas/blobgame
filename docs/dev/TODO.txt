@@ -22,6 +22,10 @@ Update 1
 - (!!!) find what makes gameplay fun, what doesn't, and what makes it less fun
 - (!!!) prioritize features and split this into several "updates"
 
+- try new focus mode
+- try new enemies
+- other stuff
+
 - gameplay
     - improve collision detection for player (use red2's controller)
 
@@ -97,7 +101,7 @@ Update 1
     - write documentation on mechanics
 
 - audio
-    - fix volume setting not working
+    + fix volume setting not working
     - ui_weapon_broken has invalid pitch
     - add music (make it quieter in in-game menues, a-la Ultrakill)
     - layer-based dynamic music (not sure on criterias for layers)

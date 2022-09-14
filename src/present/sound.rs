@@ -112,9 +112,18 @@ struct PositionalSound {
 
 //
 
-fn apply_settings(audio: Res<Audio>, settings: Res<Settings>) {
+fn apply_settings(
+    audio: Res<Audio>, settings: Res<Settings>, mut delayed_update: Local<Option<Duration>>,
+    time: Res<Time>,
+) {
     if settings.is_added() || settings.is_changed() {
-        // audio.set_volume(settings.master_volume as f64);
+        delayed_update.get_or_insert(time.now() + Duration::from_millis(100));
+    }
+    if let Some(after) = *delayed_update {
+        if time.reached(after) {
+            delayed_update.take();
+            audio.set_volume(settings.master_volume as f64);
+        }
     }
 }
 
@@ -130,7 +139,7 @@ fn update_listener_config(
 
 fn play_sounds(
     mut events: EventReader<Sound>, audio: Res<Audio>, config: Res<ListenerConfig>,
-    mut commands: Commands, time_mode: Res<TimeMode>,
+    mut commands: Commands, time_mode: Res<TimeMode>, settings: Res<Settings>,
 ) {
     let leading_silence = 0.25; // TODO: this is atrocious hack since bevy_kira_audio doesn't expose kira's start time
 
@@ -152,7 +161,7 @@ fn play_sounds(
                 thread_rng().gen_range(0.9..1.2) * time_mode.overriden.unwrap_or(1.) as f64,
             );
         }
-        cmd.with_volume(volume * K_VOLUME)
+        cmd.with_volume(volume * K_VOLUME * settings.master_volume as f64)
             .with_panning(panning)
             .start_from(start_pos);
         if let Some(pos) = event.position {
@@ -168,6 +177,7 @@ fn play_sounds(
 fn update_positional(
     mut commands: Commands, sounds: Query<(Entity, &GlobalTransform, &PositionalSound)>,
     config: Res<ListenerConfig>, mut instances: ResMut<Assets<AudioInstance>>, time: Res<Time>,
+    settings: Res<Settings>,
 ) {
     let tween = || AudioTween::linear(time.delta());
     for (entity, pos, sound) in sounds.iter() {
@@ -176,7 +186,7 @@ fn update_positional(
                 commands.entity(entity).despawn_recursive()
             } else {
                 let (volume, panning) = config.calculate(pos.pos_2d(), 1.);
-                instance.set_volume(volume * K_VOLUME, tween());
+                instance.set_volume(volume * K_VOLUME * settings.master_volume as f64, tween());
                 instance.set_panning(panning, tween());
             }
         } else {
