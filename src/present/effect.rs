@@ -195,7 +195,7 @@ fn death_explosion(
     mut events: EventWriter<Explosion>, mut deaths: CmdReader<DeathEvent>,
     mut entities: Query<(&GlobalTransform, &DeathExplosion)>,
 ) {
-    deaths.iter_cmd_mut(&mut entities, |_, (pos, explosion)| {
+    deaths.iter_entities(&mut entities, |_, (pos, explosion)| {
         let mut event = explosion.0;
         event.origin = pos.pos_2d();
         events.send(event)
@@ -348,14 +348,14 @@ fn hit_sparks_on_damage(
     mut entities: Query<&GlobalTransform, (Or<(With<Health>, With<Damage>)>, Without<DontSparkMe>)>,
     mut death: CmdReader<DeathEvent>,
 ) {
-    damage.iter_cmd_mut(&mut entities, |event, _| {
+    damage.iter_entities(&mut entities, |event, _| {
         sparks.send(HitSparks {
             origin: event.point,
             damage: event.damage.value,
         })
     });
     // this is intended for projectiles which hit walls
-    death.iter_cmd_mut(&mut entities, |_, pos| {
+    death.iter_entities(&mut entities, |_, pos| {
         sparks.send(HitSparks {
             origin: pos.pos_2d(),
             damage: 1.5,
@@ -419,7 +419,7 @@ fn flash_on_damage(
     mut events: CmdReader<ReceivedDamage>,
 ) {
     let duration = Duration::from_millis(500);
-    events.iter_cmd_mut(&mut player, |_, (entity, flash)| match *flash {
+    events.iter_entities(&mut player, |_, (entity, flash)| match *flash {
         FlashOnDamage::Radius(radius) => {
             commands.entity(entity).insert(Flash {
                 radius,

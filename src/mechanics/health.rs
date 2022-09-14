@@ -128,7 +128,7 @@ fn damage(
     mut damage: CmdReader<DamageEvent>, mut entities: Query<(Entity, &mut Health, &Team)>,
     mut death: CmdWriter<DeathEvent>, mut received: CmdWriter<ReceivedDamage>, time: Res<GameTime>,
 ) {
-    damage.iter_cmd_mut(&mut entities, |event, (entity, mut health, team)| {
+    damage.iter_entities(&mut entities, |event, (entity, mut health, team)| {
         if !team.is_same(event.team) && !health.invincible {
             health
                 .recent_damage

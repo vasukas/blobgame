@@ -87,7 +87,7 @@ fn update_stats(
         stats.time += time.delta()
     }
 
-    deaths.iter_cmd_mut(&mut diers, |_, points| {
+    deaths.iter_entities(&mut diers, |_, points| {
         stats.player.points += points.value;
         stats.ubercharge += points.charge;
     });

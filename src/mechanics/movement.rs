@@ -1,9 +1,4 @@
-use super::health::DieAfter;
-use crate::{
-    common::*,
-    objects::{player::Player, spawn::TemporaryWall},
-    present::hud_elements::WorldText,
-};
+use crate::common::*;
 
 #[derive(Component, Default)]
 pub struct KinematicController {
@@ -15,6 +10,7 @@ pub struct KinematicController {
 
     // internal state
     pub dash: Option<(Vec2, Duration)>, // (dir, until)
+    pub mov: Option<Vec2>,
 }
 
 /// Entity command
@@ -37,47 +33,7 @@ impl Plugin for MovementPlugin {
     fn build(&self, app: &mut App) {
         app.add_event::<(Entity, KinematicCommand)>()
             .add_system(kinematic_controller.label(MovementSystemLabel))
-            .add_system(drop_spread)
-            .add_system(save_from_walls);
-    }
-}
-
-// TODO: move this to player
-fn save_from_walls(
-    mut commands: Commands,
-    mut players: Query<(Entity, &GlobalTransform, &mut Transform), With<KinematicController>>,
-    walls: Query<(), With<TemporaryWall>>, phy: Res<RapierContext>,
-) {
-    for (entity, pos, mut transform) in players.iter_mut() {
-        let in_wall = [Vec2::X, -Vec2::X, Vec2::Y, -Vec2::Y]
-            .into_iter()
-            .all(|dir| {
-                let radius = Player::RADIUS;
-                let filter = QueryFilter::new()
-                    .exclude_rigid_body(entity)
-                    .groups(PhysicsType::MovementController.into());
-                if let Some((entity, ..)) = phy.cast_ray(
-                    pos.pos_2d() + dir * (radius * 0.9),
-                    -dir,
-                    radius * 0.2,
-                    true,
-                    filter,
-                ) {
-                    walls.contains(entity)
-                } else {
-                    false
-                }
-            });
-        if in_wall {
-            transform.set_2d(Vec2::ZERO);
-            commands
-                .spawn_bundle(SpatialBundle::default())
-                .insert(WorldText {
-                    text: vec![("SORRY".to_string(), Color::FUCHSIA)],
-                    size: 2.,
-                })
-                .insert(DieAfter::new(Duration::from_millis(500)));
-        }
+            .add_system(drop_spread);
     }
 }
 
@@ -90,84 +46,62 @@ fn kinematic_controller(
     )>,
     time: Res<GameTime>, mut cmds: CmdReader<KinematicCommand>, phy: Res<RapierContext>,
 ) {
+    let toi_margin = 0.05;
+
     // process commands
-    cmds.iter_cmd_mut(
-        &mut entities,
-        |cmd, (entity, global_pos, mut transform, mut kinematic)| match *cmd {
-            KinematicCommand::Move { dir } => {
-                if let Some((dash, _)) = kinematic.dash.as_mut() {
-                    *dash = dir;
-                    return;
-                }
-
-                let ray_margin = -kinematic.speed * time.delta_seconds();
-
-                let global_pos = global_pos.pos_2d();
-                let filter = QueryFilter::new()
-                    .exclude_rigid_body(entity)
-                    .groups(PhysicsType::MovementController.into());
-
-                let speed = kinematic.speed * time.delta_seconds();
-
-                if phy
-                    .cast_ray(
-                        global_pos,
-                        dir,
-                        kinematic.radius + speed + ray_margin,
-                        true,
-                        filter,
-                    )
-                    .is_none()
-                {
-                    transform.add_2d(dir * speed);
-                } else if phy
-                    .cast_ray(
-                        global_pos,
-                        vec2(dir.x, 0.),
-                        kinematic.radius + speed + ray_margin,
-                        true,
-                        filter,
-                    )
-                    .is_none()
-                {
-                    transform.add_2d(vec2(dir.x, 0.) * speed);
-                } else if phy
-                    .cast_ray(
-                        global_pos,
-                        vec2(0., dir.y),
-                        kinematic.radius + speed + ray_margin,
-                        true,
-                        filter,
-                    )
-                    .is_none()
-                {
-                    transform.add_2d(vec2(0., dir.y) * speed);
-                }
-            }
-            KinematicCommand::Dash { dir } => {
-                kinematic.dash = Some((dir, time.now() + kinematic.dash_duration))
+    cmds.iter_entities(&mut entities, |cmd, (.., mut kinematic)| match *cmd {
+        KinematicCommand::Move { dir } => match kinematic.dash.as_mut() {
+            Some((dash, ..)) => *dash = dir,
+            None => {
+                let speed = kinematic.speed;
+                *kinematic.mov.get_or_insert(default()) += dir * speed
             }
         },
-    );
+        KinematicCommand::Dash { dir } => {
+            kinematic.dash = Some((dir, time.now() + kinematic.dash_duration))
+        }
+    });
 
-    // process dash
+    // process movement
     for (entity, global_pos, mut transform, mut kinematic) in entities.iter_mut() {
+        let kinematic = &mut *kinematic;
+
         if let Some((dir, until)) = kinematic.dash {
             if time.reached(until) {
                 kinematic.dash = None
             } else {
-                let global_pos = global_pos.pos_2d();
-                let filter = QueryFilter::new()
-                    .exclude_rigid_body(entity)
-                    .groups(PhysicsType::MovementController.into());
-
                 let speed = kinematic.dash_distance / kinematic.dash_duration.as_secs_f32();
-                let offset = dir * speed * time.delta_seconds();
-                if phy
-                    .cast_ray(global_pos, offset, 1.1, true, filter)
-                    .is_none()
-                {
-                    transform.add_2d(offset);
+                kinematic.mov = Some(dir * speed)
+            }
+        }
+
+        let mov = kinematic.mov.take().unwrap_or_default() * time.delta_seconds();
+        transform.add_2d(mov);
+
+        let global_pos = global_pos.pos_2d() + mov;
+        let filter = QueryFilter::new()
+            .exclude_rigid_body(entity)
+            .groups(PhysicsType::MovementController.into());
+
+        for dir in [-Vec2::Y, Vec2::Y, -Vec2::X, Vec2::X] {
+            let length = kinematic.radius;
+            let toi = [
+                Vec2::ZERO,
+                // dir.clockwise90() * length,
+                // dir.clockwise90() * -length,
+            ]
+            .into_iter()
+            .map(|offset| {
+                phy.cast_ray(global_pos + offset, dir, length + toi_margin, false, filter)
+                    .map(|(_, toi)| toi)
+            })
+            .filter_map(|x| x)
+            .reduce(f32::min);
+
+            if let Some(toi) = toi {
+                let fix = length - toi;
+                if fix > 0. {
+                    transform.add_2d(dir * -fix)
                 }
             }
         }

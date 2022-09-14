@@ -82,7 +82,7 @@ fn weapon(
     real_time: Res<Time>, mut stats: ResMut<Stats>,
 ) {
     use bevy_lyon::*;
-    weapon.iter_cmd_mut(
+    weapon.iter_entities(
         &mut source,
         |weapon, (_entity, transform, team, kinematic)| match *weapon {
             Weapon::None => log::warn!("Shooting Weapon::None"),

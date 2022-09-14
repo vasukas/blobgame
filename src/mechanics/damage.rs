@@ -236,7 +236,7 @@ fn explode_on_death(
     mut death: CmdReader<DeathEvent>, mut explode: EventWriter<Explosion>, phy: Res<RapierContext>,
     mut damage: CmdWriter<DamageEvent>, targets: Query<&GlobalTransform>,
 ) {
-    death.iter_cmd_mut(&mut entities, |_, (source, pos, e)| {
+    death.iter_entities(&mut entities, |_, (source, pos, e)| {
         let pos = pos.pos_2d();
 
         let mut e = *e;

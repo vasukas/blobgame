@@ -106,7 +106,7 @@ fn drop_loot(
     mut entities: Query<(&GlobalTransform, &DropsLoot)>, player: Query<&Health, With<Player>>,
     stats: Res<Stats>,
 ) {
-    death.iter_cmd_mut(&mut entities, |_, (pos, loot)| {
+    death.iter_entities(&mut entities, |_, (pos, loot)| {
         for loot in &loot.0 {
             let (loot, chance) = adjust_loot(*loot, player.get_single().ok(), &stats);
             use rand::*;

@@ -154,14 +154,14 @@ pub type CmdReader<'w, 's, Event> = EventReader<'w, 's, (Entity, Event)>;
 pub type CmdWriter<'w, 's, Event> = EventWriter<'w, 's, (Entity, Event)>;
 
 pub trait CmdReaderExtended<Event> {
-    /// Iterate over all existing entities which received an event
-    fn iter_cmd_mut<'w2, 's2, Q: WorldQuery, F: WorldQuery>(
+    /// Iterate over all entities which received an event
+    fn iter_entities<'w2, 's2, Q: WorldQuery, F: WorldQuery>(
         &mut self, query: &mut Query<'w2, 's2, Q, F>, apply: impl FnMut(&Event, QueryItem<Q>),
     );
 }
 
 impl<'w, 's, Event: 'static + Send + Sync> CmdReaderExtended<Event> for CmdReader<'w, 's, Event> {
-    fn iter_cmd_mut<'w2, 's2, Q: WorldQuery, F: WorldQuery>(
+    fn iter_entities<'w2, 's2, Q: WorldQuery, F: WorldQuery>(
         &mut self, query: &mut Query<'w2, 's2, Q, F>, mut apply: impl FnMut(&Event, QueryItem<Q>),
     ) {
         for (entity, cmd) in self.iter() {

@@ -27,7 +27,8 @@ Update 1
 - other stuff
 
 - gameplay
-    - improve collision detection for player (use red2's controller)
+    + improve collision detection for player (use red2's controller)
+    - fix issues with collision on corners (just wide rays won't help)
 
     - maybe some options for mid-combat healing (at least on lower difficulties)
     - use entry/exit elevator instead of spawning level (this fixes player getting stuck in spawned enemies)
@@ -41,11 +42,7 @@ Update 1
             - fix balls being self-destroyed on contact with small projectiles
             - maybe rework into something shotgun-like (faster AoE projectile with damage fall-off)
 
-        - fix craft UX
-            - whole crafting thing feels *completely unneccessary*
-            - replacing current weapon on craft is unwieldy, esp. since it's done outside of the menu
-            - readability is bad
-            - having two separate input action sets is a mess
+        - remove craft, it sucks
 
         - add shield (sphere & magnet)
             - when equipped, appears in front of the player

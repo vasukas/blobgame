@@ -338,7 +338,7 @@ fn player_damage_reaction(
 ) {
     let charge_loss_on_hit = 0.1;
 
-    events.iter_cmd_mut(&mut player, |_, (_, _, mut player)| {
+    events.iter_entities(&mut player, |_, (_, _, mut player)| {
         if let Some(beats) = player.beats_count.as_mut() {
             *beats -= 1
         }

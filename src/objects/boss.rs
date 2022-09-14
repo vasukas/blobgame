@@ -160,7 +160,7 @@ fn boss_destruction(
     let tower_distance = 6.;
     let tower_width = 1.5;
 
-    death.iter_cmd_mut(&mut parts, |_, part| {
+    death.iter_entities(&mut parts, |_, part| {
         if let Ok((_, mut boss, _)) = bosses.get_mut(part.0) {
             boss.parts -= 1;
             if boss.parts <= 0 {
