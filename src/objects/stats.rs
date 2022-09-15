@@ -6,7 +6,6 @@ pub struct Stats {
     pub wave: usize,
     pub time: Duration,
     pub restarts: usize,
-    pub ubercharge: f32,
 
     pub player: PersistentPlayer,
     pub player_weapon_slot: usize, // which weapon slot used
@@ -71,7 +70,6 @@ fn update_stats(
             WaveEvent::Restart => {
                 stats.player = stats.last_wave.clone();
                 stats.restarts += 1;
-                stats.ubercharge = 0.;
             }
         }
     }
@@ -81,6 +79,5 @@ fn update_stats(
 
     deaths.iter_entities(&mut diers, |_, points| {
         stats.player.points += points.value;
-        stats.ubercharge += points.charge;
     });
 }

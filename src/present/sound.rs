@@ -33,18 +33,19 @@ pub struct AudioListener;
 #[derive(Default)]
 pub struct Beats {
     // settings
-    pub level: usize,
+    pub enabled: bool,
 
     // report
     pub start: Option<Duration>,
     pub period: Duration,
-    pub count: i32,
+    pub pre_start: Duration,
+    // TODO: cursed code
 }
 
 impl Beats {
     pub fn in_beat(&self, time: &Time) -> bool {
-        let allow_before = 0.12;
-        let allow_after = 0.13;
+        let allow_before = 0.15;
+        let allow_after = 0.1;
 
         match self.start {
             Some(start) => {
@@ -241,28 +242,28 @@ fn beats(
     mut beats: ResMut<Beats>, time: Res<Time>, time_mode: Res<TimeMode>, audio: Res<Audio>,
     assets: Res<MyAssets>,
 ) {
-    if beats.level != 0 && !time_mode.stopped() {
-        beats.period = match beats.level {
-            1 => Duration::from_millis(1000),
-            _ => Duration::from_millis(500),
-        };
-        let initial_delay = Duration::from_millis(300);
+    if beats.enabled && !time_mode.stopped() {
+        beats.period = Duration::from_millis(1000);
+        let first_warn = Duration::from_millis(250);
+        let first_delay = first_warn * 3;
 
-        let start = *beats
-            .start
-            .get_or_insert(time.time_since_startup() + initial_delay);
-        match time.time_since_startup().checked_sub(start) {
-            Some(passed) => {
-                let count = (passed.as_micros() / beats.period.as_micros()) as i32;
-                if count != beats.count {
-                    beats.count = count;
-                    audio.play(assets.beat.clone());
+        let beats = &mut *beats;
+        let start = *beats.start.get_or_insert_with(|| {
+            beats.pre_start = time.now();
+            time.now() + first_delay
+        });
+        if time.reached(start) {
+            if time.is_tick(start, beats.period) {
+                audio.play(assets.beat_big.clone());
+            }
+        } else {
+            if let Some(count) = time.tick_count(beats.pre_start, first_warn) {
+                if count != 0 {
+                    audio.play(assets.beat_small.clone());
                 }
             }
-            None => (),
         }
     } else {
         beats.start = None;
-        beats.count = 0;
     }
 }

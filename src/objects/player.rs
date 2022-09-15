@@ -40,7 +40,7 @@ pub struct Player {
     exhaustion: f32,
     dash_until: Option<Duration>,
     prev_move: Vec2,
-    beats_count: Option<i32>,
+    focus_mode: (bool, bool), // TODO: AAAAAAAAAAAAAAAAAAA
     fire_lock: Option<(Duration, bool)>,
     god_mode: bool,
 }
@@ -73,11 +73,6 @@ impl Player {
             self.fire_lock = Some((time.time_since_startup(), mega))
         }
         can_shoot
-    }
-
-    fn add_beats(&mut self, current_level: usize) {
-        let add_beats = if current_level == 0 { 4 } else { 8 };
-        *self.beats_count.get_or_insert(0) += add_beats;
     }
 }
 
@@ -158,15 +153,14 @@ fn controls(
         Entity,
         &GlobalTransform,
         &mut Player,
-        &mut KinematicController,
         &ActionState<PlayerAction>,
         &mut Health,
     )>,
     mut kinematic: CmdWriter<KinematicCommand>, window: Res<WindowInfo>, time: Res<GameTime>,
     mut commands: Commands, mut weapon: CmdWriter<Weapon>, mut stats: ResMut<Stats>,
-    mut beats: ResMut<Beats>, mut time_mode: ResMut<TimeMode>, real_time: Res<Time>,
+    real_time: Res<Time>,
 ) {
-    let (entity, pos, mut player, mut kctr, input, mut health) = match player.get_single_mut() {
+    let (entity, pos, mut player, input, mut health) = match player.get_single_mut() {
         Ok(v) => v,
         Err(_) => return,
     };
@@ -208,18 +202,8 @@ fn controls(
             },
         ))
     }
-    if input.just_pressed(PlayerAction::Focus) && stats.ubercharge >= 1. {
-        stats.ubercharge = 0.;
-
-        if beats.level == 0 {
-            beats.level = 1;
-        } else {
-            beats.level = 2;
-        };
-
-        player.add_beats(beats.level);
-        kctr.speed = Player::SPEED * 2.;
-        time_mode.overriden = Some(0.5);
+    if input.just_pressed(PlayerAction::Focus) {
+        player.focus_mode.0.flip();
     }
     if input.just_pressed(PlayerAction::ChangeWeapon) {
         let slot = &mut stats.player_weapon_slot;
@@ -233,9 +217,14 @@ fn controls(
     if dash && player.dash_until.is_none() && player.exhaust(1.) {
         player.dash_until = Some(time.now() + Player::DASH_DURATION);
         health.invincibility(true);
+
         commands.entity(entity).insert(Flash {
             radius: Player::RADIUS,
-            duration: Player::DASH_DURATION,
+            duration: Player::DASH_DURATION
+                / match player.focus_mode.1 {
+                    true => 2,
+                    false => 1,
+                },
             color0: Color::WHITE,
             color1: Color::rgb(0.8, 1., 1.),
         });
@@ -288,10 +277,9 @@ fn update_player(
         &mut Transform,
     )>,
     time: Res<GameTime>, mut beats: ResMut<Beats>, mut time_mode: ResMut<TimeMode>,
-    mut stats: ResMut<Stats>, spawn: Res<SpawnControl>, window: Res<WindowInfo>,
+    window: Res<WindowInfo>,
 ) {
     let exhaust_restore_speed = 1.;
-    let charge_time_seconds = 6.;
 
     for (mut player, mut health, _, mut transform) in player.iter_mut() {
         // dash
@@ -306,54 +294,46 @@ fn update_player(
         player.exhaustion =
             (player.exhaustion - time.delta_seconds() * exhaust_restore_speed).max(0.);
 
-        // increase charge
-        if (!spawn.waiting_for_next_wave || spawn.tutorial.is_some()) && beats.level == 0 {
-            stats.ubercharge += time.delta_seconds() / charge_time_seconds;
-        }
-
         // rotate
         let angle = (window.cursor - transform.pos_2d()).angle();
         transform.set_angle_2d(angle);
     }
 
-    // beats
-    if player
-        .get_single()
-        .ok()
-        .and_then(|v| v.0.beats_count.map(|count| beats.count >= count))
-        .unwrap_or(true)
-    {
-        if let Some((mut player, ..)) = player
-            .get_single_mut()
-            .ok()
-            .filter(|v| stats.ubercharge >= 1. && v.0.beats_count.is_some())
-        {
-            stats.ubercharge = 0.;
-            player.add_beats(beats.level);
-        } else {
-            beats.level = 0;
-            time_mode.overriden = None;
+    // focus mode
+    if let Ok((mut player, _, mut kctr, ..)) = player.get_single_mut() {
+        if player.focus_mode.0 != player.focus_mode.1 {
+            player.focus_mode.1 = player.focus_mode.0;
+            match player.focus_mode.0 {
+                true => {
+                    kctr.speed = Player::SPEED * 2.;
+                    kctr.dash_distance = Player::DASH_DISTANCE;
+                    kctr.dash_duration = Player::DASH_DURATION / 2;
 
-            if let Ok((mut player, _, mut kctr, _)) = player.get_single_mut() {
-                kctr.speed = Player::SPEED;
-                player.beats_count = None
+                    time_mode.overriden = Some(0.5);
+                    beats.enabled = true;
+                }
+                false => {
+                    kctr.speed = Player::SPEED;
+                    kctr.dash_distance = Player::DASH_DISTANCE;
+                    kctr.dash_duration = Player::DASH_DURATION;
+
+                    time_mode.overriden = None;
+                    beats.enabled = false;
+                }
             }
         }
+    } else {
+        time_mode.overriden = None;
+        beats.enabled = false;
     }
 }
 
 fn player_damage_reaction(
     mut player: Query<(Entity, &Health, &mut Player)>, mut events: CmdReader<ReceivedDamage>,
     mut was_damaged: Local<bool>, mut sound: EventWriter<PlaySound>, assets: Res<MyAssets>,
-    mut stats: ResMut<Stats>,
 ) {
-    let charge_loss_on_hit = 0.1;
-
     events.iter_entities(&mut player, |_, (_, _, mut player)| {
-        if let Some(beats) = player.beats_count.as_mut() {
-            *beats -= 1
-        }
-        stats.ubercharge = (stats.ubercharge.min(1.) - charge_loss_on_hit).max(0.);
+        player.focus_mode.0 = false
     });
 
     let damaged = player
@@ -422,10 +402,7 @@ fn next_wave(
     }
 }
 
-fn hud_panel(
-    mut ctx: ResMut<EguiContext>, stats: Res<Stats>, player: Query<(&Health, &Player)>,
-    beats: Res<Beats>,
-) {
+fn hud_panel(mut ctx: ResMut<EguiContext>, stats: Res<Stats>, player: Query<(&Health, &Player)>) {
     ctx.popup(
         "player::hud_panel",
         vec2(-1., -1.),
@@ -482,31 +459,6 @@ fn hud_panel(
                         ui.label("empty");
                     }
                 }
-                ui.label("");
-
-                match player.beats_count {
-                    Some(count) => {
-                        let left = count - beats.count;
-                        ui.label("BEATS");
-                        ui.visuals_mut().override_text_color = match stats.ubercharge >= 1. {
-                            true => Some(egui::Color32::WHITE),
-                            false => (left <= 2).then_some(egui::Color32::RED),
-                        };
-                        ui.label(format!("{:2} left", left));
-                    }
-                    None => {
-                        ui.label("CHARGE");
-                        ui.visuals_mut().override_text_color = match stats.ubercharge >= 1. {
-                            true => Some(egui::Color32::WHITE),
-                            false => None,
-                        };
-                        ui.label(format!(
-                            "{:3}%",
-                            (stats.ubercharge * 100.).clamp(0., 100.) as u32
-                        ));
-                    }
-                }
-                ui.visuals_mut().override_text_color = None;
                 ui.label("");
             } else {
                 ui.visuals_mut().override_text_color = Some(egui::Color32::RED);

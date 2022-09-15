@@ -10,7 +10,8 @@ pub struct MyAssets {
     pub ui_menu_drone: Handle<AudioSource>,
     pub ui_pickup: Handle<AudioSource>,
     pub ui_alert: Handle<AudioSource>,
-    pub beat: Handle<AudioSource>,
+    pub beat_big: Handle<AudioSource>,
+    pub beat_small: Handle<AudioSource>,
     pub ui_weapon_broken: Handle<AudioSource>,
     //
     pub player_gun: Handle<AudioSource>,
@@ -45,7 +46,8 @@ fn load_assets(mut assets: ResMut<MyAssets>, server: Res<AssetServer>) {
     assets.ui_menu_drone = server.load("sounds/ui/the_noise.ogg");
     assets.ui_pickup = server.load("sounds/ui/ui_pickup.ogg");
     assets.ui_alert = server.load("sounds/ui/ui_alert.ogg");
-    assets.beat = server.load("sounds/ui/beat.ogg");
+    assets.beat_big = server.load("sounds/ui/beat_big.ogg");
+    assets.beat_small = server.load("sounds/ui/beat_small.ogg");
     assets.ui_weapon_broken = server.load("sounds/ui/ui_wpn_alarm.ogg");
     //
     assets.player_gun = server.load("sounds/ui/player_gun.ogg");

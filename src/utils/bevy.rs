@@ -200,6 +200,26 @@ pub trait BevyTimeExtended {
     fn t_passed(&self, since: Duration, period: Duration) -> f32 {
         self.passed(since).as_secs_f32() / period.as_secs_f32()
     }
+
+    /// Returns Some(count) if new period started this frame
+    fn tick_count(&self, start: Duration, period: Duration) -> Option<u32> {
+        let tick_count = |time| {
+            self.now()
+                .checked_sub(time)
+                .map(|passed| passed.as_micros() / period.as_micros())
+        };
+        // get current tick count and tick count for next frame
+        let current = tick_count(start);
+        //let previous = tick_count(start.checked_sub(self.delta()).unwrap_or_default());
+        let previous = tick_count(start + self.delta());
+        // then return current tick count if counts are different
+        (current != previous).then_some(current.unwrap_or(0) as u32)
+    }
+
+    /// Returns true if new period started on this frame
+    fn is_tick(&self, start: Duration, period: Duration) -> bool {
+        self.tick_count(start, period).is_some()
+    }
 }
 
 impl BevyTimeExtended for Time {

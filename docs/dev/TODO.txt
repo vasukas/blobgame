@@ -23,6 +23,27 @@ Update 1
 - (!!!) prioritize features and split this into several "updates"
 
 - try new focus mode
+    + implement
+    + two quiet-beats before first one, with third be first main beat
+    - refactor (both player and sound code)
+    - cooldown (instead of charge), always same
+        - some stuff to reset at to zero?
+    - disabled if player
+        - misses at the beat
+        - is damaged (once on 1x, twice per two seconds on 2x)
+        - doesn't do anything for two beats (hit or dash)
+    - 2x
+        - mid-beat between main beats
+            - heard when on 1x, but quieter
+            - picks up volume when close to switching on timer
+        - no time slowdown
+        - enabled after some time or
+    - zero-beat (not sure it is needed)
+        - before cooldown ends, there is two quiet-beats
+        - third is when mode enabled
+        - it works as main beat, but disable criterias are ignored
+        - gives a bit more damage?
+
 - try new enemies
 - other stuff
 
@@ -125,6 +146,11 @@ Update 1
 + fix god mode & add one-hit kill weapon
 - maybe allow restarting the level with a single key press at any time
 - focus mode: tween time scale and add slight camera zoom
+
+- bugs
+    - crash on deleting entity after player's death, doesn't always happen
+    - add tests for *all* math-related functions, there is probably a TON of bugs there
+    - !!! there is always more !!!
 
 
 
