@@ -334,6 +334,7 @@ fn weapon(
                                             radius: 1.5,
                                             ..default()
                                         }),
+                                        retarget_on_wall: true,
                                         ..default()
                                     }),
                                     assets.player_railgun.clone(),

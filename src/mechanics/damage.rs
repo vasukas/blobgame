@@ -2,7 +2,7 @@ use super::{health::*, physics::CollectContacts};
 use crate::{
     common::*,
     objects::stats::Stats,
-    present::effect::{Explosion, ExplosionPower, RayEffect},
+    present::effect::{DontSparkMe, Explosion, ExplosionPower, RayEffect},
 };
 
 #[derive(Component, Clone, Copy)]
@@ -10,6 +10,11 @@ pub enum Team {
     Player,
     Enemy,
     YEEEEEEE,
+}
+
+#[derive(Component, Clone, Copy)]
+pub enum EnemyType {
+    Normal,
 }
 
 impl Team {
@@ -36,11 +41,12 @@ pub struct DamageOnContact;
 pub struct DieOnContact;
 
 /// Requires Damage
-#[derive(Component, Default)]
+#[derive(Component, Default, Clone)]
 pub struct DamageRay {
     pub spawn_effect: Option<RayEffect>, // length will be set on hit
     pub explosion_effect: Option<Explosion>, // show explosion where it hits
     pub ignore_obstacles: bool,
+    pub retarget_on_wall: bool,
 }
 
 #[derive(Component, Clone, Copy)]
@@ -143,14 +149,20 @@ fn damage_ray(
         &Health,
         Option<&SmallProjectile>,
         Option<&mut ExplodeOnDeath>,
+        Option<&EnemyType>,
+        &GlobalTransform,
     )>,
     mut damage_cmd: CmdWriter<DamageEvent>, phy: Res<RapierContext>, mut commands: Commands,
     mut explode: EventWriter<Explosion>, mut stats: ResMut<Stats>,
 ) {
     let huge_distance = 1000.;
+    let retarget_radius = 50.; // TODO: reduce?
+
+    // TODO: refactor, this is fucking mess of broken logic
 
     for (source, pos, ray, mut damage, team) in rays.iter_mut() {
         let dir = Vec2::Y.rotated(pos.angle_2d());
+        let filter = QueryFilter::new().groups(PhysicsType::Hitscan.into());
 
         let mut best_targets = vec![];
         phy.intersections_with_ray(
@@ -158,18 +170,15 @@ fn damage_ray(
             dir,
             huge_distance,
             true,
-            QueryFilter::new().groups(PhysicsType::Hitscan.into()),
+            filter,
             |entity, intersect| {
-                let same_team = targets
-                    .get(entity)
-                    .map(|other_team| team.is_same(*other_team.0))
-                    .unwrap_or(false);
-                if !same_team
-                    && targets
-                        .get(entity)
-                        .map(|v| !v.1.invincible())
-                        .unwrap_or(true)
-                {
+                let add = match targets.get(entity) {
+                    Ok((other_team, health, ..)) => {
+                        !team.is_same(*other_team) && !health.invincible()
+                    }
+                    _ => true,
+                };
+                if add {
                     best_targets.push((entity, intersect.toi, intersect.point))
                 }
                 true
@@ -178,24 +187,12 @@ fn damage_ray(
         best_targets.sort_by(|a, b| a.1.partial_cmp(&b.1).unwrap()); // by distance
 
         let mut max_distance = 0.;
-        for (entity, distance, point) in best_targets {
-            max_distance = distance;
-            if let Some(mut explosion) = ray.explosion_effect {
-                explosion.origin = point;
-                explode.send(explosion)
-            }
+        let mut prev_point = None;
+        for (hit_entity, distance, point) in best_targets {
+            let mut break_this = false;
+            let mut hit_this = true;
 
-            damage_cmd.send((
-                entity,
-                DamageEvent {
-                    source,
-                    damage: *damage,
-                    team: *team,
-                    point,
-                },
-            ));
-
-            if let Ok((_, health, projectile, mut explode)) = targets.get_mut(entity) {
+            if let Ok((_, health, projectile, mut explode, ..)) = targets.get_mut(hit_entity) {
                 if team.is_player() {
                     if let Some(explode) = explode.as_mut().filter(|_| damage.powerful) {
                         stats.player.points += 50;
@@ -203,7 +200,7 @@ fn damage_ray(
 
                         // force death
                         damage_cmd.send((
-                            entity,
+                            hit_entity,
                             DamageEvent {
                                 source,
                                 damage: Damage::new(10000.),
@@ -219,11 +216,107 @@ fn damage_ray(
                     let new_damage =
                         damage.value - health.value - if health.max > 5. { 2. } else { 1. };
                     if new_damage < 0. {
-                        break;
+                        break_this = true;
+                        hit_this = false;
                     }
                     damage.value = new_damage
                 }
-            } else if !ray.ignore_obstacles {
+                prev_point = Some(point);
+            } else {
+                if ray.retarget_on_wall {
+                    if let Some(point) = prev_point {
+                        let mut best = None;
+                        phy.intersections_with_shape(
+                            pos.pos_2d(),
+                            pos.angle_2d(),
+                            &Collider::ball(retarget_radius),
+                            filter,
+                            |entity| {
+                                if let Ok((target_team, .., enemy, target_pos)) =
+                                    targets.get(entity)
+                                {
+                                    if !target_team.is_same(*team) {
+                                        match enemy {
+                                            Some(EnemyType::Normal) => {
+                                                let dir = target_pos.pos_2d() - pos.pos_2d();
+                                                let (impact, distance) = phy
+                                                    .cast_ray(
+                                                        pos.pos_2d(),
+                                                        dir,
+                                                        1.,
+                                                        false,
+                                                        filter
+                                                            .exclude_rigid_body(hit_entity)
+                                                            .predicate(&|entity| match targets
+                                                                .get(entity)
+                                                            {
+                                                                Ok((.., enemy, _)) => {
+                                                                    enemy.is_some()
+                                                                }
+                                                                Err(_) => true,
+                                                            }),
+                                                    )
+                                                    .unwrap_or((entity, dir.length_squared()));
+                                                if impact == entity {
+                                                    let impact = (
+                                                        distance,
+                                                        entity,
+                                                        targets.contains(entity).then_some(dir),
+                                                    );
+                                                    let (best_distance, ..) =
+                                                        best.get_or_insert(impact);
+                                                    if distance < *best_distance {
+                                                        best = Some(impact);
+                                                    }
+                                                }
+                                            }
+                                            None => (),
+                                        }
+                                    }
+                                }
+                                true
+                            },
+                        );
+                        println!("{:?}", best);
+                        if let Some((.., Some(dir))) = best {
+                            commands
+                                .spawn_bundle(
+                                    Transform::new_2d(point).with_angle_2d(dir.angle()).bundle(),
+                                )
+                                .insert(GameplayObject)
+                                .insert(*damage)
+                                .insert(ray.clone())
+                                .insert(DieAfter::one_frame())
+                                .insert(DontSparkMe)
+                                .insert(*team);
+                            hit_this = false;
+                        }
+                    }
+                }
+                if ray.ignore_obstacles {
+                    hit_this = false;
+                } else {
+                    break_this = true
+                }
+            }
+
+            if hit_this {
+                max_distance = distance;
+                if let Some(mut explosion) = ray.explosion_effect {
+                    explosion.origin = point;
+                    explode.send(explosion)
+                }
+                damage_cmd.send((
+                    hit_entity,
+                    DamageEvent {
+                        source,
+                        damage: *damage,
+                        team: *team,
+                        point,
+                    },
+                ));
+            }
+            if break_this {
                 break;
             }
         }

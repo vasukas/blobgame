@@ -22,6 +22,8 @@ Update 1
 - (!!!) find what makes gameplay fun, what doesn't, and what makes it less fun
 - (!!!) prioritize features and split this into several "updates"
 
+- THINK: semi-open-world and free camera vs same fixed-size levels as now?
+
 - try new focus mode
     + implement
     + two quiet-beats before first one, with third be first main beat
@@ -33,6 +35,7 @@ Update 1
         - is damaged (once on 1x, twice per two seconds on 2x)
         - doesn't do anything for two beats (hit or dash)
     - 2x
+        - OR just increase damage?
         - mid-beat between main beats
             - heard when on 1x, but quieter
             - picks up volume when close to switching on timer
@@ -64,6 +67,10 @@ Update 1
 
         + remove craft, it sucks and doesn't add anything
         - fix "crafted" weapons loot
+            - it should drop parts which are actually on these robots
+            - OR... player can craft weapons (via menu or terminal?) from scrap which is dropped on death
+        - use normal weapon slots instead of current mess
+        - OR there are normal weapons (using slots) and super-weapons which are dropped by enemies
 
         - add shield (sphere & magnet)
             - when equipped, appears in front of the player
@@ -79,7 +86,8 @@ Update 1
 
         - tie weapon damage and enemy HP (so i.e. it would take exactly 3 powered railgun shots to defeat the boss)
 
-        - rework railgun: instead of hitting wall bounce ray to the nearest enemy (in certain radius?)
+        + rework railgun: instead of hitting wall bounce ray to the nearest enemy (in certain radius)
+        - fix that
 
     - enemies
         - make advanced turrets better

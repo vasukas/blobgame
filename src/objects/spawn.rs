@@ -3,7 +3,7 @@ use crate::{
     common::*,
     mechanics::{
         ai::*,
-        damage::Team,
+        damage::{EnemyType, Team},
         health::{DieAfter, Health},
     },
     objects::{
@@ -596,6 +596,7 @@ fn create_turret(
         .insert(GameplayObject)
         .insert(Target::Player)
         .insert(Team::Enemy)
+        .insert(EnemyType::Normal)
         .insert(match ty {
             TurretType::Simple => AttackPattern::default()
                 .stage(1, Duration::from_secs(1), AttackStage::Wait)

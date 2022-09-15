@@ -9,8 +9,6 @@ use std::time::Duration;
 // 2D transform
 
 pub trait BevyTransform2d {
-    /// Same as `Transform::from_translation(pos.extend(0.))`
-    fn new_2d(pos: Vec2) -> Self;
     /// Returns 2D translation (without Z)
     fn pos_2d(&self) -> Vec2;
     /// Returns 2D angle. Zero points to Y axis
@@ -28,10 +26,14 @@ pub trait BevyTransform2dMut {
     fn set_scale_2d(&mut self, value: f32);
 }
 
+pub trait BevyTransform2dNew {
+    /// Same as `Transform::from_translation(pos.extend(0.))`
+    fn new_2d(pos: Vec2) -> Self;
+    fn with_angle_2d(self, angle: f32) -> Self;
+    fn bundle(self) -> SpatialBundle;
+}
+
 impl BevyTransform2d for Transform {
-    fn new_2d(pos: Vec2) -> Self {
-        Self::from_translation(pos.extend(0.))
-    }
     fn pos_2d(&self) -> Vec2 {
         self.translation.truncate()
     }
@@ -58,10 +60,20 @@ impl BevyTransform2dMut for Transform {
     }
 }
 
-impl BevyTransform2d for GlobalTransform {
+impl BevyTransform2dNew for Transform {
     fn new_2d(pos: Vec2) -> Self {
-        Transform::new_2d(pos).into()
+        Self::from_translation(pos.extend(0.))
     }
+    fn with_angle_2d(mut self, angle: f32) -> Self {
+        self.set_angle_2d(angle);
+        self
+    }
+    fn bundle(self) -> SpatialBundle {
+        self.into()
+    }
+}
+
+impl BevyTransform2d for GlobalTransform {
     fn pos_2d(&self) -> Vec2 {
         self.translation().truncate()
     }
