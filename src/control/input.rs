@@ -43,32 +43,9 @@ pub enum ControlAction {
     ExitMenu,
 }
 
-/// Read with ActionState component
-#[derive(Actionlike, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
-pub enum CraftAction {
-    CraftSelect1,
-    CraftSelect2,
-    CraftSelect3,
-    CraftSelect4,
-    Craft,
-}
-
-impl CraftAction {
-    pub fn description(self) -> &'static str {
-        match self {
-            CraftAction::CraftSelect1 => "Select part 1",
-            CraftAction::CraftSelect2 => "Select part 2",
-            CraftAction::CraftSelect3 => "Select part 3",
-            CraftAction::CraftSelect4 => "Select part 4",
-            CraftAction::Craft => "Craft",
-        }
-    }
-}
-
 #[derive(Clone, Serialize, Deserialize)]
 pub struct InputSettings {
     pub player: InputMap<PlayerAction>,
-    pub craft: InputMap<CraftAction>,
     pub control: InputMap<ControlAction>,
 }
 
@@ -89,14 +66,6 @@ impl Default for InputSettings {
             .insert(MouseWheelDirection::Up, PlayerAction::ChangeWeapon)
             .insert(MouseWheelDirection::Down, PlayerAction::ChangeWeapon)
             .build(),
-
-            craft: InputMap::new([
-                (KeyCode::Key1, CraftAction::CraftSelect1),
-                (KeyCode::Key2, CraftAction::CraftSelect2),
-                (KeyCode::Key3, CraftAction::CraftSelect3),
-                (KeyCode::Key4, CraftAction::CraftSelect4),
-                (KeyCode::C, CraftAction::Craft),
-            ]),
 
             control: InputMap::new([
                 (KeyCode::R, ControlAction::Restart),
@@ -153,7 +122,6 @@ pub struct InputPlugin;
 impl Plugin for InputPlugin {
     fn build(&self, app: &mut App) {
         app.add_plugin(InputManagerPlugin::<PlayerAction>::default())
-            .add_plugin(InputManagerPlugin::<CraftAction>::default())
             .add_plugin(InputManagerPlugin::<ControlAction>::default())
             .insert_resource(ActionState::<ControlAction>::default())
             .insert_resource(InputMap::<ControlAction>::default())
@@ -165,15 +133,12 @@ impl Plugin for InputPlugin {
 }
 
 fn update_settings(
-    mut player: Query<&mut InputMap<PlayerAction>>, mut craft: Query<&mut InputMap<CraftAction>>,
-    mut control: ResMut<InputMap<ControlAction>>, settings: Res<Settings>,
+    mut player: Query<&mut InputMap<PlayerAction>>, mut control: ResMut<InputMap<ControlAction>>,
+    settings: Res<Settings>,
 ) {
     if settings.is_changed() || settings.is_added() {
         if let Ok(mut map) = player.get_single_mut() {
             *map = settings.input.player.clone()
-        }
-        if let Ok(mut map) = craft.get_single_mut() {
-            *map = settings.input.craft.clone()
         }
         *control = settings.input.control.clone()
     }
@@ -181,11 +146,6 @@ fn update_settings(
     for mut map in player.iter_mut() {
         if map.is_added() {
             *map = settings.input.player.clone()
-        }
-    }
-    for mut map in craft.iter_mut() {
-        if map.is_added() {
-            *map = settings.input.craft.clone()
         }
     }
 }

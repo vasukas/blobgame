@@ -1,9 +1,5 @@
 use super::input::*;
-use crate::{
-    common::*,
-    objects::{player::Player, spawn::SpawnControl},
-    present::camera::WindowInfo,
-};
+use crate::{common::*, objects::spawn::SpawnControl, present::camera::WindowInfo};
 use bevy::{
     app::AppExit,
     ecs::system::SystemParam,
@@ -20,14 +16,12 @@ pub struct PlayNowHack(pub bool);
 #[derive(Default, Debug)]
 pub struct TimeMode {
     pub main_menu: bool,
-    pub craft_menu: bool,
-    pub player_alive: bool,
     pub overriden: Option<f32>,
 }
 
 impl TimeMode {
     pub fn stopped(&self) -> bool {
-        self.main_menu || self.craft_menu || !self.player_alive
+        self.main_menu
     }
 }
 
@@ -41,7 +35,7 @@ impl Plugin for MenuPlugin {
             .init_resource::<PlayNowHack>()
             .init_resource::<TimeMode>()
             .add_system(show_menu)
-            .add_system(mega_mode)
+            .add_system(time_mode)
             .add_startup_system(setup)
             .add_startup_system(play_now_hack);
     }
@@ -62,7 +56,6 @@ enum ControlsBinding {
     #[default]
     None,
     Player(PlayerAction),
-    Craft(CraftAction),
 }
 
 fn show_menu(
@@ -71,7 +64,7 @@ fn show_menu(
     mut spawn: ResMut<SpawnControl>, window: Res<WindowInfo>, mut settings: ResMut<Settings>,
     mut windows: ResMut<Windows>, mut time_mode: ResMut<TimeMode>, mut input_events: InputEvents,
 ) {
-    if keys.just_pressed(ControlAction::ExitMenu) && !time_mode.craft_menu {
+    if keys.just_pressed(ControlAction::ExitMenu) {
         match *state {
             MenuState::Root => {
                 if spawn.is_game_running() {
@@ -161,7 +154,6 @@ fn show_menu(
                             // TODO: this is horrible
                             // - InputMap::insert_at swaps mappings if same input already used
                             // - there is no conflict resolution
-                            // - duplicate code
                             // - terrible UX in general
                             // - you can't rebind restart button
 
@@ -187,31 +179,6 @@ fn show_menu(
                                             *binding = ControlsBinding::Player(action);
                                         }
                                         for input in settings.input.player.get(action).iter() {
-                                            ui.label(input.description());
-                                        }
-                                        ui.end_row()
-                                    }
-                                });
-                            egui::Grid::new("settings controls 2")
-                                .striped(true)
-                                .show(ui, |ui| {
-                                    for action in CraftAction::variants() {
-                                        if *binding == ControlsBinding::Craft(action) {
-                                            if let Some(input) = input_events.input_button() {
-                                                settings.input.craft.insert_at(input, action, 0);
-                                                changed = true;
-                                            }
-                                        }
-                                        if ui
-                                            .selectable_label(
-                                                *binding == ControlsBinding::Craft(action),
-                                                action.description(),
-                                            )
-                                            .clicked()
-                                        {
-                                            *binding = ControlsBinding::Craft(action);
-                                        }
-                                        for input in settings.input.craft.get(action).iter() {
                                             ui.label(input.description());
                                         }
                                         ui.end_row()
@@ -310,19 +277,14 @@ fn show_menu(
     }
 }
 
-fn mega_mode(
-    mut mode: ResMut<TimeMode>, mut time: ResMut<GameTime>,
-    mut player: ResMut<ToggleActions<PlayerAction>>, mut craft: ResMut<ToggleActions<CraftAction>>,
-    actual_player: Query<(), With<Player>>,
+fn time_mode(
+    mode: Res<TimeMode>, mut time: ResMut<GameTime>,
+    mut player: ResMut<ToggleActions<PlayerAction>>,
 ) {
-    mode.player_alive = !actual_player.is_empty();
-
-    let lock_active = mode.main_menu || mode.craft_menu;
-    let lock_allow_craft = mode.craft_menu;
+    let lock_active = mode.main_menu;
     time.scale = if mode.stopped() { 0. } else { mode.overriden.unwrap_or(1.) };
 
     player.enabled = !lock_active;
-    craft.enabled = !lock_active || lock_allow_craft;
 }
 
 fn setup(mut egui: ResMut<EguiSettings>, settings: Res<Settings>, mut windows: ResMut<Windows>) {

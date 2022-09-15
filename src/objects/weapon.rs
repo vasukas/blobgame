@@ -57,6 +57,11 @@ impl CraftedWeapon {
             CraftedWeapon::Repeller => ("Repeller", "Pushes projectiles away from you", 15.),
         }
     }
+
+    pub fn variants() -> impl Iterator<Item = Self> + Clone + ExactSizeIterator {
+        [Self::Plasma, Self::Railgun].into_iter()
+        //[Self::Plasma, Self::Shield, Self::Railgun, Self::Repeller].into_iter()
+    }
 }
 
 //

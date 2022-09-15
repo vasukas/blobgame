@@ -1,6 +1,5 @@
-use super::{loot::CraftPart, spawn::WaveEvent, weapon::CraftedWeapon};
+use super::{spawn::WaveEvent, weapon::CraftedWeapon};
 use crate::{common::*, mechanics::health::DeathEvent};
-use enum_map::EnumMap;
 
 #[derive(Default)]
 pub struct Stats {
@@ -24,7 +23,6 @@ impl Stats {
 #[derive(Clone)]
 pub struct PersistentPlayer {
     pub points: usize,
-    pub craft_parts: EnumMap<CraftPart, usize>, // count
     pub weapons: [Option<(CraftedWeapon, f32)>; 2], // usage left
 }
 
@@ -32,12 +30,6 @@ impl Default for PersistentPlayer {
     fn default() -> Self {
         Self {
             points: Default::default(),
-            craft_parts: enum_map::enum_map! {
-                CraftPart::Generator => 2,
-                CraftPart::Emitter => 2,
-                CraftPart::Laser => 0,
-                CraftPart::Magnet => 2,
-            },
             weapons: [
                 Some((CraftedWeapon::Railgun, 3.)),
                 Some((CraftedWeapon::Plasma, 3.)),

@@ -34,15 +34,15 @@ Update 1
     - use entry/exit elevator instead of spawning level (this fixes player getting stuck in spawned enemies)
         - some levels may have TWO elevators, for secret bosses and such
         - some levels might be bigger and have camera following the player
-    - auto-collect all loot at the end of the level (and stop it's timer)
-    - different difficulties (which to some extent alter game's behaviour while keeping pace etc, except lowest ones maybe)
+    - different difficulties (which to some extent alter game mechanics while keeping pace etc, except lowest ones maybe)
 
     - weapons
         - improve plasma
             - fix balls being self-destroyed on contact with small projectiles
             - maybe rework into something shotgun-like (faster AoE projectile with damage fall-off)
 
-        - remove craft, it sucks
+        + remove craft, it sucks and doesn't add anything
+        - fix "crafted" weapons loot
 
         - add shield (sphere & magnet)
             - when equipped, appears in front of the player
@@ -57,6 +57,8 @@ Update 1
             - sound
 
         - tie weapon damage and enemy HP (so i.e. it would take exactly 3 powered railgun shots to defeat the boss)
+
+        - rework railgun: instead of hitting wall bounce ray to the nearest enemy (in certain radius?)
 
     - enemies
         - make advanced turrets better
@@ -98,10 +100,12 @@ Update 1
     - write documentation on mechanics
 
 - audio
+    - try oddio/bevy_oddio (it has built-in spatial)
     + fix volume setting not working
     - ui_weapon_broken has invalid pitch
     - add music (make it quieter in in-game menues, a-la Ultrakill)
     - layer-based dynamic music (not sure on criterias for layers)
+    + menu music plays if using CLI 'play'
 
 - re-implement tutorial without ANY hacks
     - use keybinds in tutorial text
@@ -112,7 +116,8 @@ Update 1
 - graphics
     - improve effects (higher fidelity, better visibility on some)
     - better models in general (use SVG?)
-    - add weapon and part icons (for craft menu)
+        - use vector for environment and 3D for creatures
+    - rework HUD, add weapon icons
     - maybe add movement trail
 
 - fix god mode (just prevent player's death) & add one-hit kill weapon

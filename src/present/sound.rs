@@ -122,6 +122,7 @@ fn apply_settings(
     if let Some(after) = *delayed_update {
         if time.reached(after) {
             delayed_update.take();
+            // TODO: is this really just sets volume for sounds already playing?
             audio.set_volume(settings.master_volume as f64);
         }
     }
@@ -206,12 +207,12 @@ fn menu_drone(
     let (sound, running) = &mut *sound;
     if *sound == default() {
         *sound = audio.play(assets.ui_menu_drone.clone()).looped().handle();
-        *running = true;
+        *running = false;
     }
 
     if *running != spawn.is_game_running() {
-        *running = spawn.is_game_running();
         if let Some(sound) = instances.get_mut(sound) {
+            *running = spawn.is_game_running();
             match *running {
                 true => sound.pause(AudioTween::linear(Duration::from_millis(600))),
                 false => sound.resume(AudioTween::linear(Duration::from_millis(150))),

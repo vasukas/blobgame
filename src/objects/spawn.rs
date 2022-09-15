@@ -648,7 +648,7 @@ fn create_turret(
         .insert(PhysicsType::Solid.rapier())
         .insert(Collider::ball(radius))
         .insert(DropsLoot({
-            vec![(Loot::Health(1.5), 0.5), (Loot::CraftPart(None), 0.25)]
+            vec![(Loot::Health(1.5), 0.5), (Loot::Weapon(None), 0.25)]
         }));
 
     commands.id()

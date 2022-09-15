@@ -1,20 +1,18 @@
-use super::{player::Player, stats::Stats};
+use super::{player::Player, stats::Stats, weapon::CraftedWeapon};
 use crate::{
     common::*,
-    control::input::CraftAction,
     mechanics::{
         health::{DeathEvent, DieAfter, Health},
         movement::DropSpread,
     },
     present::sound::Sound,
 };
-use enum_map::Enum;
 
 #[derive(Clone, Copy)]
 pub enum Loot {
     Health(f32),
     /// If None, random one will be selected
-    CraftPart(Option<CraftPart>),
+    Weapon(Option<CraftedWeapon>),
 }
 
 /// List of which loot entity can drop on death and what is the drop chance
@@ -29,30 +27,6 @@ pub struct LootPicker {
     pub radius: f32,
 }
 
-#[derive(Clone, Copy, Enum, Debug)]
-pub enum CraftPart {
-    Generator,
-    Emitter,
-    Laser,
-    Magnet,
-}
-
-impl CraftPart {
-    pub fn random() -> Self {
-        [Self::Generator, Self::Emitter, Self::Laser, Self::Magnet]
-            .into_iter()
-            .random()
-    }
-    pub fn description(&self) -> (CraftAction, &'static str, usize) {
-        match self {
-            CraftPart::Generator => (CraftAction::CraftSelect1, "Generator", 1),
-            CraftPart::Emitter => (CraftAction::CraftSelect2, "Emitter", 1),
-            CraftPart::Laser => (CraftAction::CraftSelect3, "Laser", 2),
-            CraftPart::Magnet => (CraftAction::CraftSelect4, "Magnet", 2),
-        }
-    }
-}
-
 //
 
 pub struct LootPlugin;
@@ -64,12 +38,10 @@ impl Plugin for LootPlugin {
     }
 }
 
-fn adjust_loot((loot, chance): (Loot, f32), player: Option<&Health>, stats: &Stats) -> (Loot, f32) {
+fn adjust_loot(
+    (loot, chance): (Loot, f32), player: Option<&Health>, _stats: &Stats,
+) -> (Loot, f32) {
     let k_health_chance = 1.5; // chance multiplier to get health if HP <= 50% by x1.5
-
-    // chance of getting most needed part; actual drop chance not changed
-    let zero_parts_chance = 0.8; // if count is zero
-    let many_parts_chance = 0.1; // if count is more than zero
 
     match loot {
         Loot::Health(_) => (
@@ -78,25 +50,12 @@ fn adjust_loot((loot, chance): (Loot, f32), player: Option<&Health>, stats: &Sta
                 .and_then(|hp| (hp.t() <= 0.5).then_some(chance * k_health_chance))
                 .unwrap_or(chance),
         ),
-        // increase chance to get part which player doesn't have enough
-        Loot::CraftPart(part) => match part {
+        Loot::Weapon(weapon) => match weapon {
             Some(_) => (loot, chance),
-            None => {
-                let (part, count) = stats
-                    .player
-                    .craft_parts
-                    .iter()
-                    .min_by_key(|v| v.1)
-                    .unwrap_or((CraftPart::Generator, &0));
-                let part_chance = if *count == 0 { zero_parts_chance } else { many_parts_chance };
-
-                use rand::*;
-                if thread_rng().gen_bool(part_chance) {
-                    (Loot::CraftPart(Some(part)), chance)
-                } else {
-                    (loot, chance)
-                }
-            }
+            None => (
+                Loot::Weapon(Some(CraftedWeapon::variants().random())),
+                chance,
+            ),
         },
     }
 }
@@ -116,7 +75,7 @@ fn drop_loot(
 
             let (radius, color) = match loot {
                 Loot::Health(..) => (0.3, Color::GREEN * 0.8),
-                Loot::CraftPart(..) => (0.4, Color::ORANGE_RED * 0.8),
+                Loot::Weapon(..) => (0.4, Color::ORANGE_RED * 0.8),
             };
             let lifetime = Duration::from_secs(8);
 
@@ -142,7 +101,7 @@ fn drop_loot(
                                 default(),
                             ));
                         }
-                        Loot::CraftPart(..) => {
+                        Loot::Weapon(..) => {
                             parent.spawn_bundle(GeometryBuilder::build_as(
                                 &shapes::Polygon {
                                     points: vec![
@@ -198,9 +157,12 @@ fn pick_loot(
                             }
                         }
 
-                        Loot::CraftPart(part) => {
-                            let part = part.unwrap_or_else(|| CraftPart::random());
-                            stats.player.craft_parts[part] += 1;
+                        Loot::Weapon(weapon) => {
+                            if let Some(weapon) = weapon {
+                                *stats.weapon_mut() = Some((weapon, weapon.description().2))
+                            } else {
+                                log::warn!("None-weapon");
+                            }
 
                             commands.entity(entity).despawn_recursive();
                             sounds.send(Sound {
