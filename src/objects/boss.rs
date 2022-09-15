@@ -12,7 +12,7 @@ use crate::{
             SpawnEffect,
         },
         light::Light,
-        sound::Sound,
+        sound::PlaySound,
     },
 };
 
@@ -221,7 +221,7 @@ enum BossStage {
 fn the_boss_logic(
     mut commands: Commands,
     mut logic: Query<(&GlobalTransform, &mut Transform, &mut BossLogic, &TheBoss)>,
-    time: Res<GameTime>, parts: Query<(Entity, &BossPart)>, mut sound: EventWriter<Sound>,
+    time: Res<GameTime>, parts: Query<(Entity, &BossPart)>, mut sound: EventWriter<PlaySound>,
     assets: Res<MyAssets>,
 ) {
     let charge_duration = Duration::from_millis(1000);
@@ -395,11 +395,7 @@ fn the_boss_logic(
                                 duration: charge_duration,
                                 color: Color::rgb(1., 0.4, 0.3),
                             });
-                            sound.send(Sound {
-                                sound: assets.ray_charge.clone(),
-                                position: Some(pos),
-                                ..default()
-                            });
+                            sound.send(PlaySound::world(assets.ray_charge.clone(), pos));
 
                             logic.count = 0;
                             break;
@@ -414,11 +410,7 @@ fn the_boss_logic(
                                     duration: charge_duration,
                                     color: Color::rgb(0.8, 1., 1.),
                                 });
-                                sound.send(Sound {
-                                    sound: assets.ray_charge.clone(),
-                                    position: Some(pos),
-                                    ..default()
-                                });
+                                sound.send(PlaySound::world(assets.ray_charge.clone(), pos));
 
                                 any = true;
                             }

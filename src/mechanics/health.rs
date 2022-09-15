@@ -7,7 +7,7 @@ pub struct Health {
     pub value: f32,
     pub max: f32,
 
-    pub invincible: bool,
+    pub invincible_counter: u32,
     pub armor: bool, // reduced damage from explosions
 
     pub recent_damage: HashMap<Entity, Duration>,
@@ -21,7 +21,7 @@ impl Health {
         Self {
             value,
             max: value,
-            invincible: false,
+            invincible_counter: 0,
             armor: false,
             recent_damage: default(),
         }
@@ -35,6 +35,19 @@ impl Health {
     /// How many health has relative to max, normally in 0-1 range
     pub fn t(&self) -> f32 {
         self.value / self.max
+    }
+
+    pub fn invincibility(&mut self, enable: bool) {
+        match enable {
+            true => self.invincible_counter += 1,
+            false => {
+                self.invincible_counter = self.invincible_counter.checked_sub(1).unwrap_or_default()
+            }
+        }
+    }
+
+    pub fn invincible(&self) -> bool {
+        self.invincible_counter > 0
     }
 }
 
@@ -129,7 +142,7 @@ fn damage(
     mut death: CmdWriter<DeathEvent>, mut received: CmdWriter<ReceivedDamage>, time: Res<GameTime>,
 ) {
     damage.iter_entities(&mut entities, |event, (entity, mut health, team)| {
-        if !team.is_same(event.team) && !health.invincible {
+        if !team.is_same(event.team) && !health.invincible() {
             health
                 .recent_damage
                 .retain(|_, at| time.passed(*at) < Health::DAMAGE_PERIOD);

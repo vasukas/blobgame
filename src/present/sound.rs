@@ -3,11 +3,27 @@ use crate::{common::*, control::menu::TimeMode, objects::spawn::SpawnControl};
 use bevy_kira_audio::prelude::*;
 
 /// Event
-#[derive(Default)]
-pub struct Sound {
+#[derive(Clone, Default)]
+pub struct PlaySound {
     pub sound: Handle<AudioSource>,
-    pub position: Option<Vec2>,
+    pub pos: Option<Vec2>,
     pub non_randomized: bool,
+}
+
+impl PlaySound {
+    /// Positional sound
+    pub fn world(sound: Handle<AudioSource>, pos: Vec2) -> Self {
+        Self {
+            sound,
+            pos: Some(pos),
+            ..default()
+        }
+    }
+
+    /// Non-positional non-randomized sound
+    pub fn ui(sound: Handle<AudioSource>) -> Self {
+        Self { sound, ..default() }
+    }
 }
 
 #[derive(Component)]
@@ -54,7 +70,7 @@ impl Plugin for SoundPlugin {
             .add_plugin(AudioPlugin)
             .init_resource::<ListenerConfig>()
             .init_resource::<Beats>()
-            .add_event::<Sound>()
+            .add_event::<PlaySound>()
             .add_system(apply_settings)
             .add_system(update_listener_config)
             .add_system(play_sounds)
@@ -139,7 +155,7 @@ fn update_listener_config(
 }
 
 fn play_sounds(
-    mut events: EventReader<Sound>, audio: Res<Audio>, config: Res<ListenerConfig>,
+    mut events: EventReader<PlaySound>, audio: Res<Audio>, config: Res<ListenerConfig>,
     mut commands: Commands, time_mode: Res<TimeMode>, settings: Res<Settings>,
 ) {
     let leading_silence = 0.25; // TODO: this is atrocious hack since bevy_kira_audio doesn't expose kira's start time
@@ -147,7 +163,7 @@ fn play_sounds(
     for event in events.iter() {
         use rand::*;
         let ((volume, panning), start_pos) = event
-            .position
+            .pos
             .map(|pos| {
                 (
                     config.calculate(pos, 1.),
@@ -165,7 +181,7 @@ fn play_sounds(
         cmd.with_volume(volume * K_VOLUME * settings.master_volume as f64)
             .with_panning(panning)
             .start_from(start_pos);
-        if let Some(pos) = event.position {
+        if let Some(pos) = event.pos {
             commands
                 .spawn_bundle(SpatialBundle::from_transform(Transform::new_2d(pos)))
                 .insert(PositionalSound {

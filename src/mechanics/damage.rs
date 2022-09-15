@@ -122,10 +122,12 @@ fn die_on_contact(
         if match big.is_some() {
             true => {
                 contacts.current.iter().any(|e| !projectiles.contains(*e))
-                    && contacts
-                        .current
-                        .iter()
-                        .any(|e| !invincible.get(*e).map(|hp| hp.invincible).unwrap_or(false))
+                    && contacts.current.iter().any(|e| {
+                        !invincible
+                            .get(*e)
+                            .map(|hp| hp.invincible())
+                            .unwrap_or(false)
+                    })
             }
             false => !contacts.current.is_empty(),
         } {
@@ -162,7 +164,12 @@ fn damage_ray(
                     .get(entity)
                     .map(|other_team| team.is_same(*other_team.0))
                     .unwrap_or(false);
-                if !same_team && targets.get(entity).map(|v| !v.1.invincible).unwrap_or(true) {
+                if !same_team
+                    && targets
+                        .get(entity)
+                        .map(|v| !v.1.invincible())
+                        .unwrap_or(true)
+                {
                     best_targets.push((entity, intersect.toi, intersect.point))
                 }
                 true

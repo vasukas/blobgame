@@ -101,8 +101,10 @@ Update 1
 
 - audio
     - try oddio/bevy_oddio (it has built-in spatial)
-    + fix volume setting not working
     - ui_weapon_broken has invalid pitch
+    - sounds probably used incorrectly in a lot of places
+
+    + fix volume setting not working
     - add music (make it quieter in in-game menues, a-la Ultrakill)
     - layer-based dynamic music (not sure on criterias for layers)
     + menu music plays if using CLI 'play'
@@ -120,7 +122,7 @@ Update 1
     - rework HUD, add weapon icons
     - maybe add movement trail
 
-- fix god mode (just prevent player's death) & add one-hit kill weapon
++ fix god mode & add one-hit kill weapon
 - maybe allow restarting the level with a single key press at any time
 - focus mode: tween time scale and add slight camera zoom
 
@@ -134,6 +136,7 @@ Later updates
     - fix system order (esp. delays!)
     - try to remove hacks
     - documentation
+    - pre-load assets
 
 - menu
     - fix keybinding (grep TODOs there)

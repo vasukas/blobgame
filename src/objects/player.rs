@@ -16,7 +16,7 @@ use crate::{
         camera::WindowInfo,
         effect::{Explosion, Flash, FlashOnDamage},
         hud_elements::WorldText,
-        sound::{AudioListener, Beats, Sound},
+        sound::{AudioListener, Beats, PlaySound},
     },
 };
 
@@ -42,6 +42,7 @@ pub struct Player {
     prev_move: Vec2,
     beats_count: Option<i32>,
     fire_lock: Option<(Duration, bool)>,
+    god_mode: bool,
 }
 
 impl Player {
@@ -159,12 +160,13 @@ fn controls(
         &mut Player,
         &mut KinematicController,
         &ActionState<PlayerAction>,
+        &mut Health,
     )>,
     mut kinematic: CmdWriter<KinematicCommand>, window: Res<WindowInfo>, time: Res<GameTime>,
     mut commands: Commands, mut weapon: CmdWriter<Weapon>, mut stats: ResMut<Stats>,
     mut beats: ResMut<Beats>, mut time_mode: ResMut<TimeMode>, real_time: Res<Time>,
 ) {
-    let (entity, pos, mut player, mut kctr, input) = match player.get_single_mut() {
+    let (entity, pos, mut player, mut kctr, input, mut health) = match player.get_single_mut() {
         Ok(v) => v,
         Err(_) => return,
     };
@@ -230,6 +232,7 @@ fn controls(
     }
     if dash && player.dash_until.is_none() && player.exhaust(1.) {
         player.dash_until = Some(time.now() + Player::DASH_DURATION);
+        health.invincibility(true);
         commands.entity(entity).insert(Flash {
             radius: Player::RADIUS,
             duration: Player::DASH_DURATION,
@@ -293,9 +296,8 @@ fn update_player(
     for (mut player, mut health, _, mut transform) in player.iter_mut() {
         // dash
         if let Some(until) = player.dash_until {
-            let still_dashing = !time.reached(until);
-            health.invincible = still_dashing;
-            if !still_dashing {
+            if time.reached(until) {
+                health.invincibility(false);
                 player.dash_until = None;
             }
         }
@@ -342,7 +344,7 @@ fn update_player(
 
 fn player_damage_reaction(
     mut player: Query<(Entity, &Health, &mut Player)>, mut events: CmdReader<ReceivedDamage>,
-    mut was_damaged: Local<bool>, mut sound: EventWriter<Sound>, assets: Res<MyAssets>,
+    mut was_damaged: Local<bool>, mut sound: EventWriter<PlaySound>, assets: Res<MyAssets>,
     mut stats: ResMut<Stats>,
 ) {
     let charge_loss_on_hit = 0.1;
@@ -361,11 +363,7 @@ fn player_damage_reaction(
     if damaged != *was_damaged {
         *was_damaged = damaged;
         if damaged {
-            sound.send(Sound {
-                sound: assets.ui_alert.clone(),
-                non_randomized: true,
-                ..default()
-            })
+            sound.send(PlaySound::ui(assets.ui_alert.clone()))
         }
     }
 }
@@ -519,13 +517,16 @@ fn hud_panel(
 }
 
 fn god_mode(
-    keys: Res<Input<KeyCode>>, mut player: Query<&mut Health, With<Player>>,
+    keys: Res<Input<KeyCode>>, mut player: Query<(&mut Health, &mut Player)>,
     mut stats: ResMut<Stats>,
 ) {
-    if keys.just_pressed(KeyCode::P) {
-        if let Ok(mut health) = player.get_single_mut() {
-            health.invincible = true
+    if keys.just_pressed(KeyCode::F4) {
+        if let Ok((mut health, mut player)) = player.get_single_mut() {
+            player.god_mode.flip();
+            health.invincibility(player.god_mode);
+            if player.god_mode {
+                *stats.weapon_mut() = Some((CraftedWeapon::GodRay, 0.))
+            }
         }
-        *stats.weapon_mut() = Some((CraftedWeapon::Railgun, 100000.))
     }
 }

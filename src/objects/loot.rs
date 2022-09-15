@@ -5,7 +5,7 @@ use crate::{
         health::{DeathEvent, DieAfter, Health},
         movement::DropSpread,
     },
-    present::sound::Sound,
+    present::sound::PlaySound,
 };
 
 #[derive(Clone, Copy)]
@@ -128,7 +128,7 @@ fn drop_loot(
 fn pick_loot(
     mut commands: Commands, phy: Res<RapierContext>,
     mut picker: Query<(&GlobalTransform, &mut Health, &mut LootPicker)>,
-    loot: Query<&PickableLoot>, mut sounds: EventWriter<Sound>, assets: Res<MyAssets>,
+    loot: Query<&PickableLoot>, mut sounds: EventWriter<PlaySound>, assets: Res<MyAssets>,
     mut stats: ResMut<Stats>,
 ) {
     for (pos, mut health, picker) in picker.iter_mut() {
@@ -148,12 +148,7 @@ fn pick_loot(
                                 health.value = new_health;
 
                                 commands.entity(entity).despawn_recursive();
-                                sounds.send(Sound {
-                                    sound: assets.ui_pickup.clone(),
-                                    position: Some(pos),
-                                    non_randomized: true,
-                                    ..default()
-                                });
+                                sounds.send(PlaySound::ui(assets.ui_pickup.clone()));
                             }
                         }
 
@@ -165,12 +160,7 @@ fn pick_loot(
                             }
 
                             commands.entity(entity).despawn_recursive();
-                            sounds.send(Sound {
-                                sound: assets.ui_pickup.clone(),
-                                position: Some(pos),
-                                non_randomized: true,
-                                ..default()
-                            });
+                            sounds.send(PlaySound::ui(assets.ui_pickup.clone()));
                         }
                     }
                 }

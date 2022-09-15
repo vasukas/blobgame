@@ -11,7 +11,7 @@ use crate::{
     present::{
         effect::{DontSparkMe, Explosion, ExplosionPower, RayEffect},
         light::Light,
-        sound::{Beats, Sound},
+        sound::{Beats, PlaySound},
     },
 };
 use std::f32::consts::PI;
@@ -41,6 +41,7 @@ pub enum CraftedWeapon {
     Shield,
     Railgun,
     Repeller,
+    GodRay,
 }
 
 impl CraftedWeapon {
@@ -55,6 +56,7 @@ impl CraftedWeapon {
             ),
             CraftedWeapon::Railgun => ("Railgun", "Shoots powerful piercing death ray", 10.),
             CraftedWeapon::Repeller => ("Repeller", "Pushes projectiles away from you", 15.),
+            CraftedWeapon::GodRay => ("GODRAY", "GODRAY", 0.),
         }
     }
 
@@ -83,7 +85,7 @@ fn weapon(
         &Team,
         Option<&KinematicController>,
     )>,
-    mut sound_cmd: EventWriter<Sound>, assets: Res<MyAssets>, beats: Res<Beats>,
+    mut play_sound: EventWriter<PlaySound>, assets: Res<MyAssets>, beats: Res<Beats>,
     real_time: Res<Time>, mut stats: ResMut<Stats>,
 ) {
     use bevy_lyon::*;
@@ -140,11 +142,7 @@ fn weapon(
                     .insert(PhysicsType::Projectile.rapier())
                     .insert(Velocity::linear(velocity));
 
-                sound_cmd.send(Sound {
-                    sound: assets.wpn_smg.clone(),
-                    position: Some(transform.pos_2d()),
-                    ..default()
-                });
+                play_sound.send(PlaySound::world(assets.wpn_smg.clone(), transform.pos_2d()));
             }
 
             Weapon::AdvancedTurret { offset } => {
@@ -195,11 +193,7 @@ fn weapon(
                     .insert(PhysicsType::Projectile.rapier())
                     .insert(Velocity::linear(velocity));
 
-                sound_cmd.send(Sound {
-                    sound: assets.wpn_smg.clone(),
-                    position: Some(transform.pos_2d()),
-                    ..default()
-                });
+                play_sound.send(PlaySound::world(assets.wpn_smg.clone(), transform.pos_2d()));
             }
 
             Weapon::RotatingTurret => {
@@ -246,11 +240,10 @@ fn weapon(
                     .insert(PhysicsType::Projectile.rapier())
                     .insert(Velocity::linear(velocity));
 
-                sound_cmd.send(Sound {
-                    sound: assets.wpn_plasma.clone(),
-                    position: Some(transform.pos_2d()),
-                    ..default()
-                });
+                play_sound.send(PlaySound::world(
+                    assets.wpn_plasma.clone(),
+                    transform.pos_2d(),
+                ));
             }
 
             Weapon::PlayerGun { dir } | Weapon::PlayerCrafted { dir } => {
@@ -305,6 +298,7 @@ fn weapon(
                             assets.player_gun.clone()
                         },
                     ),
+
                     _ => {
                         let mega_weapon = stats.weapon_mut();
                         match mega_weapon {
@@ -312,11 +306,7 @@ fn weapon(
                                 *uses -= 1.;
                                 if *uses <= 0. {
                                     *mega_weapon = None;
-                                    sound_cmd.send(Sound {
-                                        sound: assets.ui_weapon_broken.clone(),
-                                        non_randomized: true,
-                                        ..default()
-                                    });
+                                    play_sound.send(PlaySound::ui(assets.ui_weapon_broken.clone()));
                                 }
 
                                 explodes_projectiles = true;
@@ -349,15 +339,12 @@ fn weapon(
                                     assets.player_railgun.clone(),
                                 )
                             }
+
                             Some((CraftedWeapon::Plasma, uses)) => {
                                 *uses -= 1.;
                                 if *uses <= 0. {
                                     *mega_weapon = None;
-                                    sound_cmd.send(Sound {
-                                        sound: assets.ui_weapon_broken.clone(),
-                                        non_randomized: true,
-                                        ..default()
-                                    });
+                                    play_sound.send(PlaySound::ui(assets.ui_weapon_broken.clone()));
                                 }
 
                                 let mut speed = 8.;
@@ -415,6 +402,21 @@ fn weapon(
 
                                 ([2., 5., 10.], None, assets.player_plasma.clone())
                             }
+
+                            Some((CraftedWeapon::GodRay, _)) => (
+                                [1000.; 3],
+                                Some(DamageRay {
+                                    spawn_effect: Some(RayEffect {
+                                        color: Color::WHITE,
+                                        width: 0.4,
+                                        fade_time: Duration::from_millis(200),
+                                        ..default()
+                                    }),
+                                    ..default()
+                                }),
+                                assets.player_railgun.clone(),
+                            ),
+
                             _ => {
                                 commands.insert(DieAfter::one_frame());
                                 return;
@@ -443,11 +445,7 @@ fn weapon(
                         .insert(DontSparkMe);
                 }
 
-                sound_cmd.send(Sound {
-                    sound,
-                    position: Some(transform.pos_2d()),
-                    ..default()
-                });
+                play_sound.send(PlaySound::world(sound, transform.pos_2d()));
             }
         },
     );

@@ -1,6 +1,6 @@
 use bevy_prototype_lyon::prelude::DrawMode;
 
-use super::{light::Light, sound::Sound};
+use super::{light::Light, sound::PlaySound};
 use crate::{
     common::*,
     mechanics::health::{Damage, DeathEvent, Health, ReceivedDamage},
@@ -116,7 +116,7 @@ struct TemporaryHack;
 fn explosion(
     mut commands: Commands, mut events: EventReader<Explosion>,
     mut explosions: Query<(Entity, &ExplosionState, &mut Light)>, time: Res<GameTime>,
-    hack: Query<Entity, With<TemporaryHack>>, mut sounds: EventWriter<Sound>,
+    hack: Query<Entity, With<TemporaryHack>>, mut sounds: EventWriter<PlaySound>,
     assets: Res<MyAssets>,
 ) {
     let scale = 3.; // TODO: this is a hack to force lyon draw circles with more points
@@ -138,16 +138,13 @@ fn explosion(
                 radius: 0.,
                 color: (event.color0 + event.color1) * 0.5,
             });
+
         if let Some(sound) = match event.power {
             ExplosionPower::None => None,
             ExplosionPower::Small => Some(&assets.explosion_small),
             ExplosionPower::Big => Some(&assets.explosion_big),
         } {
-            sounds.send(Sound {
-                sound: sound.clone(),
-                position: Some(event.origin),
-                ..default()
-            });
+            sounds.send(PlaySound::world(sound.clone(), event.origin));
         }
     }
 
