@@ -110,9 +110,15 @@ struct TargetState(Option<Entity>);
 
 fn update_target(
     mut state: Query<(&Target, &mut TargetState)>, player: Query<Entity, With<Player>>,
+    settings: Res<Settings>,
 ) {
     let player = player.get_single().ok();
     for (target, mut state) in state.iter_mut() {
+        if settings.cheats.blind_enemies {
+            state.0 = None;
+            continue;
+        }
+
         match *target {
             Target::Player => state.0 = player,
         }

@@ -2,7 +2,7 @@ use super::{health::*, physics::CollectContacts};
 use crate::{
     common::*,
     objects::stats::Stats,
-    present::effect::{DontSparkMe, Explosion, ExplosionPower, RayEffect},
+    present::effect::{Explosion, ExplosionPower, RayEffect},
 };
 
 #[derive(Component, Clone, Copy)]
@@ -46,7 +46,8 @@ pub struct DamageRay {
     pub spawn_effect: Option<RayEffect>, // length will be set on hit
     pub explosion_effect: Option<Explosion>, // show explosion where it hits
     pub ignore_obstacles: bool,
-    pub retarget_on_wall: bool,
+    pub bounce_before_wall: Option<f32>, // radius
+    pub max_length: Option<f32>,         // or unlimited
 }
 
 #[derive(Component, Clone, Copy)]
@@ -155,81 +156,117 @@ fn damage_ray(
     mut damage_cmd: CmdWriter<DamageEvent>, phy: Res<RapierContext>, mut commands: Commands,
     mut explode: EventWriter<Explosion>, mut stats: ResMut<Stats>,
 ) {
-    let huge_distance = 1000.;
-    let retarget_radius = 50.; // TODO: reduce?
-
-    // TODO: refactor, this is fucking mess of broken logic
-
     for (source, pos, ray, mut damage, team) in rays.iter_mut() {
-        let dir = Vec2::Y.rotated(pos.angle_2d());
-        let filter = QueryFilter::new().groups(PhysicsType::Hitscan.into());
+        let mut filter = QueryFilter::new().groups(PhysicsType::Hitscan.into());
+        let mut origin = pos.pos_2d();
+        let mut dir = Vec2::Y.rotated(pos.angle_2d());
 
-        let mut best_targets = vec![];
-        phy.intersections_with_ray(
-            pos.pos_2d(),
-            dir,
-            huge_distance,
-            true,
-            filter,
-            |entity, intersect| {
-                let add = match targets.get(entity) {
-                    Ok((other_team, health, ..)) => {
-                        !team.is_same(*other_team) && !health.invincible()
+        let mut ray_targets = vec![];
+        let mut main_raycast = true;
+
+        while main_raycast {
+            main_raycast = false;
+            let original_origin = origin;
+            ray_targets.clear();
+
+            // find everything intersecting with ray
+            phy.intersections_with_ray(
+                origin,
+                dir,
+                ray.max_length.unwrap_or(f32::MAX),
+                true,
+                filter,
+                |entity, intersect| {
+                    if match targets.get(entity) {
+                        Ok((other_team, health, ..)) => {
+                            // different team and not invincible
+                            !team.is_same(*other_team) && !health.invincible()
+                        }
+                        _ => true,
+                    } {
+                        ray_targets.push((entity, intersect.toi, intersect.point))
                     }
-                    _ => true,
-                };
-                if add {
-                    best_targets.push((entity, intersect.toi, intersect.point))
-                }
-                true
-            },
-        );
-        best_targets.sort_by(|a, b| a.1.partial_cmp(&b.1).unwrap()); // by distance
+                    true
+                },
+            );
+            ray_targets.sort_by(|a, b| a.1.partial_cmp(&b.1).unwrap()); // by distance
 
-        let mut max_distance = 0.;
-        let mut prev_point = None;
-        for (hit_entity, distance, point) in best_targets {
-            let mut break_this = false;
-            let mut hit_this = true;
+            // iterate over objects hit
+            enum HitResult {
+                Continue,
+                End,
+                EndPrevious,
+            }
+            let mut prev_hit = None;
 
-            if let Ok((_, health, projectile, mut explode, ..)) = targets.get_mut(hit_entity) {
-                if team.is_player() {
-                    if let Some(explode) = explode.as_mut().filter(|_| damage.powerful) {
-                        stats.player.points += 50;
-                        explode.activated = true;
+            for (hit_entity, _, hit_point) in ray_targets.iter().copied() {
+                let mut result = HitResult::Continue;
 
-                        // force death
-                        damage_cmd.send((
-                            hit_entity,
-                            DamageEvent {
-                                source,
-                                damage: Damage::new(10000.),
-                                team: Team::YEEEEEEE,
-                                point,
-                            },
-                        ));
-                    } else if projectile.is_some() {
-                        stats.player.points += 1
+                // hit something destructible
+                if let Ok((_, health, projectile, mut explode, enemy_type, ..)) =
+                    targets.get_mut(hit_entity)
+                {
+                    // ray is produced by player
+                    if team.is_player() {
+                        // target can explode (i.e. big projectile)
+                        if let Some(explode) = explode.as_mut().filter(|_| damage.powerful) {
+                            stats.player.points += 50;
+                            explode.activated = true;
+
+                            // force death
+                            damage_cmd.send((
+                                hit_entity,
+                                DamageEvent {
+                                    source,
+                                    damage: Damage::new(10000.),
+                                    team: Team::YEEEEEEE,
+                                    point: hit_point,
+                                },
+                            ));
+                        }
+                        // target is small projectile - destroyed
+                        else if projectile.is_some() {
+                            stats.player.points += 1
+                        }
+                    }
+
+                    // check if ray will pass through the target
+                    if health.value < damage.value {
+                        let new_damage = damage.value
+                            - health.value
+                            - match enemy_type {
+                                Some(EnemyType::Normal) => 1.,
+                                None => 0.,
+                            };
+                        if new_damage > 0. {
+                            damage.value = new_damage
+                        } else {
+                            result = HitResult::End;
+                        }
+                    }
+                    // it won't
+                    else {
+                        result = HitResult::End;
                     }
                 }
-                if health.value < damage.value {
-                    let new_damage =
-                        damage.value - health.value - if health.max > 5. { 2. } else { 1. };
-                    if new_damage < 0. {
-                        break_this = true;
-                        hit_this = false;
+                // hit obstacle
+                else {
+                    // hit the wall
+                    if !ray.ignore_obstacles {
+                        result = HitResult::End
                     }
-                    damage.value = new_damage
-                }
-                prev_point = Some(point);
-            } else {
-                if ray.retarget_on_wall {
-                    if let Some(point) = prev_point {
+
+                    // bounce off to another target if possible, which requires any target hit first
+                    if let Some((radius, (hit_point, hit_entity))) =
+                        ray.bounce_before_wall.zip(prev_hit)
+                    {
+                        // find best (closest) target
+                        // TODO: or maybe select targets based on angle?
                         let mut best = None;
                         phy.intersections_with_shape(
-                            pos.pos_2d(),
-                            pos.angle_2d(),
-                            &Collider::ball(retarget_radius),
+                            hit_point,
+                            0.,
+                            &Collider::ball(radius),
                             filter,
                             |entity| {
                                 if let Ok((target_team, .., enemy, target_pos)) =
@@ -238,25 +275,37 @@ fn damage_ray(
                                     if !target_team.is_same(*team) {
                                         match enemy {
                                             Some(EnemyType::Normal) => {
-                                                let dir = target_pos.pos_2d() - pos.pos_2d();
+                                                // check if have LoS to target
+                                                let dir = target_pos.pos_2d() - hit_point;
+                                                let distance = dir.length();
+                                                let dir = if distance > 0. {
+                                                    dir / distance
+                                                } else {
+                                                    dir
+                                                };
+
                                                 let (impact, distance) = phy
                                                     .cast_ray(
-                                                        pos.pos_2d(),
+                                                        hit_point,
                                                         dir,
-                                                        1.,
-                                                        false,
+                                                        radius,
+                                                        true,
                                                         filter
+                                                            // ignore entity from which ray starts
                                                             .exclude_rigid_body(hit_entity)
+                                                            // ignore small projectiles
                                                             .predicate(&|entity| match targets
                                                                 .get(entity)
                                                             {
-                                                                Ok((.., enemy, _)) => {
-                                                                    enemy.is_some()
+                                                                Ok((.., projectile, __, _)) => {
+                                                                    projectile.is_none()
                                                                 }
                                                                 Err(_) => true,
                                                             }),
                                                     )
-                                                    .unwrap_or((entity, dir.length_squared()));
+                                                    .unwrap_or((entity, distance));
+
+                                                // have LoS to target
                                                 if impact == entity {
                                                     let impact = (
                                                         distance,
@@ -277,56 +326,60 @@ fn damage_ray(
                                 true
                             },
                         );
-                        println!("{:?}", best);
-                        if let Some((.., Some(dir))) = best {
-                            commands
-                                .spawn_bundle(
-                                    Transform::new_2d(point).with_angle_2d(dir.angle()).bundle(),
-                                )
-                                .insert(GameplayObject)
-                                .insert(*damage)
-                                .insert(ray.clone())
-                                .insert(DieAfter::one_frame())
-                                .insert(DontSparkMe)
-                                .insert(*team);
-                            hit_this = false;
+                        // found target
+                        if let Some((.., Some(best_dir))) = best {
+                            // ignore entity from which ray starts
+                            filter = filter.exclude_rigid_body(hit_entity);
+
+                            origin = hit_point;
+                            dir = best_dir;
+                            main_raycast = true;
+                            result = HitResult::EndPrevious;
                         }
                     }
                 }
-                if ray.ignore_obstacles {
-                    hit_this = false;
-                } else {
-                    break_this = true
+
+                // generate effect and loop control
+                let (break_this, was_hit) = match result {
+                    HitResult::Continue => (false, true),
+                    HitResult::End => (true, true),
+                    HitResult::EndPrevious => (true, false),
+                };
+                if was_hit {
+                    if let Some(mut explosion) = ray.explosion_effect {
+                        explosion.origin = hit_point;
+                        explode.send(explosion)
+                    }
+                    damage_cmd.send((
+                        hit_entity,
+                        DamageEvent {
+                            source,
+                            damage: *damage,
+                            team: *team,
+                            point: hit_point,
+                        },
+                    ));
+                    prev_hit = Some((hit_point, hit_entity));
+                }
+                if break_this {
+                    break;
                 }
             }
 
-            if hit_this {
-                max_distance = distance;
-                if let Some(mut explosion) = ray.explosion_effect {
-                    explosion.origin = point;
-                    explode.send(explosion)
-                }
-                damage_cmd.send((
-                    hit_entity,
-                    DamageEvent {
-                        source,
-                        damage: *damage,
-                        team: *team,
-                        point,
-                    },
-                ));
+            // visual effect
+            if let Some((mut effect, (hit_point, _))) = ray.spawn_effect.zip(prev_hit) {
+                let dir = hit_point - original_origin;
+                effect.length = dir.length();
+                effect.destroy_parent = true;
+                commands
+                    .spawn_bundle(
+                        Transform::new_2d(original_origin)
+                            .with_angle_2d(dir.angle())
+                            .bundle(),
+                    )
+                    .insert(GameplayObject)
+                    .insert(effect);
             }
-            if break_this {
-                break;
-            }
-        }
-        if let Some(mut effect) = ray.spawn_effect {
-            effect.length = max_distance;
-            effect.destroy_parent = true;
-            commands
-                .spawn_bundle(SpatialBundle::from_transform((*pos).into()))
-                .insert(GameplayObject)
-                .insert(effect);
         }
     }
 }

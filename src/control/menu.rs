@@ -143,6 +143,22 @@ fn show_menu(
                             if ui.button("Exit to desktop").clicked() {
                                 exit_app.send_default()
                             }
+
+                            // TODO: hide behind cheatcode
+                            ui.label(""); // separator
+                            let mut changed = false;
+                            changed |= ui
+                                .checkbox(&mut settings.cheats.god_mode, "God mode")
+                                .changed();
+                            changed |= ui
+                                .checkbox(&mut settings.cheats.god_railgun, "God railgun")
+                                .changed();
+                            changed |= ui
+                                .checkbox(&mut settings.cheats.blind_enemies, "Blind enemies")
+                                .changed();
+                            if changed {
+                                settings.save()
+                            }
                         }
 
                         MenuState::Controls(binding) => {

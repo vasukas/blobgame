@@ -52,7 +52,7 @@ impl BevyTransform2dMut for Transform {
         self.translation.y = value.y;
     }
     fn set_angle_2d(&mut self, value: f32) {
-        self.rotation = Quat::from_axis_angle(Vec3::Z, value);
+        self.rotation = Quat::from_euler(EulerRot::ZXY, value, 0., 0.)
     }
     fn set_scale_2d(&mut self, value: f32) {
         self.scale.x = value;

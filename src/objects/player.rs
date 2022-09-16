@@ -470,15 +470,21 @@ fn hud_panel(mut ctx: ResMut<EguiContext>, stats: Res<Stats>, player: Query<(&He
 
 fn god_mode(
     keys: Res<Input<KeyCode>>, mut player: Query<(&mut Health, &mut Player)>,
-    mut stats: ResMut<Stats>,
+    mut stats: ResMut<Stats>, mut hack: Local<bool>, settings: Res<Settings>,
 ) {
-    if keys.just_pressed(KeyCode::F4) {
+    let always_enabled = settings.cheats.god_mode;
+    let godray = settings.cheats.god_railgun;
+
+    if keys.just_pressed(KeyCode::F4) || (!*hack && always_enabled) {
         if let Ok((mut health, mut player)) = player.get_single_mut() {
             player.god_mode.flip();
             health.invincibility(player.god_mode);
-            if player.god_mode {
+            if player.god_mode && godray {
                 *stats.weapon_mut() = Some((CraftedWeapon::GodRay, 0.))
             }
         }
+    }
+    if always_enabled {
+        *hack = player.get_single().is_ok()
     }
 }

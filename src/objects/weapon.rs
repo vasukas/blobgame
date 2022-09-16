@@ -56,7 +56,7 @@ impl CraftedWeapon {
             ),
             CraftedWeapon::Railgun => ("Railgun", "Shoots powerful piercing death ray", 10.),
             CraftedWeapon::Repeller => ("Repeller", "Pushes projectiles away from you", 15.),
-            CraftedWeapon::GodRay => ("GODRAY", "GODRAY", 0.),
+            CraftedWeapon::GodRay => ("GODRAY", "Divine punishment", 0.),
         }
     }
 
@@ -334,7 +334,7 @@ fn weapon(
                                             radius: 1.5,
                                             ..default()
                                         }),
-                                        retarget_on_wall: true,
+                                        bounce_before_wall: Some(50.), // TODO: reduce
                                         ..default()
                                     }),
                                     assets.player_railgun.clone(),

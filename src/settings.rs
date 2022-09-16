@@ -3,12 +3,14 @@ pub use serde::{Deserialize, Serialize};
 
 // TODO: platform-dependent default path to save settings
 
+/// Resource
 #[derive(Serialize, Deserialize)]
 pub struct Settings {
     pub master_volume: f32,
     pub fullscreen: bool,
     pub difficulty: Difficulty,
     pub input: InputSettings,
+    pub cheats: Cheats,
 }
 
 impl Default for Settings {
@@ -18,8 +20,16 @@ impl Default for Settings {
             fullscreen: false,
             difficulty: Difficulty::Hard,
             input: default(),
+            cheats: default(),
         }
     }
+}
+
+#[derive(Default, Serialize, Deserialize)]
+pub struct Cheats {
+    pub god_mode: bool,
+    pub god_railgun: bool,
+    pub blind_enemies: bool,
 }
 
 #[derive(Clone, Copy, Serialize, Deserialize, PartialEq, Eq)]

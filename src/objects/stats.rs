@@ -30,7 +30,7 @@ impl Default for PersistentPlayer {
         Self {
             points: Default::default(),
             weapons: [
-                Some((CraftedWeapon::Railgun, 3.)),
+                Some((CraftedWeapon::Railgun, 50.)),
                 Some((CraftedWeapon::Plasma, 3.)),
             ],
         }

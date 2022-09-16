@@ -316,18 +316,44 @@ fn spawn(
                         ] {
                             create_wall(&mut commands, offset + pos, Vec2::splat(1.3))
                         }
-                        wave_data.entities.push(create_turret(
-                            &mut commands,
-                            offset + vec2(-15., 0.),
-                            settings.difficulty,
-                            TurretType::Simple,
-                        ));
-                        wave_data.entities.push(create_turret(
-                            &mut commands,
-                            offset + vec2(15., 0.),
-                            settings.difficulty,
-                            TurretType::Simple,
-                        ));
+                        // wave_data.entities.push(create_turret(
+                        //     &mut commands,
+                        //     offset + vec2(-15., 0.),
+                        //     settings.difficulty,
+                        //     TurretType::Simple,
+                        // ));
+                        // wave_data.entities.push(create_turret(
+                        //     &mut commands,
+                        //     offset + vec2(15., 0.),
+                        //     settings.difficulty,
+                        //     TurretType::Simple,
+                        // ));
+                        for pos in [vec2(15., 1.), vec2(15., 3.), vec2(15., 5.), vec2(15., 7.)] {
+                            wave_data.entities.push(create_turret(
+                                &mut commands,
+                                offset + pos,
+                                settings.difficulty,
+                                TurretType::Simple,
+                            ));
+                            wave_data.entities.push(create_turret(
+                                &mut commands,
+                                offset + vec2(pos.x, -pos.y),
+                                settings.difficulty,
+                                TurretType::Simple,
+                            ));
+                            wave_data.entities.push(create_turret(
+                                &mut commands,
+                                offset + vec2(-pos.x, pos.y),
+                                settings.difficulty,
+                                TurretType::Simple,
+                            ));
+                            wave_data.entities.push(create_turret(
+                                &mut commands,
+                                offset + vec2(-pos.x, -pos.y),
+                                settings.difficulty,
+                                TurretType::Simple,
+                            ));
+                        }
                     }
                     1 => {
                         wave_data.entities.push(create_turret(

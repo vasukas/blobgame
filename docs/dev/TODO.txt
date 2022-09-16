@@ -87,7 +87,7 @@ Update 1
         - tie weapon damage and enemy HP (so i.e. it would take exactly 3 powered railgun shots to defeat the boss)
 
         + rework railgun: instead of hitting wall bounce ray to the nearest enemy (in certain radius)
-        - fix that
+        + fix that
 
     - enemies
         - make advanced turrets better
