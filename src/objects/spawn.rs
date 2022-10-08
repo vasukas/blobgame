@@ -7,7 +7,6 @@ use crate::{
         health::{DieAfter, Health},
     },
     objects::{
-        boss::TheBoss,
         grid::GridBar,
         loot::{DropsLoot, Loot},
         stats::DeathPoints,
@@ -19,40 +18,26 @@ use crate::{
     },
     settings::Difficulty,
 };
+use serde::{Deserialize, Serialize};
 use std::f32::consts::SQRT_2;
 
 /// Object which must be despawned
 #[derive(Component)]
 pub struct GameplayObject;
 
-/// Resource
-#[derive(Default)]
-pub struct SpawnControl {
-    /// Current state
-    pub wave_spawned: Option<usize>,
-    pub waiting_for_next_wave: bool,
-
-    /// Set this to Some(true) to respawn, to Some(false) to despawn
-    pub despawn: Option<bool>,
-    pub tutorial: Option<usize>,
+#[derive(Clone, Copy, Serialize, Deserialize)]
+pub enum SpawnObject {
+    Wall { extents: Vec2 },
+    Turret(TurretType),
+    Boss,
 }
 
-impl SpawnControl {
-    pub fn is_game_running(&self) -> bool {
-        self.wave_spawned.is_some()
-    }
+#[derive(Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub enum TurretType {
+    Simple,
+    Advanced,
+    Rotating,
 }
-
-/// Event, sent from here
-#[derive(PartialEq, Eq)]
-pub enum WaveEvent {
-    Started,
-    Ended,
-    Restart, // sent with Started
-}
-
-#[derive(Component)]
-pub struct TemporaryWall;
 
 //
 
@@ -63,7 +48,8 @@ impl Plugin for SpawnPlugin {
         app.init_resource::<SpawnControl>()
             .init_resource::<WaveData>()
             .init_resource::<TutorialText>()
-            .add_event::<WaveEvent>()
+            .init_resource::<LevelData>()
+            .add_event::<LevelProgressEvent>()
             .add_system_to_stage(CoreStage::First, spawn.exclusive_system())
             .add_system(wave_end_detect)
             .add_system(draw_tutorial_text);
@@ -75,11 +61,14 @@ struct WaveData {
     entities: Vec<Entity>,
 }
 
+#[derive(Component)]
+struct TemporaryWall;
+
 fn spawn(
     mut commands: Commands, mut control: ResMut<SpawnControl>,
     entities: Query<Entity, With<GameplayObject>>, mut camera: Query<&mut WorldCamera>,
     mut stats: ResMut<Stats>, mut wave_data: ResMut<WaveData>,
-    mut wave_event: EventWriter<WaveEvent>, settings: Res<Settings>,
+    mut wave_event: EventWriter<LevelProgressEvent>, settings: Res<Settings>,
     mut tutorial_text: ResMut<TutorialText>, tmp_walls: Query<Entity, With<TemporaryWall>>,
 ) {
     if let Some(respawn) = control.despawn.take() {
@@ -106,13 +95,11 @@ fn spawn(
             *stats = default();
         }
 
-        if control.wave_spawned == Some(stats.wave) {
-            wave_event.send(WaveEvent::Restart)
-        }
+        let new = control.wave_spawned != Some(stats.wave);
         control.wave_spawned = Some(stats.wave);
         control.waiting_for_next_wave = false;
         *wave_data = default();
-        wave_event.send(WaveEvent::Started);
+        wave_event.send(LevelProgressEvent::Started { new });
 
         //
 
@@ -217,90 +204,8 @@ fn spawn(
 
         // wave-specific spawns
 
+        /*
         match control.tutorial {
-            // IF YOU CHANGE ANYTHING HERE DON'T FORGET TO UPDATE HACK IN PLAYER NEXT WAVE MESSAGE!!!!
-            // TODO: use actual keybinds in text
-            Some(0) => {
-                tutorial_text.0 = concat!(
-                    "This is a tutorial message!\n",
-                    "Press R key to show next message",
-                );
-            }
-            Some(1) => {
-                tutorial_text.0 = concat!(
-                    "Move around with W/A/S/D keys.\n",
-                    "Press SPACE key to dash in movement direction.\n",
-                    "You can change direction mid-dash, but can't stop.\n",
-                    "\n",
-                    "Dash gives temporary INVINCIBILITY, but consumes stamina.",
-                    "\n\nPress R key to show next message",
-                );
-            }
-            Some(2) => {
-                tutorial_text.0 = concat!(
-                    "Shoot with left mouse button.\n",
-                    "Shoot in the movement direction just after starting dash\n",
-                    "  to deal increased damage (ray will turn red).",
-                    "\n\nPress R key to start tutorial combat",
-                );
-            }
-            Some(3) => {
-                tutorial_text.0 = concat!("Destroy both turrets to finish the level!",);
-                wave_data.entities.push(create_turret(
-                    &mut commands,
-                    offset + vec2(world_size.x * -0.4, world_size.y * 0.1),
-                    settings.difficulty,
-                    TurretType::Simple,
-                ));
-                wave_data.entities.push(create_turret(
-                    &mut commands,
-                    offset + vec2(world_size.x * 0.4, world_size.y * -0.1),
-                    settings.difficulty,
-                    TurretType::Simple,
-                ));
-            }
-            Some(4) => {
-                tutorial_text.0 = concat!(
-                    "Sometimes enemies drop pieces which can be picked up:\n",
-                    "- green ones restore health;\n",
-                    "- red ones used to craft additional weapons.\n",
-                    "You can only have two such weapons (in addition to main one) and they have limited uses.\n",
-                    "Press C to access crafting menu.\n",
-                    "Shoot crafted weapon with right mouse button.\n",
-                    "Switch current weapon with F or mouse wheel.\n",
-                    "Try combining different attacks, like shooting plasma ball with railgun.",
-                    "\n\nPress R key to show next message",
-                );
-            }
-            Some(5) => {
-                tutorial_text.0 = concat!(
-                    "Over time you acquire focus charge.\n",
-                    "Destroy enemies and avoid damage to charge faster and stay focused longer.\n",
-                    "Press SHIFT at 100% charge to enter focus mode.\n",
-                    "Shoot in sync with the beat to GREATLY increase damage.",
-                    "\n\nPress R key to start tutorial combat (again)",
-                );
-            }
-            Some(6) => {
-                tutorial_text.0 = concat!("Try destroying the turret using focus mode!");
-                wave_data.entities.push(create_turret(
-                    &mut commands,
-                    offset + vec2(0., world_size.y * 0.35),
-                    settings.difficulty,
-                    TurretType::Simple,
-                ));
-            }
-            Some(_) => {
-                tutorial_text.0 = concat!(
-                    "That's it, end of tutorial!\n",
-                    "Game currently has no ending,\n",
-                    "Levels will be repeated after some time",
-                    "\n\nPress R key to PLAY\n",
-                    "And remember that you are damaged by your own explosions!",
-                );
-                control.tutorial = None;
-            }
-
             // not tutorial, actual game
             None => {
                 tutorial_text.0 = default();
@@ -316,44 +221,18 @@ fn spawn(
                         ] {
                             create_wall(&mut commands, offset + pos, Vec2::splat(1.3))
                         }
-                        // wave_data.entities.push(create_turret(
-                        //     &mut commands,
-                        //     offset + vec2(-15., 0.),
-                        //     settings.difficulty,
-                        //     TurretType::Simple,
-                        // ));
-                        // wave_data.entities.push(create_turret(
-                        //     &mut commands,
-                        //     offset + vec2(15., 0.),
-                        //     settings.difficulty,
-                        //     TurretType::Simple,
-                        // ));
-                        for pos in [vec2(15., 1.), vec2(15., 3.), vec2(15., 5.), vec2(15., 7.)] {
-                            wave_data.entities.push(create_turret(
-                                &mut commands,
-                                offset + pos,
-                                settings.difficulty,
-                                TurretType::Simple,
-                            ));
-                            wave_data.entities.push(create_turret(
-                                &mut commands,
-                                offset + vec2(pos.x, -pos.y),
-                                settings.difficulty,
-                                TurretType::Simple,
-                            ));
-                            wave_data.entities.push(create_turret(
-                                &mut commands,
-                                offset + vec2(-pos.x, pos.y),
-                                settings.difficulty,
-                                TurretType::Simple,
-                            ));
-                            wave_data.entities.push(create_turret(
-                                &mut commands,
-                                offset + vec2(-pos.x, -pos.y),
-                                settings.difficulty,
-                                TurretType::Simple,
-                            ));
-                        }
+                        wave_data.entities.push(create_turret(
+                            &mut commands,
+                            offset + vec2(-15., 0.),
+                            settings.difficulty,
+                            TurretType::Simple,
+                        ));
+                        wave_data.entities.push(create_turret(
+                            &mut commands,
+                            offset + vec2(15., 0.),
+                            settings.difficulty,
+                            TurretType::Simple,
+                        ));
                     }
                     1 => {
                         wave_data.entities.push(create_turret(
@@ -516,23 +395,20 @@ fn spawn(
                 }
             }
         }
+        */
     }
 }
 
 fn wave_end_detect(
     mut control: ResMut<SpawnControl>, entities: Query<()>, mut wave_data: ResMut<WaveData>,
-    mut event: EventWriter<WaveEvent>,
+    mut event: EventWriter<LevelProgressEvent>,
 ) {
     if control.is_game_running() {
         let was_empty = wave_data.entities.is_empty();
         wave_data.entities.retain(|e| entities.contains(*e));
         if wave_data.entities.is_empty() && !was_empty {
-            control.waiting_for_next_wave = true;
-            event.send(WaveEvent::Ended);
-
-            if let Some(wave) = control.tutorial.as_mut() {
-                *wave += 1
-            }
+            control.waiting_for_next_level = true;
+            event.send(LevelProgressEvent::Ended);
         }
     }
 }
@@ -563,13 +439,6 @@ fn create_wall(commands: &mut Commands, origin: Vec2, extents: Vec2) {
         .insert(PhysicsType::Solid.rapier())
         .insert(Collider::cuboid(extents.x / 2., extents.y / 2.))
         .insert(TemporaryWall);
-}
-
-#[derive(Clone, Copy, PartialEq, Eq)]
-enum TurretType {
-    Simple,
-    Advanced,
-    Rotating,
 }
 
 fn create_turret(

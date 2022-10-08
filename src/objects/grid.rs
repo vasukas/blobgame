@@ -1,4 +1,4 @@
-use super::{player::Player, spawn::WaveEvent};
+use super::{player::Player, spawn::LevelProgressEvent};
 use crate::{common::*, mechanics::health::Health, present::sound::Beats};
 
 #[derive(Component)]
@@ -103,14 +103,17 @@ struct SelectState {
 
 fn select_grid_pulse(
     mut pulse: ResMut<GridPulse>, player: Query<&Health, With<Player>>,
-    mut state: Local<SelectState>, mut wave_event: EventReader<WaveEvent>, beats: Res<Beats>,
-    real_time: Res<Time>,
+    mut state: Local<SelectState>, mut wave_event: EventReader<LevelProgressEvent>,
+    beats: Res<Beats>, real_time: Res<Time>,
 ) {
     for ev in wave_event.iter() {
-        match ev {
-            WaveEvent::Started => state.wait_wave = false,
-            WaveEvent::Ended => state.wait_wave = true,
-            WaveEvent::Restart => (), // ignored
+        match *ev {
+            LevelProgressEvent::Started { new } => {
+                if new {
+                    state.wait_wave = false
+                }
+            }
+            LevelProgressEvent::Ended => state.wait_wave = true,
         }
     }
 

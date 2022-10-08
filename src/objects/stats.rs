@@ -1,4 +1,4 @@
-use super::{spawn::WaveEvent, weapon::CraftedWeapon};
+use super::{spawn::LevelProgressEvent, weapon::CraftedWeapon};
 use crate::{common::*, mechanics::health::DeathEvent};
 
 #[derive(Default)]
@@ -55,21 +55,22 @@ impl Plugin for StatsPlugin {
 }
 
 fn update_stats(
-    mut stats: ResMut<Stats>, mut events: EventReader<WaveEvent>, time: Res<GameTime>,
+    mut stats: ResMut<Stats>, mut events: EventReader<LevelProgressEvent>, time: Res<GameTime>,
     mut wave_now: Local<bool>, mut deaths: CmdReader<DeathEvent>, mut diers: Query<&DeathPoints>,
 ) {
     for ev in events.iter() {
-        match ev {
-            WaveEvent::Started => {
-                stats.last_wave = stats.player.clone();
+        match *ev {
+            LevelProgressEvent::Started { new } => {
+                if new {
+                    stats.last_wave = stats.player.clone();
+                } else {
+                    stats.player = stats.last_wave.clone();
+                    stats.restarts += 1;
+                }
                 *wave_now = true;
             }
-            WaveEvent::Ended => {
+            LevelProgressEvent::Ended => {
                 *wave_now = false;
-            }
-            WaveEvent::Restart => {
-                stats.player = stats.last_wave.clone();
-                stats.restarts += 1;
             }
         }
     }

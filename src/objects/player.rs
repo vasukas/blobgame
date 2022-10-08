@@ -1,6 +1,6 @@
 use super::{
     loot::LootPicker,
-    spawn::{SpawnControl, WaveEvent},
+    spawn::{LevelProgressEvent, SpawnControl},
     stats::Stats,
     weapon::{CraftedWeapon, Weapon},
 };
@@ -354,12 +354,13 @@ struct NextWaveMenu {
 }
 
 fn next_wave(
-    mut wave: EventReader<WaveEvent>, mut stats: ResMut<Stats>, mut spawn: ResMut<SpawnControl>,
-    mut commands: Commands, input: Res<ActionState<ControlAction>>, mut data: Local<NextWaveMenu>,
+    mut wave: EventReader<LevelProgressEvent>, mut stats: ResMut<Stats>,
+    mut spawn: ResMut<SpawnControl>, mut commands: Commands,
+    input: Res<ActionState<ControlAction>>, mut data: Local<NextWaveMenu>,
     input_map: Res<InputMap<ControlAction>>,
 ) {
     // begin user input
-    if wave.iter().any(|ev| *ev == WaveEvent::Ended) {
+    if wave.iter().any(|ev| *ev == LevelProgressEvent::Ended) {
         let text = match spawn.tutorial {
             Some(1) => vec![(
                 "This is tutorial\nRead text at the bottom of screen".to_string(),
